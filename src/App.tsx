@@ -58,6 +58,7 @@ import { CommunityRequestsPage } from './pages/CommunityRequestsPage';
 import { CameraMasterPage } from './pages/CameraMasterPage';
 import { CameraRequestsPage } from './pages/CameraRequestsPage';
 import { CorrespondencePage } from './pages/CorrespondencePage';
+import { EmailSettingsMasterPage } from './pages/EmailSettingsMasterPage';
 import { ContractorsPage } from './pages/ContractorsPage';
 import { ContractorMasterPage } from './pages/ContractorMasterPage';
 import { VisitorsPage } from './pages/VisitorsPage';
@@ -184,6 +185,7 @@ function App() {
                                                                                   <Route path="cambio-clave" element={<ChangePasswordPage />} />
                                                                                   <Route path="maestros-operativos" element={<OperationalMastersPage />} />
                                                                                   <Route path="maestro-camaras" element={<CameraMasterPage />} />
+                                                                                  <Route path="maestro-correos" element={<EmailSettingsMasterPage />} />
                                                                                   <Route path="*" element={<Navigate to="/" replace />} />
                                                                                 </Route>
                                                                               </Routes>

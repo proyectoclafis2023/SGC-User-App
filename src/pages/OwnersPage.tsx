@@ -28,6 +28,7 @@ export const OwnersPage: React.FC = () => {
     const [dni, setDni] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
+    const [receiveResidentNotifications, setReceiveResidentNotifications] = useState(false);
 
     const handleOpenModal = (owner?: Owner) => {
         if (owner) {
@@ -37,6 +38,7 @@ export const OwnersPage: React.FC = () => {
             setDni(owner.dni);
             setPhone(owner.phone);
             setEmail(owner.email);
+            setReceiveResidentNotifications(owner.receiveResidentNotifications || false);
         } else {
             setEditingOwner(null);
             setNames('');
@@ -44,13 +46,14 @@ export const OwnersPage: React.FC = () => {
             setDni('');
             setPhone('');
             setEmail('');
+            setReceiveResidentNotifications(false);
         }
         setIsModalOpen(true);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { names, lastNames, dni, phone, email };
+        const data = { names, lastNames, dni, phone, email, receiveResidentNotifications };
         if (editingOwner) {
             await updateOwner({ ...editingOwner, ...data });
         } else {
@@ -171,6 +174,11 @@ export const OwnersPage: React.FC = () => {
                                     <span className="w-4 flex justify-center font-black">#</span>
                                     <span>{o.phone}</span>
                                 </div>
+                                <div className="flex items-center gap-3 text-xs font-bold mt-2">
+                                    <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-widest ${o.receiveResidentNotifications ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800'}`}>
+                                        Notificaciones del Residente: {o.receiveResidentNotifications ? 'Activadas' : 'Inactivas'}
+                                    </span>
+                                </div>
                             </div>
 
                             <div className="mt-6 pt-6 border-t border-gray-50 dark:border-gray-800 flex justify-between items-center">
@@ -225,6 +233,19 @@ export const OwnersPage: React.FC = () => {
                             <Input label="DNI / RUT" value={dni} onChange={(e) => setDni(formatRUT(e.target.value))} required />
                             <Input label="Teléfono" value={phone} onChange={(e) => setPhone(e.target.value)} required />
                             <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
+                                <div>
+                                    <p className="text-sm font-bold text-gray-900 dark:text-white">Notificaciones de Residentes</p>
+                                    <p className="text-[10px] text-gray-500 font-medium">Recibir copias cuando un residente genere acciones (visitas, encomiendas, reservas).</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setReceiveResidentNotifications(!receiveResidentNotifications)}
+                                    className={`w-12 h-6 rounded-full transition-all relative shrink-0 ${receiveResidentNotifications ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-700'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${receiveResidentNotifications ? 'right-1' : 'left-1'}`} />
+                                </button>
+                            </div>
                             <div className="flex justify-end gap-3 pt-6 border-t dark:border-gray-800">
                                 <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
                                 <Button type="submit">Guardar</Button>

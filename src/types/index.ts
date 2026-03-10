@@ -52,6 +52,22 @@ export interface SystemSettings {
     adminSignature?: string; // Base64 de la firma
     deletionPassword?: string;
     vacationAccrualRate?: number;
+    // Email Config
+    smtpHost?: string;
+    smtpPort?: number;
+    smtpUser?: string;
+    smtpPassword?: string;
+    smtpFrom?: string;
+    smtpBcc?: string; // Correo en copia (registro)
+    conciergeEmail?: string; // Correo para recibir notificaciones de conserjería
+    emailTriggers?: {
+        expenses?: boolean;
+        visits?: boolean;
+        correspondence?: boolean;
+        reservations?: boolean;
+        systemAnnouncements?: boolean;
+        suggestions?: boolean;
+    };
 }
 
 export interface SettingsContextType {
@@ -238,6 +254,7 @@ export interface Owner {
     notes?: string;
     status: 'active' | 'inactive';
     isArchived?: boolean;
+    receiveResidentNotifications?: boolean;
     createdAt: string;
 }
 

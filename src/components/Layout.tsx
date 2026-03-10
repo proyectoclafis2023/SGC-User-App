@@ -271,6 +271,7 @@ export const Layout: React.FC = () => {
                                     { label: 'Maestro Cámaras', path: '/maestro-camaras' },
                                     { label: 'Maestro Avisos Sistema', path: '/mensajes' },
                                     { label: 'Maestro Perfiles de Acceso', path: '/perfiles' },
+                                    { label: 'Maestro Envíos por Correo', path: '/maestro-correos' },
                                     { label: 'Ajustes Generales', path: '/configuracion' },
                                     { label: 'Carga Masiva', path: '/carga-masiva' },
                                 ]}
