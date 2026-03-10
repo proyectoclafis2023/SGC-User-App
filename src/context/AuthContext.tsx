@@ -15,19 +15,59 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     });
 
+    const updateUserAuthData = (data: Partial<NonNullable<AuthState['user']>>) => {
+        setAuth(prev => {
+            if (!prev.user) return prev;
+            return { ...prev, user: { ...prev.user, ...data } };
+        });
+    };
+
     useEffect(() => {
         localStorage.setItem('auth', JSON.stringify(auth));
     }, [auth]);
 
     const login = async (username: string, pass: string) => {
-        // Hardcoded admin/admin as requested in original requirements
+        // Hardcoded admin/admin
         if (username === 'admin' && pass === 'admin') {
             const adminUser = {
                 isAuthenticated: true,
-                user: { name: 'Admin User', role: 'admin' }
+                user: {
+                    id: '1',
+                    name: 'Admin User',
+                    email: 'admin@example.com',
+                    role: 'admin',
+                    status: 'active'
+                }
             };
             setAuth(adminUser);
             return true;
+        }
+
+        // Try to find in localStorage users
+        try {
+            const storedUsers = localStorage.getItem('users');
+            const usersList = storedUsers ? JSON.parse(storedUsers) : [];
+            const userFound = usersList.find((u: any) => (u.email === username || u.id === username) && u.password === pass && !u.isArchived);
+
+            if (userFound) {
+                const userData = {
+                    isAuthenticated: true,
+                    user: {
+                        id: userFound.id,
+                        name: userFound.name,
+                        email: userFound.email,
+                        role: userFound.role,
+                        status: userFound.status,
+                        relatedId: userFound.relatedId,
+                        profileId: userFound.profileId,
+                        mustChangePassword: userFound.mustChangePassword
+                    }
+                };
+                setAuth(userData);
+                return true;
+            }
+        } catch (e) {
+            console.error('Error in local login:', e);
         }
 
         try {
@@ -42,17 +82,71 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setAuth(data);
                 return true;
             }
-            // The provided snippet seems to be from a component that *uses* the login function,
-            // not from within the login function definition itself.
-            // Inserting it directly here would cause syntax errors and logical issues
-            // (e.g., recursive call to login, undefined variables like navigate, setError, setLoading).
-            // Therefore, to maintain a syntactically correct file, this specific snippet cannot be
-            // inserted as-is into the AuthProvider's login function.
-            // The original `return false;` for non-ok responses is kept.
             return false;
         } catch (error) {
             console.error('Login error:', error);
-            // Returning false on network/server error for the caller to handle
+            return false;
+        }
+    };
+
+    const changePassword = async (newPassword: string) => {
+        if (!auth.user) return;
+
+        // Update in localStorage users
+        try {
+            const storedUsers = localStorage.getItem('users');
+            const usersList = storedUsers ? JSON.parse(storedUsers) : [];
+            const updatedUsers = usersList.map((u: any) =>
+                u.id === auth.user?.id ? { ...u, password: newPassword, mustChangePassword: false } : u
+            );
+            localStorage.setItem('users', JSON.stringify(updatedUsers));
+
+            // Update current auth state
+            setAuth(prev => ({
+                ...prev,
+                user: prev.user ? { ...prev.user, mustChangePassword: false } : null
+            }));
+        } catch (e) {
+            console.error('Error changing password:', e);
+        }
+    };
+
+    const loginWithGoogle = async (email: string, name: string, photoUrl?: string) => {
+        try {
+            // Simulated login: Check if user already exists in users DB
+            const storedUsers = localStorage.getItem('users');
+            const usersList = storedUsers ? JSON.parse(storedUsers) : [];
+            let existingUser = usersList.find((u: any) => u.email === email);
+
+            if (!existingUser) {
+                existingUser = {
+                    id: `G-${Date.now()}`,
+                    name,
+                    email,
+                    role: 'pending',
+                    status: 'setting_up',
+                    createdAt: new Date().toISOString()
+                };
+                usersList.push(existingUser);
+                localStorage.setItem('users', JSON.stringify(usersList));
+            }
+
+            setAuth({
+                isAuthenticated: true,
+                user: {
+                    name: existingUser.name,
+                    role: existingUser.role,
+                    email: existingUser.email,
+                    status: existingUser.status,
+                    id: existingUser.id,
+                    photo: photoUrl,
+                    mustChangePassword: existingUser.mustChangePassword
+                } as any
+            });
+
+            return true;
+        } catch (error) {
+            console.error("Error signing in with Google:", error);
             return false;
         }
     };
@@ -63,7 +157,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ ...auth, login, logout }}>
+        <AuthContext.Provider value={{ ...auth, login, loginWithGoogle, logout, updateUserAuthData, changePassword }}>
             {children}
         </AuthContext.Provider>
     );

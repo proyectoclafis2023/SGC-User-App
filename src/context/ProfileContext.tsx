@@ -6,6 +6,7 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 const STORAGE_KEY = 'profiles_data';
 
 const DEFAULT_PERMISSIONS: ProfilePermissions = {
+    // Maestros y Configuración
     canViewPersonnel: true,
     canManagePersonnel: true,
     canViewPrevisiones: true,
@@ -14,8 +15,56 @@ const DEFAULT_PERMISSIONS: ProfilePermissions = {
     canManageAFPs: true,
     canViewUsers: true,
     canManageUsers: true,
+    canViewProfiles: true,
+    canManageProfiles: true,
     canViewSettings: true,
     canManageSettings: true,
+    canViewInfrastructure: true,
+    canManageInfrastructure: true,
+    canViewResidents: true,
+    canManageResidents: true,
+    canViewOwners: true,
+    canManageOwners: true,
+    canViewUnitTypes: true,
+    canManageUnitTypes: true,
+    canViewParking: true,
+    canManageParking: true,
+    canViewCommonSpaces: true,
+    canManageCommonSpaces: true,
+    canViewArticles: true,
+    canManageArticles: true,
+    canViewContractors: true,
+    canManageContractors: true,
+    canViewFixedAssets: true,
+    canManageFixedAssets: true,
+    canViewEmergencyNumbers: true,
+    canManageEmergencyNumbers: true,
+    canViewOperationalMasters: true,
+    canManageOperationalMasters: true,
+
+    // Operativa y Gestión
+    canViewCommonExpenses: true,
+    canManageCommonExpenses: true,
+    canViewCertificates: true,
+    canManageCertificates: true,
+    canViewVisitors: true,
+    canManageVisitors: true,
+    canViewShiftReports: true,
+    canManageShiftReports: true,
+    canViewCorrespondence: true,
+    canManageCorrespondence: true,
+    canViewTickets: true,
+    canManageTickets: true,
+    canViewCameraRequests: true,
+    canManageCameraRequests: true,
+    canViewReservations: true,
+    canManageReservations: true,
+    canViewSystemMessages: true,
+    canManageSystemMessages: true,
+    canViewArticleDeliveries: true,
+    canManageArticleDeliveries: true,
+    canViewPayslips: true,
+    canManagePayslips: true,
 };
 
 const INITIAL_PROFILES: Profile[] = [
@@ -65,7 +114,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
 
     const deleteProfile = async (id: string) => {
-        setProfiles(prev => prev.filter(p => p.id !== id));
+        setProfiles(prev => prev.map(p => p.id === id ? { ...p, isArchived: true } : p));
     };
 
     return (

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSystemMessages } from '../context/SystemMessageContext';
 import { Button } from '../components/Button';
-import { Plus, Trash2, Edit2, X, Bell, Eye, EyeOff, MessageSquare, Bookmark } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Bell, Eye, EyeOff, MessageSquare, Bookmark, Camera, Youtube } from 'lucide-react';
 import type { SystemMessage } from '../types';
 
 export const SystemMessagesPage: React.FC = () => {
@@ -14,6 +14,12 @@ export const SystemMessagesPage: React.FC = () => {
     const [expiresAt, setExpiresAt] = useState('');
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState<string[]>([]);
+
+    // Novedades
+    const [image, setImage] = useState<string | undefined>(undefined);
+    const [youtubeUrl, setYoutubeUrl] = useState<string | undefined>(undefined);
+    const [durationSeconds, setDurationSeconds] = useState<number>(5);
+    const [isFullImage, setIsFullImage] = useState(false);
 
     const quickTemplates = [
         { label: 'Hidropack', text: 'Problemas con sistema Hidropack - Técnicos en camino.', type: 'danger' as const },
@@ -29,14 +35,33 @@ export const SystemMessagesPage: React.FC = () => {
             setType(msg.type);
             setExpiresAt(msg.expiresAt || '');
             setTags(msg.tags || []);
+            setImage(msg.image);
+            setYoutubeUrl(msg.youtubeUrl);
+            setDurationSeconds(msg.durationSeconds || 5);
+            setIsFullImage(msg.isFullImage || false);
         } else {
             setEditingMessage(null);
             setText('');
             setType('info');
             setExpiresAt('');
             setTags([]);
+            setImage(undefined);
+            setYoutubeUrl(undefined);
+            setDurationSeconds(5);
+            setIsFullImage(false);
         }
         setIsModalOpen(true);
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImage(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleQuickTemplate = (template: typeof quickTemplates[0]) => {
@@ -46,7 +71,17 @@ export const SystemMessagesPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { text, type, expiresAt, tags, isActive: true };
+        const data = {
+            text,
+            type,
+            expiresAt,
+            tags,
+            isActive: true,
+            image,
+            youtubeUrl,
+            durationSeconds,
+            isFullImage
+        };
         if (editingMessage) {
             await updateMessage({ ...editingMessage, ...data });
         } else {
@@ -81,7 +116,7 @@ export const SystemMessagesPage: React.FC = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <MessageSquare className="w-8 h-8 text-indigo-600" />
-                        Maestro de Mensajes Comunitarios
+                        Maestro Avisos Sistema
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">Gestiona los avisos que se mostrarán en el carrusel público.</p>
                 </div>
@@ -118,7 +153,7 @@ export const SystemMessagesPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-                {messages.map((msg) => (
+                {messages.filter(m => !m.isArchived).map((msg) => (
                     <div key={msg.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
                         <div className="flex items-center gap-4 flex-1">
                             <div className={`p-3 rounded-xl shrink-0 ${getTypeColor(msg.type)}`}>
@@ -207,14 +242,80 @@ export const SystemMessagesPage: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Fecha de Expiración (Opcional)</label>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Duración (segundos)</label>
                                     <input
-                                        type="date"
-                                        value={expiresAt}
-                                        onChange={(e) => setExpiresAt(e.target.value)}
+                                        type="number"
+                                        min="1"
+                                        max="60"
+                                        value={durationSeconds}
+                                        onChange={(e) => setDurationSeconds(parseInt(e.target.value) || 5)}
                                         className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm"
                                     />
                                 </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Imagen del Aviso (Opcional)</label>
+                                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
+                                    {image ? (
+                                        <div className="relative w-20 h-20 rounded-xl overflow-hidden shadow-md">
+                                            <img src={image} alt="Preview" className="w-full h-full object-cover" />
+                                            <button
+                                                type="button"
+                                                onClick={() => setImage(undefined)}
+                                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full shadow-lg"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <label className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-indigo-500 transition-colors">
+                                            <Camera className="w-6 h-6 text-gray-400" />
+                                            <span className="text-[8px] font-bold text-gray-400">SUBIR</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                                        </label>
+                                    )}
+                                    <div className="flex-1 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-bold text-gray-500 uppercase">Ocupar gran parte del aviso</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsFullImage(!isFullImage)}
+                                                className={`w-10 h-5 rounded-full transition-all relative ${isFullImage ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                            >
+                                                <button
+                                                    type="button"
+                                                    className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${isFullImage ? 'translate-x-5.5' : 'translate-x-0.5'}`}
+                                                />
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-gray-400 italic">Si se marca, la imagen ocupará el fondo o un lateral prominente.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Link de YouTube (Opcional)</label>
+                                <div className="relative">
+                                    <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-red-600" />
+                                    <input
+                                        type="url"
+                                        value={youtubeUrl || ''}
+                                        onChange={(e) => setYoutubeUrl(e.target.value)}
+                                        placeholder="https://www.youtube.com/watch?v=..."
+                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Fecha de Expiración (Opcional)</label>
+                                <input
+                                    type="date"
+                                    value={expiresAt}
+                                    onChange={(e) => setExpiresAt(e.target.value)}
+                                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm"
+                                />
                             </div>
 
                             <div className="space-y-1.5">
@@ -234,7 +335,7 @@ export const SystemMessagesPage: React.FC = () => {
                                     {tags.map((t, i) => (
                                         <span key={i} className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 px-2 py-1 rounded-lg text-xs font-bold">
                                             {t}
-                                            <button onClick={() => removeTag(t)} className="hover:text-red-500"><X className="w-3 h-3" /></button>
+                                            <button type="button" onClick={() => removeTag(t)} className="hover:text-red-500"><X className="w-3 h-3" /></button>
                                         </span>
                                     ))}
                                 </div>

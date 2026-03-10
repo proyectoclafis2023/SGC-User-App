@@ -6,9 +6,9 @@ const CommonSpaceContext = createContext<CommonSpaceContextType | undefined>(und
 const STORAGE_KEY = 'common_spaces_data';
 
 const INITIAL_SPACES: CommonSpace[] = [
-    { id: '1', name: 'Quincho Principal', location: 'Azotea Torre A', rentalValue: 15000, rentalTime: '4 horas' },
-    { id: '2', name: 'Sala de Eventos', location: 'Primer Piso', rentalValue: 25000, rentalTime: '6 horas' },
-    { id: '3', name: 'Gimnasio', location: 'Subsuelo', rentalValue: 0, rentalTime: '1 hora' },
+    { id: '1', name: 'Quincho Principal', location: 'Azotea Torre A', rentalValue: 15000, durationHours: 4 },
+    { id: '2', name: 'Sala de Eventos', location: 'Primer Piso', rentalValue: 25000, durationHours: 6 },
+    { id: '3', name: 'Gimnasio', location: 'Subsuelo', rentalValue: 0, durationHours: 1 },
 ];
 
 export const CommonSpaceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -39,7 +39,7 @@ export const CommonSpaceProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     const deleteSpace = async (id: string) => {
-        setSpaces(prev => prev.filter(s => s.id !== id));
+        setSpaces(prev => prev.map(s => s.id === id ? { ...s, isArchived: true } : s));
     };
 
     return (

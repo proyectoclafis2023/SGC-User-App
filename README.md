@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+# SGC - Plataforma de Gestión Comunitaria
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![Dharma Tecnologías](https://www.dharmatec.cl/wp-content/uploads/2021/05/logo-dharma-01.png)
 
-Currently, two official plugins are available:
+**SGC** es una solución integral diseñada por **Dharma Tecnologías** para la administración y operación eficiente de comunidades, edificios y condominios. La plataforma se enfoca en la automatización de procesos, transparencia financiera y mejora de la comunicación interna.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Funcionalidades Principales
 
-## React Compiler
+*   **Gestión de Infraestructura**: Control detallado de edificios, unidades (departamentos, bodegas, estacionamientos) y tipos de unidad.
+*   **Recursos Humanos**: Maestro de personal, liquidaciones de sueldo, certificados automáticos y gestión de EPP.
+*   **Finanzas y Egresos**: Registro de gastos comunes, maestros de fondos especiales, activos fijos y seguimiento de pagos.
+*   **Operaciones Diarias**: Bitácora de turnos, control de visitas, gestión de correspondencia y solicitudes de cámaras.
+*   **Soporte y Servicios**: Directorio de servicios recomendados, sistema de sugerencias y reclamos, y números de emergencia.
+*   **Comunicación**: Maestro de avisos sistema para carruseles públicos y notificaciones a residentes.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Stack Tecnológico
 
-## Expanding the ESLint configuration
+*   **Frontend**: React + TypeScript + Vite
+*   **Estilos**: TailwindCSS (con diseño premium personalizado)
+*   **Iconografía**: Lucide React
+*   **Estado**: React Context API
+*   **Backend**: Nodo / Express (en desarrollo)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 📦 Instalación y Desarrollo
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Para ejecutar el proyecto localmente por primera vez:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1.  Clonar el repositorio.
+2.  Instalar dependencias:
+    ```bash
+    npm install
+    ```
+3.  Iniciar servidor de desarrollo:
+    ```bash
+    npm run dev
+    ```
+4.  Para generar el bundle de producción:
+    ```bash
+    npm run build
+    ```
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 📄 Licencia
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Este software es propiedad privada de **Dharma Tecnologías**. Todos los derechos reservados. Consulte el archivo `LICENSE` para más detalles.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+© 2024 [Dharma Tecnologías](https://www.dharmatec.cl) - Innovación en Gestión Tecnológica.

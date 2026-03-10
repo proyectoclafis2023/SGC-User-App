@@ -12,7 +12,10 @@ export const SystemMessageProvider: React.FC<{ children: ReactNode }> = ({ child
             return stored ? JSON.parse(stored) : [
                 { id: '1', text: 'Portón principal en reparación - Acceso por lateral', type: 'warning', isActive: true, createdAt: new Date().toISOString() },
                 { id: '2', text: 'Corte de agua programado - Miércoles 10:00 AM', type: 'danger', isActive: true, createdAt: new Date().toISOString() },
-                { id: '3', text: 'Mantenimiento de piscinas finalizado', type: 'success', isActive: true, createdAt: new Date().toISOString() }
+                { id: '3', text: 'Mantenimiento de piscinas finalizado', type: 'success', isActive: true, createdAt: new Date().toISOString() },
+                { id: '4', text: 'Proton malo o con fallas. Operar de forma manual.', type: 'danger', isActive: false, createdAt: new Date(Date.now() - 86400000).toISOString() },
+                { id: '5', text: 'Problemas con hidropack, se está gestionando servicio técnico.', type: 'warning', isActive: false, createdAt: new Date(Date.now() - 172800000).toISOString() },
+                { id: '6', text: 'Corte de servicio eléctrico programado - Viernes 14:00 PM', type: 'warning', isActive: false, createdAt: new Date(Date.now() - 259200000).toISOString() }
             ];
         } catch (e) {
             console.error('Error loading system messages:', e);
@@ -49,7 +52,7 @@ export const SystemMessageProvider: React.FC<{ children: ReactNode }> = ({ child
     };
 
     const deleteMessage = async (id: string) => {
-        setMessages(prev => prev.filter(m => m.id !== id));
+        setMessages(prev => prev.map(m => m.id === id ? { ...m, isArchived: true } : m));
     };
 
     const toggleMessageStatus = async (id: string) => {

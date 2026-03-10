@@ -16,9 +16,9 @@ export const UserForm: React.FC<UserFormProps> = ({ isOpen, onClose, onSubmit, i
     const { profiles } = useProfiles();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [role, setRole] = useState<'admin' | 'user'>('user');
+    const [role, setRole] = useState<User['role']>('user');
     const [profileId, setProfileId] = useState('');
-    const [status, setStatus] = useState<'active' | 'inactive'>('active');
+    const [status, setStatus] = useState<User['status']>('active');
 
     useEffect(() => {
         if (initialData) {
@@ -123,11 +123,13 @@ export const UserForm: React.FC<UserFormProps> = ({ isOpen, onClose, onSubmit, i
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Estado</label>
                         <select
                             value={status}
-                            onChange={(e) => setStatus(e.target.value as 'active' | 'inactive')}
+                            onChange={(e) => setStatus(e.target.value as User['status'])}
                             className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all cursor-pointer shadow-sm"
                         >
                             <option value="active">Activo</option>
                             <option value="inactive">Inactivo</option>
+                            <option value="setting_up">Configurando</option>
+                            <option value="pending_approval">Pendiente Aprobación</option>
                         </select>
                     </div>
 

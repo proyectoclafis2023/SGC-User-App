@@ -12,8 +12,9 @@ export const CommonSpacesPage: React.FC = () => {
 
     const [name, setName] = useState('');
     const [location, setLocation] = useState('');
-    const [rentalValue, setRentalValue] = useState(0);
-    const [rentalTime, setRentalTime] = useState('');
+    const [rentalValue, setRentalValue] = useState<number>(0);
+    const [durationHours, setDurationHours] = useState<number>(1);
+    const [conditions, setConditions] = useState('');
 
     const handleOpenModal = (space?: CommonSpace) => {
         if (space) {
@@ -21,13 +22,15 @@ export const CommonSpacesPage: React.FC = () => {
             setName(space.name);
             setLocation(space.location);
             setRentalValue(space.rentalValue);
-            setRentalTime(space.rentalTime);
+            setDurationHours(space.durationHours);
+            setConditions(space.conditions || '');
         } else {
             setEditingSpace(null);
             setName('');
             setLocation('');
             setRentalValue(0);
-            setRentalTime('');
+            setDurationHours(1);
+            setConditions('');
         }
         setIsModalOpen(true);
     };
@@ -35,9 +38,9 @@ export const CommonSpacesPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (editingSpace) {
-            await updateSpace({ ...editingSpace, name, location, rentalValue: Number(rentalValue), rentalTime });
+            await updateSpace({ ...editingSpace, name, location, rentalValue: Math.floor(rentalValue), durationHours: Math.floor(durationHours), conditions });
         } else {
-            await addSpace({ name, location, rentalValue: Number(rentalValue), rentalTime });
+            await addSpace({ name, location, rentalValue: Math.floor(rentalValue), durationHours: Math.floor(durationHours), conditions });
         }
         setIsModalOpen(false);
     };
@@ -63,7 +66,7 @@ export const CommonSpacesPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {spaces.map((space) => (
+                {spaces.filter(s => !s.isArchived).map((space) => (
                     <div key={space.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-all">
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
@@ -91,7 +94,7 @@ export const CommonSpacesPage: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                     <Clock className="w-4 h-4 text-blue-500" />
-                                    <span>{space.rentalTime}</span>
+                                    <span>{space.durationHours} {space.durationHours === 1 ? 'hora' : 'horas'}</span>
                                 </div>
                             </div>
                         </div>
@@ -115,8 +118,28 @@ export const CommonSpacesPage: React.FC = () => {
                             <Input label="Nombre del Espacio" value={name} onChange={(e) => setName(e.target.value)} placeholder="ej. Quincho Mirador" required />
                             <Input label="Ubicación" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="ej. Piso 15" required />
                             <div className="grid grid-cols-2 gap-4">
-                                <Input label="Valor de Arriendo ($)" type="number" value={rentalValue} onChange={(e) => setRentalValue(Number(e.target.value))} required />
-                                <Input label="Tiempo de Arriendo" value={rentalTime} onChange={(e) => setRentalTime(e.target.value)} placeholder="ej. 4 horas" required />
+                                <Input
+                                    label="Arriendo ($)"
+                                    type="number"
+                                    value={rentalValue}
+                                    onChange={(e) => setRentalValue(Math.floor(Number(e.target.value)))}
+                                    required
+                                />
+                                <Input
+                                    label="Duración (Horas)"
+                                    type="number"
+                                    value={durationHours}
+                                    onChange={(e) => setDurationHours(Math.floor(Number(e.target.value)))}
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-gray-500 ml-1 uppercase">Condiciones y Reglas</label>
+                                <textarea
+                                    className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 min-h-[100px]"
+                                    value={conditions}
+                                    onChange={(e) => setConditions(e.target.value)}
+                                    placeholder="Ej: Se entrega limpio, acceso a luz incluído, multa por ruidos molestos..."
+                                />
                             </div>
                             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
                                 <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancelar</Button>

@@ -43,7 +43,7 @@ export const PensionFundProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     const deleteFund = async (id: string) => {
-        setFunds(prev => prev.filter(f => f.id !== id));
+        setFunds(prev => prev.map(f => f.id === id ? { ...f, isArchived: true } : f));
     };
 
     return (

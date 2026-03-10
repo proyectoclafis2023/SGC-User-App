@@ -6,14 +6,29 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 const DEFAULT_SETTINGS: SystemSettings = {
     systemName: 'Administración GAG',
     systemIcon: 'G',
-    darkMode: false
+    cameraBackupDays: 7,
+    darkMode: false,
+    theme: 'light',
+    adminName: '',
+    adminRut: '',
+    condoRut: '',
+    condoAddress: '',
+    adminPhone: '',
+    adminSignature: '',
+    deletionPassword: '',
+    vacationAccrualRate: 1.25
 };
 
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [settings, setSettings] = useState<SystemSettings>(() => {
         try {
             const stored = localStorage.getItem('system_settings');
-            return stored ? JSON.parse(stored) : DEFAULT_SETTINGS;
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                // Aseguramos que campos nuevos no definidos en versiones previas de localStorage se incluyan
+                return { ...DEFAULT_SETTINGS, ...parsed };
+            }
+            return DEFAULT_SETTINGS;
         } catch (e) {
             console.error('Error parsing settings:', e);
             return DEFAULT_SETTINGS;
@@ -25,10 +40,15 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         document.title = settings.systemName;
 
         // Apply theme to document
-        if (settings.darkMode) {
+        if (settings.theme === 'dark') {
             document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('modern');
+        } else if (settings.theme === 'modern') {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('modern');
         } else {
             document.documentElement.classList.remove('dark');
+            document.documentElement.classList.remove('modern');
         }
 
         // Apply favicon on initial load and settings change
@@ -60,11 +80,32 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
 
     const toggleTheme = () => {
-        setSettings(prev => ({ ...prev, darkMode: !prev.darkMode }));
+        setSettings(prev => {
+            const currentTheme = prev.theme || 'light';
+            let nextTheme: 'light' | 'dark' | 'modern';
+
+            if (currentTheme === 'light') nextTheme = 'dark';
+            else if (currentTheme === 'dark') nextTheme = 'modern';
+            else nextTheme = 'light';
+
+            return {
+                ...prev,
+                theme: nextTheme,
+                darkMode: nextTheme === 'dark'
+            };
+        });
+    };
+
+    const setTheme = (theme: 'light' | 'dark' | 'modern') => {
+        setSettings(prev => ({
+            ...prev,
+            theme,
+            darkMode: theme === 'dark'
+        }));
     };
 
     return (
-        <SettingsContext.Provider value={{ settings, updateSettings, toggleTheme }}>
+        <SettingsContext.Provider value={{ settings, updateSettings, toggleTheme, setTheme }}>
             {children}
         </SettingsContext.Provider>
     );

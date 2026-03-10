@@ -37,7 +37,7 @@ export const AFPsPage: React.FC = () => {
     };
 
     const filteredFunds = funds.filter(f =>
-        f.name.toLowerCase().includes(searchTerm.toLowerCase())
+        !f.isArchived && f.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (

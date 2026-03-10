@@ -51,7 +51,7 @@ export const HealthProviderProvider: React.FC<{ children: ReactNode }> = ({ chil
     };
 
     const deleteProvider = async (id: string) => {
-        setProviders(prev => prev.filter(p => p.id !== id));
+        setProviders(prev => prev.map(p => p.id === id ? { ...p, isArchived: true } : p));
     };
 
     return (

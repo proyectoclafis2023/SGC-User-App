@@ -38,7 +38,7 @@ export const PrevisionesPage: React.FC = () => {
     };
 
     const filteredProviders = providers.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+        !p.isArchived && p.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (

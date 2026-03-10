@@ -4,9 +4,10 @@ import { useSettings } from '../context/SettingsContext';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
+import { Mail } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-    const { login } = useAuth();
+    const { login, loginWithGoogle } = useAuth();
     const { settings } = useSettings();
     const navigate = useNavigate();
     const [username, setUsername] = useState('');
@@ -31,6 +32,29 @@ export const LoginPage: React.FC = () => {
             }
         } catch (err) {
             setError('Error de conexión con el servidor. Intenta con admin/admin.');
+            setLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setLoading(true);
+        setError('');
+
+        // Simular flujo de Google OAuth
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        // En una app real, esto abriría el popup de Google y luego
+        // llamaríamos a loginWithGoogle(user.email, user.displayName)
+        // Para este prototipo simularemos una cuenta al azar:
+        const randomNum = Math.floor(Math.random() * 100);
+        const email = `usuario${randomNum}@gmail.com`;
+        const name = `Usuario Nuevo ${randomNum}`;
+
+        const success = await loginWithGoogle(email, name);
+        if (success) {
+            navigate('/');
+        } else {
+            setError('Error al iniciar sesión con Google.');
             setLoading(false);
         }
     };
@@ -86,6 +110,25 @@ export const LoginPage: React.FC = () => {
                             Iniciar Sesión
                         </Button>
                     </form>
+
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-2 bg-white/70 dark:bg-gray-900/70 text-gray-500">O continuar con</span>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        disabled={loading}
+                        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-2xl text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-bold shadow-sm"
+                    >
+                        <Mail className="w-5 h-5 text-red-500" />
+                        Acceder con Google
+                    </button>
 
                     <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 text-center text-xs text-gray-400 dark:text-gray-500">
                         Usa <span className="font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300">admin</span> / <span className="font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300">admin</span> para entrar

@@ -40,11 +40,17 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const deleteUser = async (id: string) => {
-        setUsers(prev => prev.filter(user => user.id !== id));
+        setUsers(prev => prev.map(user => user.id === id ? { ...user, status: 'inactive', isArchived: true } : user));
+    };
+
+    const resetPassword = async (id: string, newPassword: string) => {
+        setUsers(prev => prev.map(user =>
+            user.id === id ? { ...user, password: newPassword, mustChangePassword: true } : user
+        ));
     };
 
     return (
-        <UserContext.Provider value={{ users, addUser, updateUser, deleteUser }}>
+        <UserContext.Provider value={{ users, addUser, updateUser, deleteUser, resetPassword }}>
             {children}
         </UserContext.Provider>
     );

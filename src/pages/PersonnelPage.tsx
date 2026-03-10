@@ -3,14 +3,24 @@ import { usePersonnel } from '../context/PersonnelContext';
 import { PersonnelList } from '../components/PersonnelList';
 import { PersonnelForm } from '../components/PersonnelForm';
 import { Button } from '../components/Button';
+import { useUsers } from '../context/UserContext';
 import { Plus, Search, Users as UsersIcon, Download } from 'lucide-react';
-import type { Personnel } from '../types';
+import type { Personnel, AssignedArticle } from '../types';
+import { SecurityModal } from '../components/SecurityModal';
+import { useArticleDeliveries } from '../context/ArticleDeliveryContext';
+import { useArticles } from '../context/ArticleContext';
 
 export const PersonnelPage: React.FC = () => {
-    const { personnel, addPersonnel, updatePersonnel, deletePersonnel } = usePersonnel();
+    const { personnel, addPersonnel, updatePersonnel, deletePersonnel, uploadPersonnel } = usePersonnel();
+    const { users, deleteUser } = useUsers();
+    const { addDelivery } = useArticleDeliveries();
+    const { decreaseStock } = useArticles();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPerson, setEditingPerson] = useState<Personnel | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [personToDelete, setPersonToDelete] = useState<Personnel | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleAddPerson = () => {
         setEditingPerson(null);
@@ -22,28 +32,97 @@ export const PersonnelPage: React.FC = () => {
         setIsModalOpen(true);
     };
 
-    const handleDeletePerson = async (id: string, name: string) => {
-        if (window.confirm(`¿Está seguro de eliminar la ficha de ${name}?`)) {
-            await deletePersonnel(id);
+    const handleDeletePerson = (id: string, _name: string) => {
+        const person = personnel.find(p => p.id === id);
+        if (person) {
+            setPersonToDelete(person);
+            setIsDeleteModalOpen(true);
         }
     };
 
-    const handleSubmit = async (data: Omit<Personnel, 'id' | 'createdAt'>, id?: string) => {
-        if (id) {
-            await updatePersonnel({ ...data, id, createdAt: editingPerson!.createdAt });
-        } else {
-            await addPersonnel(data);
+    const confirmDelete = async () => {
+        if (personToDelete) {
+            const user = users.find(u => u.relatedId === personToDelete.id);
+            if (user) {
+                await deleteUser(user.id);
+            }
+            await deletePersonnel(personToDelete.id);
+            setPersonToDelete(null);
+            setIsDeleteModalOpen(false);
         }
+    };
+
+    const handleSubmit = async (data: Omit<Personnel, 'id' | 'createdAt' | 'status'>, id?: string) => {
+        let finalPersonnelId = id;
+
+        // Determinar qué artículos son nuevos o incrementados para el historial
+        const newArticlesForHistory: { articleId: string; quantity: number; size?: string }[] = [];
+
+        if (id && editingPerson) {
+            // Caso edición: comparar con lo que tenía antes
+            (data.assignedArticles || []).forEach((newItem: AssignedArticle) => {
+                const oldItem = editingPerson.assignedArticles?.find(a => a.articleId === newItem.articleId);
+                if (!oldItem) {
+                    // Completamente nuevo
+                    newArticlesForHistory.push({
+                        articleId: newItem.articleId,
+                        quantity: newItem.quantity,
+                        size: newItem.size
+                    });
+                } else if (newItem.quantity > oldItem.quantity) {
+                    // Cantidad incrementada
+                    newArticlesForHistory.push({
+                        articleId: newItem.articleId,
+                        quantity: newItem.quantity - oldItem.quantity,
+                        size: newItem.size
+                    });
+                }
+            });
+            await updatePersonnel({ ...data, id, createdAt: editingPerson.createdAt, status: editingPerson.status });
+        } else {
+            // Caso nuevo: todos los artículos asignados van al historial
+            finalPersonnelId = await addPersonnel(data);
+            if (data.assignedArticles && data.assignedArticles.length > 0) {
+                data.assignedArticles.forEach((item: AssignedArticle) => {
+                    newArticlesForHistory.push({
+                        articleId: item.articleId,
+                        quantity: item.quantity,
+                        size: item.size
+                    });
+                });
+            }
+        }
+
+        // Si hay artículos nuevos, registrar la entrega en el historial
+        if (newArticlesForHistory.length > 0 && finalPersonnelId) {
+            await addDelivery({
+                personnelId: finalPersonnelId,
+                deliveryDate: new Date().toISOString(),
+                articles: newArticlesForHistory,
+                status: 'active',
+                notes: id ? 'Actualización desde ficha de personal' : 'Entrega inicial al registrar personal'
+            });
+
+            // Deduct stock
+            for (const art of newArticlesForHistory) {
+                await decreaseStock(art.articleId, art.quantity);
+            }
+        }
+
+        alert(id ? 'Cambios guardados exitosamente.' : 'Personal registrado exitosamente.');
         setIsModalOpen(false);
     };
 
     const filteredPersonnel = personnel.filter(p => {
-        const normalizedSearch = searchTerm.toLowerCase().replace(/[^0-9kK]/g, '');
-        const normalizedDni = p.dni.toLowerCase().replace(/[^0-9kK]/g, '');
+        if (p.isArchived) return false;
 
-        return `${p.names} ${p.lastNames}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            normalizedDni.includes(normalizedSearch) ||
-            p.dni.toLowerCase().includes(searchTerm.toLowerCase());
+        const cleanSearch = searchTerm.toLowerCase().trim();
+        const cleanDniSearch = searchTerm.replace(/[^0-9kK]/g, '').toLowerCase();
+
+        const matchName = `${p.names} ${p.lastNames}`.toLowerCase().includes(cleanSearch);
+        const matchDni = p.dni.replace(/[^0-9kK]/g, '').toLowerCase().includes(cleanDniSearch);
+
+        return matchName || (cleanDniSearch.length > 0 && matchDni);
     });
 
     return (
@@ -57,6 +136,27 @@ export const PersonnelPage: React.FC = () => {
                     <p className="text-gray-500 dark:text-gray-400 mt-1">Gestión de fichas, contratos y previsión del personal.</p>
                 </div>
                 <div className="flex gap-2">
+                    <input
+                        type="file"
+                        accept=".csv"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                                try {
+                                    const result = await uploadPersonnel(file);
+                                    alert(result.message);
+                                } catch (err: any) {
+                                    alert(err.message);
+                                }
+                            }
+                        }}
+                    />
+                    <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Carga Masiva
+                    </Button>
                     <Button variant="secondary" onClick={() => window.print()}>
                         <Download className="w-4 h-4 mr-2" />
                         Exportar
@@ -96,6 +196,19 @@ export const PersonnelPage: React.FC = () => {
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleSubmit}
                 initialData={editingPerson}
+            />
+
+            <SecurityModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setPersonToDelete(null);
+                }}
+                onConfirm={confirmDelete}
+                title="Eliminar Personal"
+                description="¿Está seguro de eliminar la ficha de"
+                itemName={personToDelete ? `${personToDelete.names} ${personToDelete.lastNames}` : ''}
+                actionLabel="Eliminar Ficha"
             />
         </div>
     );
