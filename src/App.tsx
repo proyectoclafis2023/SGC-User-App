@@ -24,6 +24,7 @@ import { InfrastructurePage } from './pages/InfrastructurePage';
 import { CommonSpacesPage } from './pages/CommonSpacesPage';
 import { ReservationsPage } from './pages/ReservationsPage';
 import { SystemMessagesPage } from './pages/SystemMessagesPage';
+import { CommunicationsPage } from './pages/CommunicationsPage';
 import { PublicCarouselPage } from './pages/PublicCarouselPage';
 import { OwnersPage } from './pages/OwnersPage';
 import { OwnerProvider } from './context/OwnerContext';
@@ -69,6 +70,7 @@ import { PayslipsPage } from './pages/PayslipsPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { CommunityExpensesPage } from './pages/CommunityExpensesPage';
 import { ResidentsServicesPage } from './pages/ResidentsServicesPage';
+import { MessageMasterPage } from './pages/MessageMasterPage';
 
 import { AccountSetupPage } from './pages/AccountSetupPage';
 import { EmergencyNumberProvider } from './context/EmergencyNumberContext';
@@ -81,7 +83,9 @@ import { CourierProvider } from './context/CourierContext';
 import { ContractorVisitProvider } from './context/ContractorVisitContext';
 import { CertificateProvider } from './context/CertificateContext';
 import { PayslipProvider } from './context/PayslipContext';
-
+import { CommunicationProvider } from './context/CommunicationContext';
+import { SystemParameterProvider } from './context/SystemParameterContext';
+import { ParametersPage } from './pages/ParametersPage';
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, user } = useAuth();
   const location = useLocation();
@@ -133,12 +137,15 @@ function App() {
                                                                       <CourierProvider>
                                                                         <ContractorVisitProvider>
                                                                           <CertificateProvider>
-                                                                            <PayslipProvider>
-                                                                              <Routes>
+                                                                              <PayslipProvider>
+
+                                                                                <SystemParameterProvider>
+                                                                                  <CommunicationProvider>
+                                                                                    <Routes>
                                                                                 <Route path="/login" element={<LoginPage />} />
                                                                                 <Route path="/visor-mensajes" element={<PublicCarouselPage />} />
                                                                                 <Route
-                                                                                  path="/*"
+                                                                                  path="/"
                                                                                   element={
                                                                                     <PrivateRoute>
                                                                                       <Layout />
@@ -158,6 +165,7 @@ function App() {
                                                                                   <Route path="espacios" element={<CommonSpacesPage />} />
                                                                                   <Route path="reservas" element={<ReservationsPage />} />
                                                                                   <Route path="mensajes" element={<SystemMessagesPage />} />
+                                                                                  <Route path="comunicaciones" element={<CommunicationsPage />} />
                                                                                   <Route path="estacionamientos" element={<ParkingPage />} />
                                                                                   <Route path="bancos" element={<BanksPage />} />
                                                                                   <Route path="articulos-personal" element={<ArticlesPage />} />
@@ -186,10 +194,14 @@ function App() {
                                                                                   <Route path="maestros-operativos" element={<OperationalMastersPage />} />
                                                                                   <Route path="maestro-camaras" element={<CameraMasterPage />} />
                                                                                   <Route path="maestro-correos" element={<EmailSettingsMasterPage />} />
+                                                    <Route path="maestro-mensajes" element={<MessageMasterPage />} />
+                                                                                  <Route path="parametros" element={<ParametersPage />} />
                                                                                   <Route path="*" element={<Navigate to="/" replace />} />
-                                                                                </Route>
-                                                                              </Routes>
-                                                                            </PayslipProvider>
+                                                                                  </Route>
+                                                                                </Routes>
+                                                                              </CommunicationProvider>
+                                                                            </SystemParameterProvider>
+                                                                          </PayslipProvider>
                                                                           </CertificateProvider>
                                                                         </ContractorVisitProvider>
                                                                       </CourierProvider>

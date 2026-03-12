@@ -4,7 +4,7 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import {
     Camera, Plus, Trash2,
-    Save, X, LayoutGrid, CheckCircle2,
+    Save, X, CheckCircle2,
     Search, Clock, Edit2
 } from 'lucide-react';
 

@@ -41,6 +41,7 @@ export const SpecialFundsPage: React.FC = () => {
 
     // Delete confirmation state
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [fundCode, setFundCode] = useState<number>(0);
     const [fundToDelete, setFundToDelete] = useState<SpecialFund | null>(null);
 
     const resetForm = () => {
@@ -50,6 +51,7 @@ export const SpecialFundsPage: React.FC = () => {
         setTotalAmountPerUnit(0);
         setTotalProjectAmount(undefined);
         setDeadline('');
+        setFundCode(0);
         setUnitConfigs([]);
         setEditingFund(null);
     };
@@ -63,6 +65,7 @@ export const SpecialFundsPage: React.FC = () => {
             setTotalAmountPerUnit(fund.totalAmountPerUnit);
             setTotalProjectAmount(fund.totalProjectAmount);
             setDeadline(fund.deadline || '');
+            setFundCode(fund.fundCode);
             setUnitConfigs(fund.unitConfigs || []);
         } else {
             resetForm();
@@ -81,6 +84,7 @@ export const SpecialFundsPage: React.FC = () => {
             totalProjectAmount,
             deadline,
             unitConfigs,
+            fundCode,
             isActive: true
         };
 
@@ -238,8 +242,13 @@ export const SpecialFundsPage: React.FC = () => {
                                         {fund.type === 'reserve' ? 'Fondo Reserva' : 'Cuota Extraordinaria'}
                                     </span>
                                 </div>
-
-                                <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">{fund.name}</h3>
+                                
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-500">
+                                        {fund.fundCode}
+                                    </span>
+                                    <h3 className="text-xl font-black text-gray-900 dark:text-white">{fund.name}</h3>
+                                </div>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-6">{fund.description}</p>
 
                                 <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl space-y-4">
@@ -381,6 +390,15 @@ export const SpecialFundsPage: React.FC = () => {
                                             <option value="reserve">Fondo de Reserva</option>
                                             <option value="extraordinary">Cuota Extraordinaria</option>
                                         </select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Input
+                                            label="Código de Identificación (0=GC, 1+ Otros)"
+                                            type="number"
+                                            value={fundCode}
+                                            onChange={(e) => setFundCode(Number(e.target.value))}
+                                            required
+                                        />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="col-span-1">

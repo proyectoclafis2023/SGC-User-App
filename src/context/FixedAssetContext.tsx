@@ -1,53 +1,57 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { FixedAsset, FixedAssetContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const FixedAssetContext = createContext<FixedAssetContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'fixed_assets_data';
+const API_URL = `${API_BASE_URL}/fixed_assets`;
 
 export const FixedAssetProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [assets, setAssets] = useState<FixedAsset[]>(() => {
+    const [assets, setAssets] = useState<FixedAsset[]>([]);
+
+    const fetchAssets = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (!stored) return [];
-            const parsed = JSON.parse(stored);
-            return (parsed as FixedAsset[]).map(asset => {
-                if (asset.maintenanceHistory) {
-                    asset.maintenanceHistory = asset.maintenanceHistory.map(record => {
-                        if (!record.folio) {
-                            const dateStr = (record.date || new Date().toISOString()).slice(0, 10).replace(/-/g, '');
-                            return { ...record, folio: `MNT-${dateStr}-${record.id.slice(-4).toUpperCase()}` };
-                        }
-                        return record;
-                    });
-                }
-                return asset;
-            });
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setAssets(data);
+            }
         } catch (e) {
-            console.error('Error loading fixed assets:', e);
-            return [];
+            console.error('Error fetching fixed assets:', e);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(assets));
-    }, [assets]);
+        fetchAssets();
+    }, []);
 
     const addAsset = async (asset: Omit<FixedAsset, 'id' | 'createdAt'>) => {
-        const newRecord: FixedAsset = {
-            ...asset,
-            id: `AF-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-            createdAt: new Date().toISOString()
-        };
-        setAssets(prev => [newRecord, ...prev]);
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(asset)
+            });
+            if (response.ok) await fetchAssets();
+        } catch (e) { console.error('Error adding fixed asset:', e); }
     };
 
     const updateAsset = async (asset: FixedAsset) => {
-        setAssets(prev => prev.map(a => a.id === asset.id ? asset : a));
+        try {
+            const response = await fetch(`${API_URL}/${asset.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(asset)
+            });
+            if (response.ok) await fetchAssets();
+        } catch (e) { console.error('Error updating fixed asset:', e); }
     };
 
     const deleteAsset = async (id: string) => {
-        setAssets(prev => prev.map(a => a.id === id ? { ...a, isArchived: true } : a));
+        try {
+            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            if (response.ok) await fetchAssets();
+        } catch (e) { console.error('Error deleting fixed asset:', e); }
     };
 
     return (

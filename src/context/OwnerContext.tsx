@@ -1,95 +1,83 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Owner, OwnerContextType } from '../types';
 import { useHistoryLogs } from './HistoryLogContext';
+import { API_BASE_URL } from '../config/api';
 
 const OwnerContext = createContext<OwnerContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'owners_data';
-
 export const OwnerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { addLog } = useHistoryLogs();
-    const [owners, setOwners] = useState<Owner[]>(() => {
+    const [owners, setOwners] = useState<Owner[]>([]);
+
+    const fetchOwners = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                if (Array.isArray(parsed)) return parsed;
+            const response = await fetch(`${API_BASE_URL}/owners`);
+            if (response.ok) {
+                const data = await response.json();
+                setOwners(data);
             }
-            return [
-                {
-                    id: 'o1',
-                    names: 'Marcelo',
-                    lastNames: 'Salas',
-                    dni: '11.111.111-1',
-                    phone: '+56988888888',
-                    email: 'matador@example.com',
-                    status: 'active',
-                    createdAt: new Date().toISOString()
-                }
-            ];
         } catch (e) {
-            console.error('Error loading owners:', e);
-            return [];
+            console.error('Error fetching owners:', e);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(owners));
-    }, [owners]);
-
-    useEffect(() => {
-        const handleSync = (e: StorageEvent) => {
-            if (e.key === STORAGE_KEY && e.newValue) setOwners(JSON.parse(e.newValue));
-        };
-        window.addEventListener('storage', handleSync);
-        return () => window.removeEventListener('storage', handleSync);
+        fetchOwners();
     }, []);
 
     const addOwner = async (owner: Omit<Owner, 'id' | 'createdAt' | 'status'>) => {
-        const id = Math.random().toString(36).substr(2, 9);
-        const newRecord: Owner = {
-            ...owner,
-            id,
-            status: 'active',
-            createdAt: new Date().toISOString(),
-        };
-        setOwners(prev => [newRecord, ...prev]);
+        try {
+            const response = await fetch(`${API_BASE_URL}/owners`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...owner, status: 'active' })
+            });
 
-        await addLog({
-            entityType: 'owner',
-            entityId: id,
-            action: 'created',
-            details: `Propietario ${owner.names} ${owner.lastNames} registrado.`
-        });
-
-        return id;
+            if (response.ok) {
+                const newOwner = await response.json();
+                fetchOwners();
+                await addLog({
+                    entityType: 'owner',
+                    entityId: newOwner.id,
+                    action: 'created',
+                    details: `Propietario ${newOwner.names} ${newOwner.lastNames} registrado.`
+                });
+                return newOwner.id;
+            }
+        } catch (e) {
+            console.error('Error adding owner:', e);
+        }
     };
 
     const updateOwner = async (owner: Owner) => {
-        const previous = owners.find(o => o.id === owner.id);
-        setOwners(prev => prev.map(o => o.id === owner.id ? owner : o));
-
-        await addLog({
-            entityType: 'owner',
-            entityId: owner.id,
-            action: 'updated',
-            previousValue: previous,
-            newValue: owner,
-            details: `Datos del propietario ${owner.names} ${owner.lastNames} actualizados.`
-        });
+        try {
+            const response = await fetch(`${API_BASE_URL}/owners/${owner.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(owner)
+            });
+            if (response.ok) {
+                fetchOwners();
+                await addLog({
+                    entityType: 'owner',
+                    entityId: owner.id,
+                    action: 'updated',
+                    details: `Propietario ${owner.names} ${owner.lastNames} actualizado.`
+                });
+            }
+        } catch (e) {
+            console.error('Error updating owner:', e);
+        }
     };
 
     const deleteOwner = async (id: string) => {
-        const owner = owners.find(o => o.id === id);
-        setOwners(prev => prev.map(o => o.id === id ? { ...o, status: 'inactive' as const, isArchived: true } : o));
-
-        if (owner) {
-            await addLog({
-                entityType: 'owner',
-                entityId: id,
-                action: 'deleted',
-                details: `Propietario ${owner.names} ${owner.lastNames} eliminado.`
-            });
+        try {
+            const response = await fetch(`${API_BASE_URL}/owners/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                fetchOwners();
+            }
+        } catch (e) {
+            console.error('Error deleting owner:', e);
         }
     };
 

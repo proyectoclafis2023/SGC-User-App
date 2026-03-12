@@ -1,39 +1,28 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Ticket, TicketContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const TicketContext = createContext<TicketContextType | undefined>(undefined);
 
+const BACKEND_URL = `${API_BASE_URL}/tickets`;
+
 export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [tickets, setTickets] = useState<Ticket[]>(() => {
-        const saved = localStorage.getItem('sgc_tickets');
-        if (!saved) return [];
+    const [tickets, setTickets] = useState<Ticket[]>([]);
+
+    const fetchTickets = async () => {
         try {
-            const parsed = JSON.parse(saved);
-            return (parsed as Ticket[]).map(t => {
-                if (!t.folio) {
-                    const dateStr = (t.createdAt || new Date().toISOString()).slice(0, 10).replace(/-/g, '');
-                    return { ...t, folio: `TCK-${dateStr}-${t.id.slice(-4).toUpperCase()}` };
-                }
-                return t;
-            });
-        } catch (e) {
-            return [];
-        }
-    });
-
-    useEffect(() => {
-        localStorage.setItem('sgc_tickets', JSON.stringify(tickets));
-    }, [tickets]);
-
-    // Escuchar cambios en otras pestañas
-    useEffect(() => {
-        const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'sgc_tickets' && e.newValue) {
-                setTickets(JSON.parse(e.newValue));
+            const response = await fetch(BACKEND_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setTickets(data);
             }
-        };
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        } catch (e) {
+            console.error('Error fetching tickets:', e);
+        }
+    };
+
+    useEffect(() => {
+        fetchTickets();
     }, []);
 
     const generateFolio = (prefix: string) => {
@@ -52,33 +41,55 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
-        setTickets(prev => [newTicket, ...prev]);
+
+        try {
+            const resp = await fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newTicket)
+            });
+            if (resp.ok) {
+                fetchTickets();
+            }
+        } catch (e) {
+            console.error('API Error adding ticket:', e);
+        }
     };
 
     const updateTicketStatus = async (id: string, status: Ticket['status'], adminNotes?: string) => {
-        setTickets(prev => prev.map(t => {
-            if (t.id === id) {
-                const historyEntry = {
-                    status: t.status,
-                    notes: t.adminNotes || 'Sin notas',
-                    date: new Date().toISOString(),
-                    user: 'Sistema/Administrador' // Simplified for context
-                };
+        const ticket = tickets.find(t => t.id === id);
+        if (!ticket) return;
 
-                return {
-                    ...t,
-                    status,
-                    updatedAt: new Date().toISOString(),
-                    adminNotes: adminNotes !== undefined ? adminNotes : t.adminNotes,
-                    history: [...(t.history || []), historyEntry]
-                };
+        const updated = {
+            ...ticket,
+            status,
+            updatedAt: new Date().toISOString(),
+            adminNotes: adminNotes !== undefined ? adminNotes : ticket.adminNotes,
+        };
+
+        try {
+            const resp = await fetch(`${BACKEND_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated)
+            });
+            if (resp.ok) {
+                fetchTickets();
             }
-            return t;
-        }));
+        } catch (e) {
+            console.error('API Error updating ticket:', e);
+        }
     };
 
     const deleteTicket = async (id: string) => {
-        setTickets(prev => prev.filter(t => t.id !== id));
+        try {
+            const resp = await fetch(`${BACKEND_URL}/${id}`, { method: 'DELETE' });
+            if (resp.ok) {
+                fetchTickets();
+            }
+        } catch (e) {
+            console.error('API Error deleting ticket:', e);
+        }
     };
 
     return (

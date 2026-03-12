@@ -1,3 +1,19 @@
+import React from 'react';
+
+export interface SystemParameter {
+    id: string;
+    type: 'job_position' | 'shift' | 'contractor_specialty' | 'ticket_category' | 'article_category' | 'pet_type' | 'vehicle_type';
+    name: string;
+    description?: string;
+    isActive: boolean;
+}
+
+export interface SystemParameterContextType {
+    parameters: SystemParameter[];
+    addParameter: (param: Omit<SystemParameter, 'id'>) => Promise<void>;
+    updateParameter: (id: string, param: Partial<SystemParameter>) => Promise<void>;
+    deleteParameter: (id: string) => Promise<void>;
+}
 export interface User {
     id: string;
     name: string;
@@ -68,6 +84,11 @@ export interface SystemSettings {
         systemAnnouncements?: boolean;
         suggestions?: boolean;
     };
+    // Gestión de Cobranza
+    paymentDeadlineDay?: number; // Día del mes límite de pago
+    maxArrearsMonths?: number; // Meses de mora máximos antes de alerta crítica
+    arrearsFineAmount?: number; // Monto de multa fija por mora
+    arrearsFinePercentage?: number; // % de multa por mora (si aplica)
 }
 
 export interface SettingsContextType {
@@ -175,6 +196,8 @@ export interface Reservation {
     folio: string;
     spaceId: string;
     userId: string; // Quien reserva
+    unitId?: string;
+    towerId?: string;
     date: string; // YYYY-MM-DD
     startTime: string; // HH:mm
     endTime: string; // HH:mm (calculado automáticamente)
@@ -200,7 +223,8 @@ export interface HistoryLog {
     id: string;
     entityType: 'department' | 'owner' | 'resident' | 'personnel' | 'reservation';
     entityId: string;
-    action: 'created' | 'updated' | 'deleted' | 'owner_change' | 'resident_change' | 'approval';
+    unitId?: string; // Vinculo permanente con la unidad física
+    action: 'created' | 'updated' | 'deleted' | 'owner_change' | 'resident_change' | 'approval' | 'archived' | 'status_change';
     previousValue?: any;
     newValue?: any;
     details: string;
@@ -218,6 +242,7 @@ export interface UnitType {
     id: string;
     name: string;
     baseCommonExpense: number; // Monto base para gastos comunes
+    defaultM2?: number; // Metraje por defecto
     isArchived?: boolean;
 }
 
@@ -225,6 +250,7 @@ export interface Department {
     id: string;
     towerId?: string;
     number: string;
+    floor?: number;
     unitTypeId?: string;
     propertyRole?: string;
     m2?: number;
@@ -255,6 +281,7 @@ export interface Owner {
     status: 'active' | 'inactive';
     isArchived?: boolean;
     receiveResidentNotifications?: boolean;
+    canResidentSeeArrears?: boolean; // Permite que el residente vea el reporte de deudas
     createdAt: string;
 }
 
@@ -349,6 +376,7 @@ export interface Ticket {
     folio: string;
     userId: string;
     unitId?: string;
+    towerId?: string;
     type: 'complaint' | 'suggestion';
     subject: string;
     description: string;
@@ -402,7 +430,10 @@ export interface InfrastructureContextType {
     updateTower: (tower: Tower) => Promise<void>;
     deleteTower: (id: string) => Promise<void>;
     duplicateTower: (id: string, newName: string) => Promise<void>;
-    deleteDepartment: (towerId: string, deptId: string) => Promise<void>;
+    addDepartment: (dept: Omit<Department, 'id'>) => Promise<void>;
+    updateDepartment: (dept: Department) => Promise<void>;
+    deleteDepartment: (id: string) => Promise<void>;
+    fetchAll: () => Promise<void>;
 }
 
 export interface HealthProvider {
@@ -595,6 +626,7 @@ export interface SpecialFund {
     deadline?: string;
     unitConfigs?: FundUnitTypeConfig[];
     expenses?: FundExpense[];
+    fundCode: number; // 0 for Gasto Común, 1+ for other funds
     isArchived?: boolean;
     createdAt: string;
 }
@@ -971,4 +1003,34 @@ export interface PayslipContextType {
     addAdvance: (advance: Omit<Advance, 'id' | 'status'>) => Promise<string>;
     updateAdvanceStatus: (id: string, status: Advance['status'], payslipId?: string) => Promise<void>;
     deleteAdvance: (id: string) => Promise<void>;
+}
+
+export interface CommunicationTemplate {
+    id: string;
+    name: string;
+    subject: string;
+    message: string;
+    type: 'general' | 'arrears' | 'emergency';
+    isArchived?: boolean;
+    createdAt: string;
+}
+
+export interface CommunicationHistory {
+    id: string;
+    subject: string;
+    message: string;
+    recipients: string[]; // Lista de correos
+    senderId: string;
+    attachmentUrl?: string;
+    targetFilter: string; // Resumen del filtro aplicado
+    createdAt: string;
+}
+
+export interface CommunicationContextType {
+    templates: CommunicationTemplate[];
+    history: CommunicationHistory[];
+    addTemplate: (template: Omit<CommunicationTemplate, 'id' | 'createdAt'>) => Promise<void>;
+    updateTemplate: (template: CommunicationTemplate) => Promise<void>;
+    deleteTemplate: (id: string) => Promise<void>;
+    addHistory: (item: Omit<CommunicationHistory, 'id' | 'createdAt'>) => Promise<void>;
 }

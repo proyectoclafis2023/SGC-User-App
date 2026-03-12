@@ -1,34 +1,29 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Contractor, ContractorContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const ContractorContext = createContext<ContractorContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'sgc_contractors_data';
+const BACKEND_URL = `${API_BASE_URL}/contractors`;
 
 export const ContractorProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [contractors, setContractors] = useState<Contractor[]>(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (!stored) return [];
-            const parsed = JSON.parse(stored);
+    const [contractors, setContractors] = useState<Contractor[]>([]);
 
-            // Retrocompatibility for folios
-            return (parsed as Contractor[]).map(c => {
-                if (!c.folio) {
-                    const dateStr = (c.createdAt || new Date().toISOString()).slice(0, 10).replace(/-/g, '');
-                    return { ...c, folio: `CON-${dateStr}-${c.id.slice(-4).toUpperCase()}` };
-                }
-                return c;
-            });
+    const fetchContractors = async () => {
+        try {
+            const response = await fetch(BACKEND_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setContractors(data);
+            }
         } catch (e) {
-            console.error('Error loading contractors:', e);
-            return [];
+            console.error('Error fetching contractors:', e);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(contractors));
-    }, [contractors]);
+        fetchContractors();
+    }, []);
 
     const generateFolio = (prefix: string) => {
         const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -44,15 +39,45 @@ export const ContractorProvider: React.FC<{ children: ReactNode }> = ({ children
             folio: generateFolio('CON'),
             createdAt: new Date().toISOString()
         };
-        setContractors(prev => [newRecord, ...prev]);
+
+        try {
+            const resp = await fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newRecord)
+            });
+            if (resp.ok) {
+                fetchContractors();
+            }
+        } catch (e) {
+            console.error('API Error adding contractor:', e);
+        }
     };
 
     const updateContractor = async (contractor: Contractor) => {
-        setContractors(prev => prev.map(c => c.id === contractor.id ? contractor : c));
+        try {
+            const resp = await fetch(`${BACKEND_URL}/${contractor.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(contractor)
+            });
+            if (resp.ok) {
+                fetchContractors();
+            }
+        } catch (e) {
+            console.error('API Error updating contractor:', e);
+        }
     };
 
     const deleteContractor = async (id: string) => {
-        setContractors(prev => prev.filter(c => c.id !== id));
+        try {
+            const resp = await fetch(`${BACKEND_URL}/${id}`, { method: 'DELETE' });
+            if (resp.ok) {
+                fetchContractors();
+            }
+        } catch (e) {
+            console.error('API Error deleting contractor:', e);
+        }
     };
 
     return (

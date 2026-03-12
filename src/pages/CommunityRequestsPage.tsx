@@ -55,6 +55,7 @@ export const CommunityRequestsPage: React.FC = () => {
         await addTicket({
             userId: activeUserId,
             unitId,
+            towerId: selectedTower,
             type,
             subject,
             description,

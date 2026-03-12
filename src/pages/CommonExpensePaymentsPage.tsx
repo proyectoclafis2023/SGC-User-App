@@ -8,12 +8,20 @@ import {
     Trash2, AlertCircle, CheckCircle2, X, Printer, FileUp, Camera
 } from 'lucide-react';
 import { compressImage } from '../utils/imageCompression';
-
+import { useSettings } from '../context/SettingsContext';
+import { useUnitTypes } from '../context/UnitTypeContext';
+import { useOwners } from '../context/OwnerContext';
+import { useResidents } from '../context/ResidentContext';
 
 export const CommonExpensePaymentsPage: React.FC = () => {
-    const { towers } = useInfrastructure();
+    const { towers, departments } = useInfrastructure();
     const { payments, funds, addPayment, deletePayment, calculateAmount } = useCommonExpenses();
+    const { settings } = useSettings();
+    const { unitTypes } = useUnitTypes();
+    const { owners } = useOwners();
+    const { residents } = useResidents();
 
+    const [activeTab, setActiveTab] = useState<'payments' | 'report'>('payments');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -134,13 +142,29 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                 </Button>
             </div>
 
+            {/* Tabs */}
+            <div className="flex gap-4 p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl w-fit">
+                <button
+                    onClick={() => setActiveTab('payments')}
+                    className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === 'payments' ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-sm' : 'text-gray-500'}`}
+                >
+                    Pagos Recientes
+                </button>
+                <button
+                    onClick={() => setActiveTab('report')}
+                    className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all ${activeTab === 'report' ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-sm' : 'text-gray-500'}`}
+                >
+                    Reporte de Morosidad
+                </button>
+            </div>
+
             {/* Barra de Búsqueda */}
             <div className="bg-white dark:bg-gray-900 p-4 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
                 <div className="flex-1 relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                         type="text"
-                        placeholder="Buscar por número de departamento..."
+                        placeholder={activeTab === 'payments' ? "Buscar por número de departamento..." : "Filtrar reporte..."}
                         className="w-full pl-12 pr-4 py-3 rounded-xl border-none bg-gray-50 dark:bg-gray-800 text-sm font-bold outline-none"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -148,91 +172,189 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Listado de Pagos */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredPayments.length === 0 ? (
-                    <div className="col-span-full py-20 text-center bg-gray-50 dark:bg-gray-800/10 rounded-[3rem] border-4 border-dashed border-gray-100 dark:border-gray-800/50">
-                        <Receipt className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-400 text-xl font-black italic">No se registran pagos aún.</p>
-                    </div>
-                ) : (
-                    filteredPayments.map(payment => {
-                        const dept = towers.flatMap(t => t.departments).find(d => d.id === payment.departmentId);
-                        const tower = towers.find(t => t.departments.some(d => d.id === payment.departmentId));
+            {activeTab === 'payments' ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {filteredPayments.length === 0 ? (
+                        <div className="col-span-full py-20 text-center bg-gray-50 dark:bg-gray-800/10 rounded-[3rem] border-4 border-dashed border-gray-100 dark:border-gray-800/50">
+                            <Receipt className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                            <p className="text-gray-400 text-xl font-black italic">No se registran pagos aún.</p>
+                        </div>
+                    ) : (
+                        filteredPayments.map(payment => {
+                            const dept = towers.flatMap(t => t.departments).find(d => d.id === payment.departmentId);
+                            const tower = towers.find(t => t.departments.some(d => d.id === payment.departmentId));
 
-                        return (
-                            <div key={payment.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all group relative">
-                                <div className="p-8">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center">
-                                                <Landmark className="text-indigo-600 w-8 h-8" />
+                            return (
+                                <div key={payment.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all group relative">
+                                    <div className="p-8">
+                                        <div className="flex justify-between items-start mb-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center">
+                                                    <Landmark className="text-indigo-600 w-8 h-8" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-2xl font-black text-gray-900 dark:text-white">Depto {dept?.number}</h3>
+                                                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">{tower?.name}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h3 className="text-2xl font-black text-gray-900 dark:text-white">Depto {dept?.number}</h3>
-                                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest">{tower?.name}</p>
+                                            <div className="flex flex-col items-end gap-2">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => window.print()}
+                                                        className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                                        title="Imprimir Comprobante"
+                                                    >
+                                                        <Printer className="w-5 h-5" />
+                                                    </button>
+                                                    {payment.evidenceImage && (
+                                                        <a href={payment.evidenceImage} target="_blank" rel="noreferrer" className="p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                                                            <FileUp className="w-5 h-5" />
+                                                        </a>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col items-end gap-2">
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => window.print()}
-                                                    className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                                                    title="Imprimir Comprobante"
-                                                >
-                                                    <Printer className="w-5 h-5" />
-                                                </button>
-                                                {payment.evidenceImage && (
-                                                    <a href={payment.evidenceImage} target="_blank" rel="noreferrer" className="p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
-                                                        <FileUp className="w-5 h-5" />
-                                                    </a>
-                                                )}
+
+                                        <div className="grid grid-cols-2 gap-4 mb-6">
+                                            <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
+                                                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Periodo</p>
+                                                <p className="text-lg font-black">{monthsNames[payment.periodMonth - 1]} {payment.periodYear}</p>
                                             </div>
-                                            <div className="text-right">
-                                                <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${payment.status === 'mora' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
-                                                    }`}>
-                                                    {payment.status === 'mora' ? 'MOROSO' : 'AL DÍA'}
-                                                </span>
+                                            <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
+                                                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Folio</p>
+                                                <p className="text-lg font-black truncate">{payment.receiptFolio || 'MANUAL'}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-end border-t border-gray-100 dark:border-gray-800 pt-6">
+                                                <div>
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Fecha de Pago</p>
+                                                    <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                                                        {new Date(payment.paymentDate).toLocaleDateString(undefined, { day: '2-digit', month: 'long', year: 'numeric' })}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Pagado</p>
+                                                    <p className="text-3xl font-black text-emerald-600">${payment.amountPaid.toLocaleString()}</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div className="grid grid-cols-2 gap-4 mb-6">
-                                        <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Periodo</p>
-                                            <p className="text-lg font-black">{monthsNames[payment.periodMonth - 1]} {payment.periodYear}</p>
-                                        </div>
-                                        <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Folio</p>
-                                            <p className="text-lg font-black truncate">{payment.receiptFolio || 'MANUAL'}</p>
-                                        </div>
+                                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onClick={() => deletePayment(payment.id)} className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
-
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-end border-t border-gray-100 dark:border-gray-800 pt-6">
-                                            <div>
-                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Fecha de Pago</p>
-                                                <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                                                    {new Date(payment.paymentDate).toLocaleDateString(undefined, { day: '2-digit', month: 'long', year: 'numeric' })}
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+            ) : (
+                /* Reporte de Morosidad */
+                <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-50 dark:bg-gray-800/50">
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400">Unidad</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400">Responsable</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400 text-center">Meses Mora</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400 text-right">Deuda Estimada</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400">Estado</th>
+                                    <th className="px-6 py-4 text-[10px] font-black uppercase text-gray-400">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                                {departments.filter(d => {
+                                    if (d.isArchived) return false;
+                                    const tower = towers.find(t => t.id === d.towerId);
+                                    if (!tower) return false;
+                                    const q = searchTerm.toLowerCase();
+                                    return tower.name.toLowerCase().includes(q) || d.number.toLowerCase().includes(q);
+                                }).map(dept => {
+                                    const tower = towers.find(t => t.id === dept.towerId);
+                                    const ut = unitTypes.find(u => u.id === dept.unitTypeId);
+                                    const owner = owners.find(o => o.id === dept.ownerId);
+                                    const resident = residents.find(r => r.id === dept.residentId);
+                                    
+                                    const deptPayments = payments.filter(p => p.departmentId === dept.id);
+                                    const now = new Date();
+                                    const currentMonth = now.getMonth() + 1;
+                                    const currentYear = now.getFullYear();
+                                    const deadline = settings.paymentDeadlineDay || 31;
+                                    
+                                    let arrearsMonths = 0;
+                                    let totalDebt = 0;
+                                    
+                                    for (let i = 0; i < 12; i++) {
+                                        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                                        const m = date.getMonth() + 1;
+                                        const y = date.getFullYear();
+                                        
+                                        if (y === currentYear && m === currentMonth && now.getDate() <= deadline) continue;
+                                        
+                                        const paid = deptPayments
+                                            .filter(p => p.periodMonth === m && p.periodYear === y)
+                                            .reduce((acc, p) => acc + p.amountPaid, 0);
+                                        
+                                        const target = (ut?.baseCommonExpense || 0);
+                                        if (paid < target) {
+                                            arrearsMonths++;
+                                            totalDebt += (target - paid);
+                                        }
+                                    }
+                                    
+                                    if (arrearsMonths === 0) return null;
+                                    
+                                    const isCritical = arrearsMonths >= (settings.maxArrearsMonths || 3);
+                                    
+                                    return (
+                                        <tr key={dept.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/20 transition-colors group">
+                                            <td className="px-6 py-4">
+                                                <p className="font-black text-gray-900 dark:text-white leading-none">Depto {dept.number}</p>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase mt-1">{tower?.name}</p>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <p className="font-bold text-sm text-gray-700 dark:text-gray-300">
+                                                    {owner ? `${owner.names} ${owner.lastNames}` : resident ? `${resident.names} ${resident.lastNames}` : 'N/A'}
                                                 </p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Pagado</p>
-                                                <p className="text-3xl font-black text-emerald-600">${payment.amountPaid.toLocaleString()}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => deletePayment(payment.id)} className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all">
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        );
-                    })
-                )}
-            </div>
+                                                <p className="text-[10px] text-gray-400 capitalize">{owner ? 'Propietario' : resident ? 'Residente' : ''}</p>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-black text-xs ${isCritical ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                    {arrearsMonths}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <p className="font-black text-gray-900 dark:text-white">${totalDebt.toLocaleString()}</p>
+                                                {isCritical && settings.arrearsFineAmount && (
+                                                    <p className="text-[9px] text-red-500 font-black uppercase mt-0.5">+ Multa ${settings.arrearsFineAmount.toLocaleString()}</p>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${isCritical ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-amber-100 text-amber-700'}`}>
+                                                    {isCritical ? <AlertCircle className="w-3 h-3" /> : null}
+                                                    {isCritical ? 'CRÍTICO' : 'MORA'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <button 
+                                                    className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-xl transition-all"
+                                                    title="Revisar Historial / Notificar"
+                                                >
+                                                    <Receipt className="w-5 h-5" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
             {/* Modal de Registro */}
             {isModalOpen && (

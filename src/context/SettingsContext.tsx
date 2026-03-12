@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { SystemSettings, SettingsContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
@@ -19,27 +20,31 @@ const DEFAULT_SETTINGS: SystemSettings = {
     vacationAccrualRate: 1.25
 };
 
+const API_URL = `${API_BASE_URL}/system_settings`;
+
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [settings, setSettings] = useState<SystemSettings>(() => {
+    const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
+
+    const fetchSettings = async () => {
         try {
-            const stored = localStorage.getItem('system_settings');
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                // Aseguramos que campos nuevos no definidos en versiones previas de localStorage se incluyan
-                return { ...DEFAULT_SETTINGS, ...parsed };
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.length > 0) {
+                    setSettings({ ...DEFAULT_SETTINGS, ...data[0] });
+                }
             }
-            return DEFAULT_SETTINGS;
         } catch (e) {
-            console.error('Error parsing settings:', e);
-            return DEFAULT_SETTINGS;
+            console.error('Error fetching settings:', e);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem('system_settings', JSON.stringify(settings));
-        document.title = settings.systemName;
+        fetchSettings();
+    }, []);
 
-        // Apply theme to document
+    useEffect(() => {
+        document.title = settings.systemName;
         if (settings.theme === 'dark') {
             document.documentElement.classList.add('dark');
             document.documentElement.classList.remove('modern');
@@ -51,7 +56,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             document.documentElement.classList.remove('modern');
         }
 
-        // Apply favicon on initial load and settings change
         if (settings.systemFavicon) {
             let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
             if (!link) {
@@ -63,45 +67,47 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         }
     }, [settings]);
 
-    const updateSettings = (newSettings: SystemSettings) => {
-        setSettings(newSettings);
-        localStorage.setItem('system_settings', JSON.stringify(newSettings)); // Explicitly update localStorage here as well
-
-        // Actualizar Favicon dinámicamente
-        if (newSettings.systemFavicon) {
-            let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-            if (!link) {
-                link = document.createElement('link');
-                link.rel = 'icon';
-                document.getElementsByTagName('head')[0].appendChild(link);
+    const updateSettings = async (newSettings: SystemSettings) => {
+        try {
+            const method = (newSettings as any).id ? 'PUT' : 'POST';
+            const url = (newSettings as any).id ? `${API_URL}/${(newSettings as any).id}` : API_URL;
+            
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newSettings)
+            });
+            
+            if (response.ok) {
+                await fetchSettings();
             }
-            link.href = newSettings.systemFavicon;
+        } catch (e) {
+            console.error('Error saving settings:', e);
+            setSettings(newSettings);
         }
     };
 
     const toggleTheme = () => {
-        setSettings(prev => {
-            const currentTheme = prev.theme || 'light';
-            let nextTheme: 'light' | 'dark' | 'modern';
+        const currentTheme = settings.theme || 'light';
+        let nextTheme: 'light' | 'dark' | 'modern';
 
-            if (currentTheme === 'light') nextTheme = 'dark';
-            else if (currentTheme === 'dark') nextTheme = 'modern';
-            else nextTheme = 'light';
+        if (currentTheme === 'light') nextTheme = 'dark';
+        else if (currentTheme === 'dark') nextTheme = 'modern';
+        else nextTheme = 'light';
 
-            return {
-                ...prev,
-                theme: nextTheme,
-                darkMode: nextTheme === 'dark'
-            };
+        updateSettings({
+            ...settings,
+            theme: nextTheme,
+            darkMode: nextTheme === 'dark'
         });
     };
 
     const setTheme = (theme: 'light' | 'dark' | 'modern') => {
-        setSettings(prev => ({
-            ...prev,
+        updateSettings({
+            ...settings,
             theme,
             darkMode: theme === 'dark'
-        }));
+        });
     };
 
     return (

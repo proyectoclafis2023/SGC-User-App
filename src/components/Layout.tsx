@@ -29,13 +29,17 @@ import {
     Banknote,
     Calendar,
     Wallet,
-    Home
+    Home,
+    Mail,
+    Shield,
+    UploadCloud
 } from 'lucide-react';
 
 interface SubMenuItem {
     label: string;
-    path: string;
+    path?: string;
     icon?: any;
+    isHeader?: boolean;
 }
 
 interface NavItemProps {
@@ -48,22 +52,60 @@ interface NavItemProps {
 
 const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, children }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [expandedHeaders, setExpandedHeaders] = useState<string[]>([]);
     const { settings } = useSettings();
     const location = useLocation();
     const hasChildren = children && children.length > 0;
 
-    const isChildActive = hasChildren && children.some(child => location.pathname === child.path);
+    const isChildActive = hasChildren && children.some(child => child.path && location.pathname === child.path);
     const isActive = to ? location.pathname === to : isChildActive;
 
     useEffect(() => {
-        if (isChildActive) setIsOpen(true);
-    }, [isChildActive]);
+        if (isChildActive) {
+            setIsOpen(true);
+            // Auto-expand the header containing the active child
+            const activeChild = children?.find(child => child.path && location.pathname === child.path);
+            if (activeChild) {
+                // Find the header preceding this child
+                let headerFound = '';
+                for (const child of children || []) {
+                    if (child.isHeader) headerFound = child.label;
+                    if (child.path && location.pathname === child.path) break;
+                }
+                if (headerFound) setExpandedHeaders(prev => prev.includes(headerFound) ? prev : [...prev, headerFound]);
+            }
+        }
+    }, [isChildActive, children, location.pathname]);
+
+    const toggleHeader = (headerLabel: string) => {
+        setExpandedHeaders(prev => 
+            prev.includes(headerLabel) 
+                ? prev.filter(h => h !== headerLabel) 
+                : [...prev, headerLabel]
+        );
+    };
 
     const baseClasses = `flex items-center w-full rounded-2xl font-black transition-all duration-300 group ${isCollapsed ? 'justify-center px-0' : 'space-x-3 px-4'} py-3`;
     const activeClasses = `shadow-lg shadow-indigo-500/30 ${settings.theme === 'modern' ? 'bg-white text-indigo-900' : 'bg-indigo-600 text-white'}`;
     const inactiveClasses = `${settings.theme === 'modern' ? 'text-indigo-200 hover:bg-white/10 hover:text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 hover:text-indigo-600 dark:hover:text-indigo-400'}`;
 
     if (hasChildren && !isCollapsed) {
+        // Group items by header
+        const sections: { header?: SubMenuItem; items: SubMenuItem[] }[] = [];
+        let currentSection: { header?: SubMenuItem; items: SubMenuItem[] } = { items: [] };
+
+        children.forEach(child => {
+            if (child.isHeader) {
+                if (currentSection.items.length > 0 || currentSection.header) {
+                    sections.push(currentSection);
+                }
+                currentSection = { header: child, items: [] };
+            } else {
+                currentSection.items.push(child);
+            }
+        });
+        sections.push(currentSection);
+
         return (
             <div className="space-y-1">
                 <button
@@ -75,21 +117,51 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, c
                     {isOpen ? <ChevronDown className="w-4 h-4 shrink-0 transition-transform" /> : <ChevronRight className="w-4 h-4 shrink-0 transition-transform text-gray-400" />}
                 </button>
                 {isOpen && (
-                    <div className="ml-9 border-l-2 border-indigo-100 dark:border-indigo-900/30 pl-4 space-y-1 animate-in slide-in-from-top-2 duration-200">
-                        {children.map((child, idx) => (
-                            <NavLink
-                                key={idx}
-                                to={child.path}
-                                className={({ isActive }) =>
-                                    `flex items-center gap-3 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isActive
-                                        ? (settings.theme === 'modern' ? 'bg-white text-indigo-900 shadow-md' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20')
-                                        : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/5'
-                                    }`
-                                }
-                            >
-                                {child.icon && <child.icon className="w-3 h-3" />}
-                                {child.label}
-                            </NavLink>
+                    <div className="ml-9 border-l-2 border-indigo-100 dark:border-indigo-900/30 pl-2 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                        {sections.map((section, sIdx) => (
+                            <div key={sIdx} className="space-y-1">
+                                {section.header && (
+                                    <button
+                                        onClick={() => toggleHeader(section.header!.label)}
+                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-300 group/header ${
+                                            expandedHeaders.includes(section.header.label)
+                                            ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                                            : 'hover:bg-gray-50 dark:hover:bg-white/5 text-gray-400 dark:text-gray-500'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                                                expandedHeaders.includes(section.header.label) ? 'bg-indigo-500 scale-110' : 'bg-gray-300 dark:bg-gray-700'
+                                            }`}></div>
+                                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-left">
+                                                {section.header.label}
+                                            </span>
+                                        </div>
+                                        <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${
+                                            expandedHeaders.includes(section.header.label) ? 'rotate-0' : '-rotate-90'
+                                        }`} />
+                                    </button>
+                                )}
+                                <div className={`space-y-1 overflow-hidden transition-all duration-300 ${
+                                    (!section.header || expandedHeaders.includes(section.header.label)) ? 'max-h-[500px] opacity-100 py-1' : 'max-h-0 opacity-0'
+                                }`}>
+                                    {section.items.map((child, idx) => (
+                                        <NavLink
+                                            key={idx}
+                                            to={child.path || '#'}
+                                            className={({ isActive }) =>
+                                                `flex items-center gap-3 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isActive
+                                                    ? (settings.theme === 'modern' ? 'bg-white text-indigo-900 shadow-md translate-x-1' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 translate-x-1')
+                                                    : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/5 hover:translate-x-1'
+                                                }`
+                                            }
+                                        >
+                                            {child.icon && <child.icon className="w-3 h-3" />}
+                                            {child.label}
+                                        </NavLink>
+                                    ))}
+                                </div>
+                            </div>
                         ))}
                     </div>
                 )}
@@ -173,10 +245,14 @@ export const Layout: React.FC = () => {
                     {/* OPERACIÓN & GESTIÓN DIARIA (Admins & Workers) */}
                     {(isAdmin || isWorker) && (
                         <>
-                            <div className={`pt-6 pb-2 px-4 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                                <span className="text-[9px] font-black text-indigo-400 dark:text-indigo-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <Zap className="w-3 h-3" /> Operaciones
-                                </span>
+                            <div className={`pt-12 pb-4 px-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+                                <h3 className="text-[13px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3 mb-2">
+                                    <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
+                                        <Zap className="w-4 h-4 fill-indigo-600/20" /> 
+                                    </div>
+                                    OPERACIONES
+                                </h3>
+                                <div className="h-[2px] w-full bg-gradient-to-r from-indigo-500/30 to-transparent rounded-full opacity-50"></div>
                             </div>
                             <NavItem to="/bitacora-turnos" icon={History} label="Bitácora Turnos" isCollapsed={isCollapsed} />
                             <NavItem to="/visitas" icon={Users} label="Control Visitas" isCollapsed={isCollapsed} />
@@ -197,10 +273,14 @@ export const Layout: React.FC = () => {
                     {/* MI HOGAR (Resident or Owner) */}
                     {isResidentOrOwner && (
                         <>
-                            <div className={`pt-6 pb-2 px-4 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                                <span className="text-[9px] font-black text-indigo-400 dark:text-indigo-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <Home className="w-3 h-3" /> Mi Hogar
-                                </span>
+                            <div className={`pt-12 pb-4 px-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+                                <h3 className="text-[13px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3 mb-2">
+                                    <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                                        <Home className="w-4 h-4 fill-emerald-600/20" /> 
+                                    </div>
+                                    MI HOGAR
+                                </h3>
+                                <div className="h-[2px] w-full bg-gradient-to-r from-emerald-500/30 to-transparent rounded-full opacity-50"></div>
                             </div>
                             <NavItem to="/reservas" icon={Calendar} label="Mis Reservas" isCollapsed={isCollapsed} />
                             <NavItem to="/gastos-comunes" icon={Wallet} label="Mis Pagos" isCollapsed={isCollapsed} />
@@ -208,10 +288,14 @@ export const Layout: React.FC = () => {
                     )}
 
                     {/* SOPORTE & SERVICIOS (Public for all) */}
-                    <div className={`pt-6 pb-2 px-4 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                        <span className="text-[9px] font-black text-indigo-400 dark:text-indigo-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                            <LifeBuoy className="w-3 h-3" /> Soporte y Servicios
-                        </span>
+                    <div className={`pt-12 pb-4 px-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+                        <h3 className="text-[13px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-[0.4em] flex items-center gap-3 mb-2">
+                            <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
+                                <LifeBuoy className="w-4 h-4 fill-amber-600/20" /> 
+                            </div>
+                            SOPORTE Y SERVICIOS
+                        </h3>
+                        <div className="h-[2px] w-full bg-gradient-to-r from-amber-500/30 to-transparent rounded-full opacity-50"></div>
                     </div>
                     <NavItem to="/servicios-residentes" icon={HardHat} label="Directorio de Servicios" isCollapsed={isCollapsed} />
                     <NavItem to="/reclamos" icon={LifeBuoy} label="Sugerencias & Reclamos" isCollapsed={isCollapsed} />
@@ -220,10 +304,14 @@ export const Layout: React.FC = () => {
                     {/* ADMINISTRACIÓN (Admins only) */}
                     {isAdmin && (
                         <>
-                            <div className={`pt-8 pb-2 px-4 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                                <span className="text-[9px] font-black text-indigo-400 dark:text-indigo-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <Database className="w-3 h-3" /> Administración
-                                </span>
+                            <div className={`pt-12 pb-4 px-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+                                <h3 className="text-[13px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.4em] flex items-center gap-3 mb-2">
+                                    <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                                        <Database className="w-4 h-4 fill-blue-600/20" /> 
+                                    </div>
+                                    ADMINISTRACIÓN
+                                </h3>
+                                <div className="h-[2px] w-full bg-gradient-to-r from-blue-500/30 to-transparent rounded-full opacity-50"></div>
                             </div>
                             <NavItem
                                 icon={Building2}
@@ -232,7 +320,8 @@ export const Layout: React.FC = () => {
                                 children={[
                                     { label: 'Residentes', path: '/residentes', icon: Users },
                                     { label: 'Propietarios', path: '/propietarios', icon: ShieldCheck },
-                                    { label: 'Maestro Servicios / Contratistas', path: '/contratistas', icon: HardHat },
+                                    { label: 'Mensajes Dirigidos', path: '/comunicaciones', icon: Mail },
+                                    { label: 'Avisos Sistema', path: '/mensajes', icon: Mail },
                                 ]}
                             />
                             <NavItem
@@ -241,9 +330,10 @@ export const Layout: React.FC = () => {
                                 isCollapsed={isCollapsed}
                                 children={[
                                     { label: 'Maestro Personal', path: '/personal', icon: Briefcase },
+                                    { label: 'Servicios / Contratistas', path: '/contratistas', icon: HardHat },
                                     { label: 'Gestión de Nómina', path: '/liquidaciones', icon: Banknote },
                                     { label: 'Entrega de EPP', path: '/entregas-articulos', icon: Package },
-                                    { label: 'Maestro EPP', path: '/articulos-personal', icon: ShieldCheck },
+                                    { label: 'Maestro Insumos y EPP', path: '/articulos-personal', icon: ShieldCheck },
                                     { label: 'Certificados', path: '/certificados', icon: FileText },
                                 ]}
                             />
@@ -259,24 +349,74 @@ export const Layout: React.FC = () => {
                                     { label: 'Activo Fijo', path: '/activo-fijo' },
                                 ]}
                             />
-                            <NavItem
-                                icon={Settings}
-                                label="Configuración"
-                                isCollapsed={isCollapsed}
-                                children={[
-                                    { label: 'Maestro Números Emergencia', path: '/maestro-emergencias' },
-                                    { label: 'Maestro Edificios y Unidades', path: '/infraestructura' },
-                                    { label: 'Maestro Tipos de Unidad', path: '/tipos-unidad' },
-                                    { label: 'Maestro Bitácora Turnos', path: '/maestros-operativos' },
-                                    { label: 'Maestro Cámaras', path: '/maestro-camaras' },
-                                    { label: 'Maestro Avisos Sistema', path: '/mensajes' },
-                                    { label: 'Maestro Perfiles de Acceso', path: '/perfiles' },
-                                    { label: 'Maestro Envíos por Correo', path: '/maestro-correos' },
-                                    { label: 'Ajustes Generales', path: '/configuracion' },
-                                    { label: 'Carga Masiva', path: '/carga-masiva' },
-                                ]}
-                            />
+
                         </>
+                    )}
+                    {isAdmin && (
+                        <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
+                             <div className={`pt-12 pb-4 px-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+                                <h3 className="text-[13px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.4em] flex items-center gap-3 mb-2">
+                                    <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
+                                        <Settings className="w-4 h-4 fill-purple-600/20" /> 
+                                    </div>
+                                    CONFIGURACIÓN
+                                </h3>
+                                <div className="h-[2px] w-full bg-gradient-to-r from-purple-500/30 to-transparent rounded-full opacity-50"></div>
+                            </div>
+                            
+                            <div className="space-y-1">
+                                <NavItem
+                                    icon={Settings}
+                                    label="Ajustes Generales"
+                                    to="/parametros"
+                                    isCollapsed={isCollapsed}
+                                />
+                                <NavItem
+                                    icon={Mail}
+                                    label="Configuración Email"
+                                    to="/maestro-correos"
+                                    isCollapsed={isCollapsed}
+                                />
+                                <NavItem
+                                    icon={Shield}
+                                    label="Perfiles Acceso"
+                                    to="/perfiles"
+                                    isCollapsed={isCollapsed}
+                                />
+                                <NavItem
+                                    icon={UploadCloud}
+                                    label="Carga Masiva"
+                                    to="/carga-masiva"
+                                    isCollapsed={isCollapsed}
+                                />
+                                <NavItem
+                                    icon={Database}
+                                    label="Maestros"
+                                    isCollapsed={isCollapsed}
+                                    children={[
+                                        { label: 'Infraestructura', isHeader: true },
+                                        { label: 'Edificios y Unidades', path: '/infraestructura' },
+                                        { label: 'Tipos de Unidad', path: '/tipos-unidad' },
+                                        { label: 'Espacios Comunes', path: '/espacios' },
+                                        { label: 'Estacionamientos', path: '/estacionamientos' },
+                                        
+                                        { label: 'Recursos Humanos', isHeader: true },
+                                        { label: 'Previsiones', path: '/previsiones' },
+                                        { label: 'AFPs', path: '/afps' },
+                                        
+                                        { label: 'Finanzas', isHeader: true },
+                                        { label: 'Bancos', path: '/bancos' },
+                                        { label: 'Condiciones Especiales', path: '/condiciones-especiales' },
+                                        
+                                        { label: 'Operaciones', isHeader: true },
+                                        { label: 'Bitácora Turnos', path: '/maestros-operativos' },
+                                        { label: 'Cámaras', path: '/maestro-camaras' },
+                                        { label: 'Mensajes Prefijados', path: '/maestro-mensajes' },
+                                        { label: 'Números Emergencia', path: '/maestro-emergencias' },
+                                    ]}
+                                />
+                            </div>
+                        </div>
                     )}
                 </nav>
 

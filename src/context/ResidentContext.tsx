@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Resident } from '../types';
 import { useHistoryLogs } from './HistoryLogContext';
+import { API_BASE_URL } from '../config/api';
 
 export interface ResidentContextType {
     residents: Resident[];
@@ -12,51 +13,26 @@ export interface ResidentContextType {
 
 const ResidentContext = createContext<ResidentContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'residents_data';
-const API_URL = 'http://localhost:3001/api/residents';
+const API_URL = `${API_BASE_URL}/residents`;
 
 export const ResidentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { addLog } = useHistoryLogs();
-    const [residents, setResidents] = useState<Resident[]>(() => {
+    const [residents, setResidents] = useState<Resident[]>([]);
+
+    const fetchResidents = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                if (Array.isArray(parsed)) return parsed;
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setResidents(data);
             }
-            return [];
-        } catch (e) {
-            console.error('Error loading residents:', e);
-            return [];
+        } catch (error) {
+            console.error('Failed to fetch from backend:', error);
         }
-    });
+    };
 
-    // Fetch from backend on mount
     useEffect(() => {
-        const fetchResidents = async () => {
-            try {
-                const response = await fetch(API_URL);
-                if (response.ok) {
-                    const data = await response.json();
-                    setResidents(data);
-                }
-            } catch (error) {
-                console.error('Failed to fetch from backend, using local storage.');
-            }
-        };
         fetchResidents();
-    }, []);
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(residents));
-    }, [residents]);
-
-    useEffect(() => {
-        const handleSync = (e: StorageEvent) => {
-            if (e.key === STORAGE_KEY && e.newValue) setResidents(JSON.parse(e.newValue));
-        };
-        window.addEventListener('storage', handleSync);
-        return () => window.removeEventListener('storage', handleSync);
     }, []);
 
     const uploadResidents = async (file: File) => {
@@ -74,76 +50,69 @@ export const ResidentProvider: React.FC<{ children: ReactNode }> = ({ children }
         }
 
         const result = await response.json();
-
-        // Refresh local state after upload
-        const refreshResp = await fetch(API_URL);
-        if (refreshResp.ok) {
-            const freshData = await refreshResp.json();
-            setResidents(freshData);
-        }
-
+        await fetchResidents();
         return result;
     };
 
     const addResident = async (resident: Omit<Resident, 'id' | 'createdAt' | 'status'>) => {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...resident,
-                status: 'active'
-            })
-        });
-
-        if (response.ok) {
-            const newRes = await response.json();
-            setResidents(prev => [newRes, ...prev]);
-
-            await addLog({
-                entityType: 'resident',
-                entityId: newRes.id,
-                action: 'created',
-                details: `Residente ${newRes.names} ${newRes.lastNames} registrado vía API.`
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...resident,
+                    status: 'active'
+                })
             });
-            return newRes.id;
-        }
 
-        const id = Math.random().toString(36).substr(2, 9);
-        const newRecord: Resident = {
-            ...resident,
-            id,
-            status: 'active',
-            createdAt: new Date().toISOString(),
-        };
-        setResidents(prev => [newRecord, ...prev]);
-        return id;
+            if (response.ok) {
+                const newRes = await response.json();
+                await fetchResidents();
+
+                await addLog({
+                    entityType: 'resident',
+                    entityId: newRes.id,
+                    unitId: newRes.unitId,
+                    action: 'created',
+                    details: `Residente ${newRes.names} ${newRes.lastNames} registrado.`
+                });
+                return newRes.id;
+            }
+        } catch (e) {
+            console.error('API Error adding resident:', e);
+        }
     };
 
     const updateResident = async (resident: Resident) => {
-        const previous = residents.find(r => r.id === resident.id);
-        setResidents(prev => prev.map(r => r.id === resident.id ? resident : r));
-
-        await addLog({
-            entityType: 'resident',
-            entityId: resident.id,
-            action: 'updated',
-            previousValue: previous,
-            newValue: resident,
-            details: `Datos del residente ${resident.names} ${resident.lastNames} actualizados.`
-        });
+        try {
+            const response = await fetch(`${API_URL}/${resident.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(resident)
+            });
+            if (response.ok) {
+                await fetchResidents();
+                await addLog({
+                    entityType: 'resident',
+                    entityId: resident.id,
+                    unitId: resident.unitId,
+                    action: 'updated',
+                    details: `Datos del residente ${resident.names} ${resident.lastNames} actualizados.`
+                });
+            }
+        } catch (e) {
+            console.error('Error updating resident:', e);
+        }
     };
 
     const deleteResident = async (id: string) => {
-        const resident = residents.find(r => r.id === id);
-        setResidents(prev => prev.map(r => r.id === id ? { ...r, status: 'inactive' as const, isArchived: true } : r));
-
-        if (resident) {
-            await addLog({
-                entityType: 'resident',
-                entityId: id,
-                action: 'deleted',
-                details: `Residente ${resident.names} ${resident.lastNames} eliminado.`
-            });
+        try {
+            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                await fetchResidents();
+            }
+        } catch (e) {
+            console.error('Error deleting resident:', e);
         }
     };
 

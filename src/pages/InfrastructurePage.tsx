@@ -1,5 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useInfrastructure } from '../context/InfrastructureContext';
+import { useHistoryLogs } from '../context/HistoryLogContext';
+import { useUsers } from '../context/UserContext';
 import { useOwners } from '../context/OwnerContext';
 import { useResidents } from '../context/ResidentContext';
 import { useUnitTypes } from '../context/UnitTypeContext';
@@ -16,16 +18,17 @@ import { useSettings } from '../context/SettingsContext';
 import type { Department, Tower } from '../types';
 
 export const InfrastructurePage: React.FC = () => {
-    const { towers, addTower, deleteTower, updateTower, duplicateTower, deleteDepartment } = useInfrastructure();
+    const { towers, addTower, deleteTower, updateTower, duplicateTower, addDepartment, updateDepartment, deleteDepartment } = useInfrastructure();
+    const { getLogsByUnit } = useHistoryLogs();
     const { owners, addOwner } = useOwners();
     const { residents, addResident } = useResidents();
     const { unitTypes } = useUnitTypes();
     const { conditions } = useSpecialConditions();
     const { settings } = useSettings();
 
-    const handleDeleteDept = (towerId: string, deptId: string, number: string) => {
+    const handleDeleteDept = (_towerId: string, deptId: string, number: string) => {
         if (window.confirm(`¿Está seguro de eliminar la unidad ${number}?`)) {
-            deleteDepartment(towerId, deptId);
+            deleteDepartment(deptId);
         }
     };
 
@@ -47,7 +50,21 @@ export const InfrastructurePage: React.FC = () => {
     const [unitTypeId, setUnitTypeId] = useState('');
     const [propertyRole, setPropertyRole] = useState('');
     const [m2, setM2] = useState(0);
+    const [floor, setFloor] = useState<number | ''>('');
     const [waterClientId, setWaterClientId] = useState('');
+
+    useEffect(() => {
+        // Solo cargar m2 si es una unidad nueva o si m2 es 0/vacío
+        if (unitTypeId) {
+            const type = unitTypes.find(t => t.id === unitTypeId);
+            if (type && type.defaultM2) {
+                // Only update if current m2 is 0 or if we are creating a new one
+                if (m2 === 0 || !editingDept) {
+                    setM2(type.defaultM2);
+                }
+            }
+        }
+    }, [unitTypeId, unitTypes, editingDept]);
     const [electricityClientId, setElectricityClientId] = useState('');
     const [gasClientId, setGasClientId] = useState('');
     const [ownerId, setOwnerId] = useState('');
@@ -60,23 +77,21 @@ export const InfrastructurePage: React.FC = () => {
     const [quickEmail, setQuickEmail] = useState('');
 
     const filteredOwners = useMemo(() => {
-        const activeOwners = owners.filter(o => !o.isArchived);
-        if (!ownerSearch) return activeOwners;
+        const activeOwners = owners.filter((o: any) => !o.isArchived);
+        if (!ownerSearch.trim()) return [];
         const q = ownerSearch.toLowerCase();
-        return activeOwners.filter(o =>
-            o.names.toLowerCase().includes(q) ||
-            o.lastNames.toLowerCase().includes(q) ||
+        return activeOwners.filter((o: any) =>
+            `${o.names} ${o.lastNames}`.toLowerCase().includes(q) ||
             o.dni.toLowerCase().includes(q)
         );
     }, [owners, ownerSearch]);
 
     const filteredResidents = useMemo(() => {
-        const activeResidents = residents.filter(r => !r.isArchived);
-        if (!residentSearch) return activeResidents;
+        const activeResidents = residents.filter((r: any) => !r.isArchived);
+        if (!residentSearch.trim()) return [];
         const q = residentSearch.toLowerCase();
-        return activeResidents.filter(r =>
-            r.names.toLowerCase().includes(q) ||
-            r.lastNames.toLowerCase().includes(q) ||
+        return activeResidents.filter((r: any) =>
+            `${r.names} ${r.lastNames}`.toLowerCase().includes(q) ||
             r.dni.toLowerCase().includes(q)
         );
     }, [residents, residentSearch]);
@@ -111,6 +126,7 @@ export const InfrastructurePage: React.FC = () => {
             setUnitTypeId(dept.unitTypeId || '');
             setPropertyRole(dept.propertyRole || '');
             setM2(dept.m2 || 0);
+            setFloor(dept.floor || '');
             setWaterClientId(dept.waterClientId || '');
             setElectricityClientId(dept.electricityClientId || '');
             setGasClientId(dept.gasClientId || '');
@@ -123,6 +139,7 @@ export const InfrastructurePage: React.FC = () => {
             setUnitTypeId('');
             setPropertyRole('');
             setM2(0);
+            setFloor('');
             setWaterClientId('');
             setElectricityClientId('');
             setGasClientId('');
@@ -139,45 +156,60 @@ export const InfrastructurePage: React.FC = () => {
             return;
         }
         const towerId = editingDept ? editingDept.towerId : currentTower?.id;
-        if (!towerId) return;
+        if (!towerId) {
+            alert('Debe seleccionar un edificio primero.');
+            return;
+        }
 
-        const tower = towers.find(t => t.id === towerId);
-        if (!tower) return;
-
-        const deptData: Department = {
-            id: editingDept ? editingDept.dept.id : Math.random().toString(36).substr(2, 9),
+        const deptData: any = {
+            towerId,
             number: deptNumber,
             unitTypeId,
             propertyRole,
             m2: Number(m2),
+            floor: floor !== '' ? Number(floor) : undefined,
             waterClientId,
             electricityClientId,
             gasClientId,
             ownerId: ownerId || undefined,
             residentId: residentId || undefined,
-            history: editingDept ? editingDept.dept.history : []
         };
 
-        const updatedDepts = editingDept
-            ? tower.departments.map(d => d.id === deptData.id ? deptData : d)
-            : [...tower.departments, deptData];
-
-        await updateTower({ ...tower, departments: updatedDepts });
-        setIsDeptModalOpen(false);
+        try {
+            if (editingDept) {
+                await updateDepartment({ ...deptData, id: editingDept.dept.id });
+            } else {
+                await addDepartment(deptData);
+            }
+            setIsDeptModalOpen(false);
+        } catch (error) {
+            console.error('Error saving department:', error);
+            alert('Error al guardar la unidad.');
+        }
     };
 
     const handleQuickCreateOwner = async (e: React.FormEvent) => {
         e.preventDefault();
-        const id = await addOwner({
-            names: quickNames,
-            lastNames: quickLastNames,
-            dni: quickDni,
-            phone: quickPhone,
-            email: quickEmail,
-            notes: 'Creado desde InfrastructurePage'
-        });
-        setOwnerId(id);
-        setIsQuickCreateOwnerOpen(false);
+        try {
+            const id = await addOwner({
+                names: quickNames,
+                lastNames: quickLastNames,
+                dni: quickDni,
+                phone: quickPhone,
+                email: quickEmail,
+                notes: 'Creado desde InfrastructurePage'
+            });
+            if (id) {
+                setOwnerId(id);
+                setOwnerSearch(''); // Clear search to show new owner in list if needed
+            }
+            setIsQuickCreateOwnerOpen(false);
+            // Reset quick fields
+            setQuickNames(''); setQuickLastNames(''); setQuickDni(''); setQuickPhone(''); setQuickEmail('');
+        } catch (error) {
+            console.error('Error in quick create owner:', error);
+            alert('No se pudo crear el propietario.');
+        }
     };
 
     const handleQuickCreateResident = async (e: React.FormEvent) => {
@@ -248,7 +280,7 @@ export const InfrastructurePage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-8">
-                {towers.filter(t => !t.isArchived).map((tower) => (
+                {towers.filter(t => !t.isArchived).sort((a, b) => a.name.localeCompare(b.name)).map((tower) => (
                     <div key={tower.id} className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden group hover:shadow-xl transition-all duration-500">
                         <div className="p-8 border-b border-gray-50 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="flex items-center gap-6">
@@ -301,7 +333,10 @@ export const InfrastructurePage: React.FC = () => {
                                                     </div>
                                                     <div>
                                                         <span className="font-bold text-gray-900 dark:text-white block text-sm">Unidad {dept.number}</span>
-                                                        <span className="text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded font-bold uppercase tracking-tighter">{getUnitTypeName(dept.unitTypeId)}</span>
+                                                        <div className="flex items-center gap-1 mt-0.5">
+                                                            <span className="text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded font-bold uppercase tracking-tighter">{getUnitTypeName(dept.unitTypeId)}</span>
+                                                            {dept.floor && <span className="text-[9px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded font-bold uppercase tracking-tighter">Piso {dept.floor}</span>}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
@@ -400,8 +435,9 @@ export const InfrastructurePage: React.FC = () => {
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <Input label="Metros²" type="number" value={m2} onChange={(e) => setM2(Number(e.target.value))} required min="0" />
-                                        <Input label="Rol SII" value={propertyRole} onChange={(e) => setPropertyRole(e.target.value)} />
+                                        <Input label="Piso" type="number" value={floor} onChange={(e) => setFloor(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Ej: 5" />
                                     </div>
+                                    <Input label="Rol SII" value={propertyRole} onChange={(e) => setPropertyRole(e.target.value)} />
                                 </div>
                                 <div className="space-y-4">
                                     <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em]">Servicios Básicos</h3>
@@ -442,39 +478,65 @@ export const InfrastructurePage: React.FC = () => {
                             <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-6">
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
-                                        <label className="text-[11px] font-bold uppercase text-gray-400">Propietario</label>
+                                        <label className="text-[11px] font-bold uppercase text-gray-400">Propietario / Dueño</label>
                                         <button type="button" onClick={() => setIsQuickCreateOwnerOpen(true)} className="text-[10px] font-bold text-indigo-600 flex items-center gap-1 hover:underline">
                                             <Plus className="w-3 h-3" /> Crear Nuevo
                                         </button>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <div className="relative flex-1">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            <input
-                                                type="text"
-                                                placeholder="Buscar..."
-                                                className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm outline-none dark:text-gray-200"
-                                                value={ownerSearch}
-                                                onChange={(e) => setOwnerSearch(e.target.value)}
-                                            />
-                                        </div>
-                                        <select
-                                            value={ownerId}
-                                            onChange={(e) => setOwnerId(e.target.value)}
-                                            className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm h-10 outline-none dark:text-gray-200 px-3"
-                                        >
-                                            <option value="">Seleccione...</option>
-                                            {filteredOwners.map(o => <option key={o.id} value={o.id}>{o.names} {o.lastNames}</option>)}
-                                        </select>
+                                    <div className="relative">
+                                        {ownerId ? (
+                                            <div className="flex items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl">
+                                                <div className="flex items-center gap-2 text-sm font-bold text-indigo-700 dark:text-indigo-300">
+                                                    <UserCheck className="w-4 h-4" />
+                                                    {getOwnerName(ownerId)}
+                                                </div>
+                                                <button type="button" onClick={() => setOwnerId('')} className="p-1 hover:bg-white dark:hover:bg-gray-800 rounded-full text-indigo-400 transition-colors">
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="relative">
+                                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Escriba nombres, apellidos o DNI para buscar..."
+                                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm outline-none dark:text-gray-200 focus:ring-2 focus:ring-indigo-500/10"
+                                                        value={ownerSearch}
+                                                        onChange={(e) => setOwnerSearch(e.target.value)}
+                                                    />
+                                                </div>
+                                                {ownerSearch.trim() && (
+                                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+                                                        {filteredOwners.length > 0 ? (
+                                                            filteredOwners.map((o: any) => (
+                                                                <button
+                                                                    key={o.id}
+                                                                    type="button"
+                                                                    onClick={() => { setOwnerId(o.id); setOwnerSearch(''); }}
+                                                                    className="w-full text-left px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors"
+                                                                >
+                                                                    <div className="font-bold text-sm text-gray-900 dark:text-white">{o.names} {o.lastNames}</div>
+                                                                    <div className="text-[10px] text-gray-400 font-mono">{o.dni} • {o.phone || 'Sin fono'}</div>
+                                                                </button>
+                                                            ))
+                                                        ) : (
+                                                            <div className="p-4 text-center text-xs text-gray-500 italic">No se encontraron resultados para "{ownerSearch}"</div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
                                 </div>
+
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
-                                        <label className="text-[11px] font-bold uppercase text-gray-400">Residente</label>
+                                        <label className="text-[11px] font-bold uppercase text-gray-400">Residente Actual</label>
                                         <div className="flex gap-3 items-center">
                                             {ownerId && (
                                                 <button type="button" onClick={handleDuplicateOwnerToResident} className="text-[10px] font-bold text-emerald-600 flex items-center gap-1 hover:underline">
-                                                    <UserCheck className="w-3 h-3" /> Es el mismo Dueño
+                                                    <UserCheck className="w-3 h-3" /> Mismo Propietario
                                                 </button>
                                             )}
                                             <button type="button" onClick={() => setIsQuickCreateResidentOpen(true)} className="text-[10px] font-bold text-indigo-600 flex items-center gap-1 hover:underline">
@@ -482,25 +544,50 @@ export const InfrastructurePage: React.FC = () => {
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <div className="relative flex-1">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            <input
-                                                type="text"
-                                                placeholder="Buscar..."
-                                                className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm outline-none dark:text-gray-200"
-                                                value={residentSearch}
-                                                onChange={(e) => setResidentSearch(e.target.value)}
-                                            />
-                                        </div>
-                                        <select
-                                            value={residentId}
-                                            onChange={(e) => setResidentId(e.target.value)}
-                                            className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm h-10 outline-none dark:text-gray-200 px-3"
-                                        >
-                                            <option value="">Seleccione...</option>
-                                            {filteredResidents.map(r => <option key={r.id} value={r.id}>{r.names} {r.lastNames}</option>)}
-                                        </select>
+                                    <div className="relative">
+                                        {residentId ? (
+                                            <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl">
+                                                <div className="flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                                                    <UserCheck className="w-4 h-4" />
+                                                    {getResidentName(residentId)}
+                                                </div>
+                                                <button type="button" onClick={() => setResidentId('')} className="p-1 hover:bg-white dark:hover:bg-gray-800 rounded-full text-emerald-400 transition-colors">
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="relative">
+                                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Escriba nombres, apellidos o DNI para buscar..."
+                                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm outline-none dark:text-gray-200 focus:ring-2 focus:ring-emerald-500/10"
+                                                        value={residentSearch}
+                                                        onChange={(e) => setResidentSearch(e.target.value)}
+                                                    />
+                                                </div>
+                                                {residentSearch.trim() && (
+                                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+                                                        {filteredResidents.length > 0 ? (
+                                                            filteredResidents.map((r: any) => (
+                                                                <button
+                                                                    key={r.id}
+                                                                    type="button"
+                                                                    onClick={() => { setResidentId(r.id); setResidentSearch(''); }}
+                                                                    className="w-full text-left px-4 py-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors"
+                                                                >
+                                                                    <div className="font-bold text-sm text-gray-900 dark:text-white">{r.names} {r.lastNames}</div>
+                                                                    <div className="text-[10px] text-gray-400 font-mono">{r.dni} • {r.phone || 'Sin fono'}</div>
+                                                                </button>
+                                                            ))
+                                                        ) : (
+                                                            <div className="p-4 text-center text-xs text-gray-500 italic">No se encontraron resultados para "{residentSearch}"</div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -536,21 +623,31 @@ export const InfrastructurePage: React.FC = () => {
                     <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-xl shadow-2xl border border-white/20">
                         <div className="p-6 border-b flex items-center justify-between"><h2 className="text-xl font-bold flex items-center gap-2"><Clock className="w-5 h-5 text-indigo-600" /> Historial Depto {historyDept.number}</h2><button onClick={() => setIsHistoryModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-500"><X /></button></div>
                         <div className="p-6 max-h-[60vh] overflow-y-auto space-y-4">
-                            {!historyDept.history || historyDept.history.length === 0 ? <p className="text-center text-gray-500 py-10">Sin registros históricos.</p> :
-                                historyDept.history.slice().reverse().map(log => (
-                                    <div key={log.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 flex justify-between items-center">
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-bold uppercase text-indigo-600">
-                                                {log.action === 'owner_change' ? 'Propietario' : 'Residente'}
-                                            </p>
-                                            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{log.details}</p>
+                            {(() => {
+                                const unitLogs = getLogsByUnit(historyDept.id);
+                                if (unitLogs.length === 0) return <p className="text-center text-gray-400 py-10 font-bold italic">Sin registros históricos para esta unidad.</p>;
+                                
+                                return unitLogs.map(log => (
+                                    <div key={log.id} className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 flex justify-between items-center transition-hover hover:border-indigo-200">
+                                        <div className="space-y-1 pr-4">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest ${
+                                                    log.entityType === 'resident' ? 'bg-emerald-100 text-emerald-700' : 
+                                                    log.entityType === 'owner' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700'
+                                                }`}>
+                                                    {log.entityType}
+                                                </span>
+                                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{log.action}</span>
+                                            </div>
+                                            <p className="text-xs font-bold text-gray-700 dark:text-gray-300 leading-snug">"{log.details}"</p>
                                         </div>
-                                        <span className="text-[10px] text-gray-400 font-mono">
-                                            {new Date(log.timestamp).toLocaleDateString()}
-                                        </span>
+                                        <div className="text-right shrink-0">
+                                            <p className="text-[10px] text-gray-400 font-black uppercase">{new Date(log.timestamp).toLocaleDateString()}</p>
+                                            <p className="text-[9px] text-gray-300 font-bold">{new Date(log.timestamp).toLocaleTimeString()}</p>
+                                        </div>
                                     </div>
-                                ))
-                            }
+                                ));
+                            })()}
                         </div>
                         <div className="p-6 border-t flex justify-end"><Button onClick={() => setIsHistoryModalOpen(false)}>Cerrar</Button></div>
                     </div>

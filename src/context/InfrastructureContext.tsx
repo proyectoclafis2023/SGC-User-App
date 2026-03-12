@@ -1,47 +1,39 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from 'react';
-import type { Tower, InfrastructureContextType } from '../types';
+import type { Tower, Department, InfrastructureContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const InfrastructureContext = createContext<InfrastructureContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'infrastructure_data';
-const API_URL = 'http://localhost:3001/api/towers';
-
 export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [towers, setTowers] = useState<Tower[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
+
+    const fetchAll = async () => {
+        try {
+            const [towersRes, deptsRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/towers`),
+                fetch(`${API_BASE_URL}/departments`)
+            ]);
+            if (towersRes.ok) setTowers(await towersRes.json());
+            if (deptsRes.ok) setDepartments(await deptsRes.json());
+        } catch (e) {
+            console.error('Error fetching data:', e);
+        }
+    };
 
     useEffect(() => {
-        const fetchTowers = async () => {
-            try {
-                const response = await fetch(API_URL);
-                if (response.ok) setTowers(await response.json());
-            } catch (e) {
-                const stored = localStorage.getItem(STORAGE_KEY);
-                if (stored) setTowers(JSON.parse(stored));
-            }
-        };
-        fetchTowers();
+        fetchAll();
     }, []);
-
-    const departments = useMemo(() => {
-        return towers.flatMap(tower =>
-            (tower.departments || []).map(dept => ({ ...dept, towerId: tower.id }))
-        );
-    }, [towers]);
-
-    useEffect(() => {
-        if (towers.length > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(towers));
-    }, [towers]);
 
     const addTower = async (tower: Omit<Tower, 'id'>) => {
         try {
-            const response = await fetch(API_URL, {
+            const response = await fetch(`${API_BASE_URL}/towers`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(tower)
             });
             if (response.ok) {
-                const newTower = await response.json();
-                setTowers(prev => [...prev, newTower]);
+                await fetchAll();
             }
         } catch (e) {
             console.error('Error adding tower:', e);
@@ -50,23 +42,22 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
 
     const updateTower = async (updatedTower: Tower) => {
         try {
-            const response = await fetch(`${API_URL}/${updatedTower.id}`, {
+            const response = await fetch(`${API_BASE_URL}/towers/${updatedTower.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedTower)
             });
             if (response.ok) {
-                const data = await response.json();
-                setTowers(prev => prev.map(t => t.id === data.id ? data : t));
+                await fetchAll();
             }
         } catch (e) { console.error('Error updating tower:', e); }
     };
 
     const deleteTower = async (id: string) => {
         try {
-            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            const response = await fetch(`${API_BASE_URL}/towers/${id}`, { method: 'DELETE' });
             if (response.ok) {
-                setTowers(prev => prev.map(t => t.id === id ? { ...t, isArchived: true } : t));
+                await fetchAll();
             }
         } catch (e) { console.error('Error deleting tower:', e); }
     };
@@ -74,20 +65,68 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
     const duplicateTower = async (id: string, newName: string) => {
         const sourceTower = towers.find(t => t.id === id);
         if (!sourceTower) return;
-        setTowers(prev => [...prev, { ...sourceTower, id: Math.random().toString(36).substr(2, 9), name: newName }]);
+        const { id: _, ...rest } = sourceTower;
+        await addTower({ ...rest, name: newName, departments: sourceTower.departments || [] });
     };
 
-    const deleteDepartment = async (towerId: string, deptId: string) => {
-        setTowers(prev => prev.map(t => {
-            if (t.id === towerId) {
-                return { ...t, departments: t.departments.map(d => d.id === deptId ? { ...d, isArchived: true } : d) };
+    const addDepartment = async (dept: Omit<Department, 'id'>) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/departments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dept)
+            });
+            if (response.ok) {
+                await fetchAll();
             }
-            return t;
-        }));
+        } catch (e) { console.error('Error adding department:', e); }
     };
+
+    const updateDepartment = async (dept: Department) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/departments/${dept.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dept)
+            });
+            if (response.ok) {
+                await fetchAll();
+            }
+        } catch (e) { console.error('Error updating department:', e); }
+    };
+
+    const deleteDepartment = async (id: string) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/departments/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                await fetchAll();
+            }
+        } catch (e) { console.error('Error deleting department:', e); }
+    };
+
+    const enrichedTowers = useMemo(() => {
+        const mapped = towers.map(tower => ({
+            ...tower,
+            departments: (departments || [])
+                .filter(d => d.towerId === tower.id)
+                .sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }))
+        }));
+        return mapped.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    }, [towers, departments]);
 
     return (
-        <InfrastructureContext.Provider value={{ towers, departments, addTower, updateTower, deleteTower, duplicateTower, deleteDepartment }}>
+        <InfrastructureContext.Provider value={{ 
+            towers: enrichedTowers, 
+            departments, 
+            addTower, 
+            updateTower, 
+            deleteTower, 
+            duplicateTower, 
+            addDepartment, 
+            updateDepartment, 
+            deleteDepartment,
+            fetchAll 
+        }}>
             {children}
         </InfrastructureContext.Provider>
     );

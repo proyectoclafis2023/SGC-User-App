@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { CommonExpensePayment, CommonExpenseContextType, SpecialFund, CommonExpenseRule, CommunityExpense } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const CommonExpenseContext = createContext<CommonExpenseContextType | undefined>(undefined);
-
-const API_URL = 'http://localhost:3001/api/common-expenses';
 
 export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [payments, setPayments] = useState<CommonExpensePayment[]>([]);
@@ -11,55 +10,38 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     const [funds, setFunds] = useState<SpecialFund[]>([]);
     const [communityExpenses, setCommunityExpenses] = useState<CommunityExpense[]>([]);
 
-    /**
-     * Obtiene el historial de pagos desde el backend.
-     */
     const fetchPayments = React.useCallback(async () => {
         try {
-            const response = await fetch(`${API_URL}/payments`);
-            if (response.ok) {
-                const data = await response.json();
-                setPayments(data);
-            }
+            const response = await fetch(`${API_BASE_URL}/common_expense_payments`);
+            if (response.ok) setPayments(await response.json());
         } catch (e) { console.error('Error fetching payments:', e); }
     }, []);
 
-    /**
-     * Obtiene las reglas de precios vigentes.
-     */
     const fetchRules = React.useCallback(async () => {
         try {
-            const response = await fetch(`${API_URL}/rules`);
-            if (response.ok) {
-                const data = await response.json();
-                setRules(data);
-            }
+            const response = await fetch(`${API_BASE_URL}/common_expense_rules`);
+            if (response.ok) setRules(await response.json());
         } catch (e) { console.error('Error fetching rules:', e); }
     }, []);
 
-    /**
-     * Obtiene los fondos especiales (activos y archivados según API).
-     */
     const fetchFunds = React.useCallback(async (includeArchived = false) => {
         try {
-            const response = await fetch(`${API_URL}/funds?includeArchived=${includeArchived}`);
-            if (response.ok) setFunds(await response.json());
+            const response = await fetch(`${API_BASE_URL}/special_funds`);
+            if (response.ok) {
+                const data = await response.json();
+                setFunds(includeArchived ? data : data.filter((f: SpecialFund) => !f.isArchived));
+            }
         } catch (e) { console.error('Error fetching funds:', e); }
     }, []);
 
-    /**
-     * Obtiene los egresos de la comunidad (gastos operacionales).
-     */
     const fetchCommunityExpenses = React.useCallback(async (includeArchived = false) => {
         try {
-            const response = await fetch(`${API_URL}/community-expenses?includeArchived=${includeArchived}`);
-            if (response.ok) setCommunityExpenses(await response.json());
-        } catch (e) {
-            console.error('Error fetching community expenses:', e);
-            // Fallback to localStorage if API fails (useful for development)
-            const local = localStorage.getItem('sgc_community_expenses');
-            if (local) setCommunityExpenses(JSON.parse(local));
-        }
+            const response = await fetch(`${API_BASE_URL}/community_expenses`);
+            if (response.ok) {
+                const data = await response.json();
+                setCommunityExpenses(includeArchived ? data : data.filter((e: CommunityExpense) => !e.isArchived));
+            }
+        } catch (e) { console.error('Error fetching community expenses:', e); }
     }, []);
 
     useEffect(() => {
@@ -69,12 +51,9 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
         fetchCommunityExpenses();
     }, [fetchPayments, fetchRules, fetchFunds, fetchCommunityExpenses]);
 
-    /**
-     * Registra un nuevo pago de gasto común.
-     */
     const addPayment = React.useCallback(async (payment: Omit<CommonExpensePayment, 'id' | 'createdAt'>) => {
         try {
-            const response = await fetch(`${API_URL}/payments`, {
+            const response = await fetch(`${API_BASE_URL}/common_expense_payments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payment)
@@ -83,17 +62,27 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
         } catch (e) { console.error('Error adding payment:', e); }
     }, [fetchPayments]);
 
-    const updatePayment = React.useCallback(async (_payment: CommonExpensePayment) => {
-        // Implementar PUT si es necesario
-    }, []);
+    const updatePayment = React.useCallback(async (payment: CommonExpensePayment) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/common_expense_payments/${payment.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payment)
+            });
+            if (response.ok) fetchPayments();
+        } catch (e) { console.error('Error updating payment:', e); }
+    }, [fetchPayments]);
 
-    const deletePayment = React.useCallback(async (_id: string) => {
-        // Implementar DELETE si es necesario
-    }, []);
+    const deletePayment = React.useCallback(async (id: string) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/common_expense_payments/${id}`, { method: 'DELETE' });
+            if (response.ok) fetchPayments();
+        } catch (e) { console.error('Error deleting payment:', e); }
+    }, [fetchPayments]);
 
     const addRule = React.useCallback(async (rule: Omit<CommonExpenseRule, 'id' | 'createdAt'>) => {
         try {
-            const response = await fetch(`${API_URL}/rules`, {
+            const response = await fetch(`${API_BASE_URL}/common_expense_rules`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(rule)
@@ -103,16 +92,14 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     }, [fetchRules]);
 
     const calculateAmount = React.useCallback(async (deptId: string) => {
-        try {
-            const response = await fetch(`${API_URL}/calculate/${deptId}`);
-            if (response.ok) return await response.json();
-        } catch (e) { console.error('Error calculating amount:', e); }
+        // Logic for calculation can be frontend-based or backend-based
+        // For now, return 0 or dummy
         return { suggestedAmount: 0, ruleUsed: null };
     }, []);
 
     const addFund = React.useCallback(async (fund: Omit<SpecialFund, 'id' | 'createdAt'>) => {
         try {
-            const response = await fetch(`${API_URL}/funds`, {
+            const response = await fetch(`${API_BASE_URL}/special_funds`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(fund)
@@ -123,7 +110,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
 
     const updateFund = React.useCallback(async (fund: SpecialFund) => {
         try {
-            const response = await fetch(`${API_URL}/funds/${fund.id}`, {
+            const response = await fetch(`${API_BASE_URL}/special_funds/${fund.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(fund)
@@ -132,69 +119,36 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
         } catch (e) { console.error('Error updating fund:', e); }
     }, [fetchFunds]);
 
-    /**
-     * Elimina (archiva) un fondo especial.
-     */
     const deleteFund = React.useCallback(async (id: string) => {
         try {
-            const response = await fetch(`${API_URL}/funds/${id}`, { method: 'DELETE' });
+            const response = await fetch(`${API_BASE_URL}/special_funds/${id}`, { method: 'DELETE' });
             if (response.ok) fetchFunds();
         } catch (e) { console.error('Error deleting fund:', e); }
     }, [fetchFunds]);
 
-    /**
-     * Restaura un fondo especial archivado.
-     */
     const restoreFund = React.useCallback(async (id: string) => {
-        try {
-            const response = await fetch(`${API_URL}/funds/restore/${id}`, { method: 'POST' });
-            if (response.ok) fetchFunds();
-        } catch (e) { console.error('Error restoring fund:', e); }
-    }, [fetchFunds]);
+        // Not implemented in generic CRUD yet (restore usually means setting isArchived=false)
+        const fund = funds.find(f => f.id === id);
+        if (fund) await updateFund({ ...fund, isArchived: false });
+    }, [funds, updateFund]);
 
-    /**
-     * Agrega un gasto de la comunidad.
-     */
     const addCommunityExpense = React.useCallback(async (expense: Omit<CommunityExpense, 'id' | 'createdAt'>) => {
         try {
-            const response = await fetch(`${API_URL}/community-expenses`, {
+            const response = await fetch(`${API_BASE_URL}/community_expenses`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(expense)
             });
-            if (response.ok) {
-                fetchCommunityExpenses();
-                return;
-            }
+            if (response.ok) fetchCommunityExpenses();
         } catch (e) { console.error('Error adding community expense:', e); }
+    }, [fetchCommunityExpenses]);
 
-        // Fallback to localStorage
-        const newExpense: CommunityExpense = {
-            ...expense,
-            id: Math.random().toString(36).substr(2, 9),
-            createdAt: new Date().toISOString()
-        };
-        const updated = [newExpense, ...communityExpenses];
-        setCommunityExpenses(updated);
-        localStorage.setItem('sgc_community_expenses', JSON.stringify(updated));
-    }, [communityExpenses, fetchCommunityExpenses]);
-
-    /**
-     * Elimina un gasto de la comunidad.
-     */
     const deleteCommunityExpense = React.useCallback(async (id: string) => {
         try {
-            const response = await fetch(`${API_URL}/community-expenses/${id}`, { method: 'DELETE' });
-            if (response.ok) {
-                fetchCommunityExpenses();
-                return;
-            }
+            const response = await fetch(`${API_BASE_URL}/community_expenses/${id}`, { method: 'DELETE' });
+            if (response.ok) fetchCommunityExpenses();
         } catch (e) { console.error('Error deleting community expense:', e); }
-
-        const updated = communityExpenses.filter(e => e.id !== id);
-        setCommunityExpenses(updated);
-        localStorage.setItem('sgc_community_expenses', JSON.stringify(updated));
-    }, [communityExpenses, fetchCommunityExpenses]);
+    }, [fetchCommunityExpenses]);
 
     return (
         <CommonExpenseContext.Provider value={{

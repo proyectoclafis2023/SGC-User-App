@@ -17,12 +17,13 @@ import { useVisitors } from '../context/VisitorContext';
 import { useShiftReport } from '../context/ShiftReportContext';
 import { useContractorVisits } from '../context/ContractorVisitContext';
 import { useContractors } from '../context/ContractorContext';
+import { useSettings } from '../context/SettingsContext';
 import type { User } from '../types';
 import {
     Plus, Search, Users as UsersIcon, ShieldCheck, UserCheck,
     Calendar, FileWarning, Wallet,
     CheckCircle, XCircle, Landmark,
-    Package, HardHat, PieChart, Activity, X, FileText, AlertCircle, TrendingDown, TrendingUp
+    Package, HardHat, PieChart, Activity, X, FileText, AlertCircle, TrendingDown, TrendingUp, CreditCard
 } from 'lucide-react';
 import { Input } from '../components/Input';
 
@@ -40,6 +41,7 @@ export const Dashboard: React.FC = () => {
     const { reports: shiftReports } = useShiftReport();
     const { visits: contractorVisits } = useContractorVisits();
     const { contractors } = useContractors();
+    const { settings } = useSettings();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -125,12 +127,63 @@ export const Dashboard: React.FC = () => {
 
     const stats = [
         { label: 'Reservas Pendientes', value: reservations.filter(r => r.status === 'pending').length, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/20', url: '/reservas' },
-        { label: 'Entregas s/Respaldo', value: deliveries.filter(d => !d.signedDocument).length, icon: FileWarning, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20', url: '/entregas-articulos' }
+        { label: 'Entregas s/Respaldo', value: deliveries.filter(d => !d.signedDocument).length, icon: FileWarning, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20', url: '/entregas-articulos' },
+        { 
+            label: 'Unidades con Mora', 
+            style: 'danger',
+            value: towers.flatMap(t => t.departments).filter(d => {
+                const now = new Date();
+                const currentMonth = now.getMonth() + 1;
+                const currentYear = now.getFullYear();
+                const deadline = settings.paymentDeadlineDay || 5;
+                
+                const paymentsForDept = payments.filter(p => p.departmentId === d.id);
+                const ut = unitTypes.find(u => u.id === d.unitTypeId);
+                const targetAmount = (ut?.baseCommonExpense || 0);
+                
+                const paidThisMonth = paymentsForDept
+                    .filter((p: any) => p.periodMonth === currentMonth && p.periodYear === currentYear)
+                    .reduce((acc: number, p: any) => acc + p.amountPaid, 0);
+
+                const isAfterDeadline = now.getDate() > deadline;
+                
+                // Active arrear: After deadline OR has debt from previous months
+                const hasPreviousDebt = paymentsForDept.some((p: any) => p.status === 'pending');
+                
+                return (isAfterDeadline && paidThisMonth < targetAmount) || hasPreviousDebt;
+            }).length, 
+            icon: CreditCard, 
+            color: 'text-red-600', 
+            bg: 'bg-red-50 dark:bg-red-900/20', 
+            url: '/gastos-comunes' 
+        },
+        { 
+            label: 'Mora Crítica', 
+            style: 'danger',
+            value: towers.flatMap(t => t.departments).filter(d => {
+                const maxMonths = settings.maxArrearsMonths || 3;
+                // Count unpaid periods for this unit
+                const paymentsForDept = payments.filter((p: any) => p.departmentId === d.id && p.status === 'pending');
+                return paymentsForDept.length >= maxMonths;
+            }).length, 
+            icon: AlertCircle, 
+            color: 'text-rose-700', 
+            bg: 'bg-rose-100 dark:bg-rose-900/40', 
+            url: '/comunicaciones' 
+        },
+        { 
+            label: 'Encomiendas s/Retirar', 
+            value: correspondence.filter((i: any) => i.status === 'received').length, 
+            icon: Package, 
+            color: 'text-blue-600', 
+            bg: 'bg-blue-50 dark:bg-blue-900/20', 
+            url: '/correspondencia' 
+        }
     ];
 
     const today = new Date().toISOString().split('T')[0];
-    const todayReservations = reservations.filter(r => r.status === 'approved' && r.date === today).length;
-    const todayContractors = contractorVisits.filter(c => c.createdAt && c.createdAt.startsWith(today) && c.status !== 'exited').length;
+    const todayReservations = reservations.filter((r: any) => r.status === 'approved' && r.date === today).length;
+    const todayContractors = contractorVisits.filter((c: any) => c.createdAt && c.createdAt.startsWith(today) && c.status !== 'exited').length;
     const currentMonth = new Date().getMonth(); // 0-indexed
     const currentYear = new Date().getFullYear();
 
@@ -342,7 +395,7 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {stats.map((stat, idx) => (
                     <div
                         key={idx}

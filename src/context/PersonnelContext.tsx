@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, type ReactNode }
 import type { Personnel } from '../types';
 import { useHistoryLogs } from './HistoryLogContext';
 import { useSettings } from './SettingsContext';
+import { API_BASE_URL } from '../config/api';
 
 export interface PersonnelContextType {
     personnel: Personnel[];
@@ -13,39 +14,26 @@ export interface PersonnelContextType {
 
 const PersonnelContext = createContext<PersonnelContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'personnel_data';
-const API_URL = 'http://localhost:3001/api/personnel';
+const API_URL = `${API_BASE_URL}/personnel`;
 
 export const PersonnelProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { addLog } = useHistoryLogs();
     const { settings } = useSettings();
-    const [personnel, setPersonnel] = useState<Personnel[]>(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                const data = JSON.parse(stored);
-                if (Array.isArray(data)) return data;
-            }
-            return [];
-        } catch (e) {
-            console.error('Error loading personnel:', e);
-            return [];
-        }
-    });
+    const [personnel, setPersonnel] = useState<Personnel[]>([]);
 
-    // Fetch from backend on mount
-    useEffect(() => {
-        const fetchPersonnel = async () => {
-            try {
-                const response = await fetch(API_URL);
-                if (response.ok) {
-                    const data = await response.json();
-                    setPersonnel(data);
-                }
-            } catch (error) {
-                console.error('Failed to fetch personnel from backend.');
+    const fetchPersonnel = async () => {
+        try {
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setPersonnel(data);
             }
-        };
+        } catch (error) {
+            console.error('Failed to fetch personnel from backend:', error);
+        }
+    };
+
+    useEffect(() => {
         fetchPersonnel();
     }, []);
 
@@ -66,16 +54,8 @@ export const PersonnelProvider: React.FC<{ children: ReactNode }> = ({ children 
             if (diffMonths >= 1) {
                 requiresUpdate = true;
                 const addedDays = diffMonths * accrualRate;
-                // Move the lastUpdate forward by the full months processed
                 const newUpdateDate = new Date(lastUpdate);
                 newUpdateDate.setMonth(newUpdateDate.getMonth() + diffMonths);
-
-                addLog({
-                    entityType: 'personnel',
-                    entityId: p.id,
-                    action: 'updated',
-                    details: `Incremento automático de ${addedDays.toFixed(2)} días de vacaciones (${diffMonths} meses a tasa ${accrualRate}).`
-                });
 
                 return {
                     ...p,
@@ -88,20 +68,9 @@ export const PersonnelProvider: React.FC<{ children: ReactNode }> = ({ children 
 
         if (requiresUpdate) {
             setPersonnel(updatedPersonnel);
+            // In a real scenario, we should also PUT these updates to the backend
         }
     }, [personnel, settings.vacationAccrualRate]);
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(personnel));
-    }, [personnel]);
-
-    useEffect(() => {
-        const handleSync = (e: StorageEvent) => {
-            if (e.key === STORAGE_KEY && e.newValue) setPersonnel(JSON.parse(e.newValue));
-        };
-        window.addEventListener('storage', handleSync);
-        return () => window.removeEventListener('storage', handleSync);
-    }, []);
 
     const uploadPersonnel = async (file: File) => {
         const formData = new FormData();
@@ -115,64 +84,64 @@ export const PersonnelProvider: React.FC<{ children: ReactNode }> = ({ children 
             throw new Error(error.error || 'Error al subir archivo');
         }
         const result = await response.json();
-        // Refresh
-        const refreshResp = await fetch(API_URL);
-        if (refreshResp.ok) setPersonnel(await refreshResp.json());
+        await fetchPersonnel();
         return result;
     };
 
     const addPersonnel = async (person: Omit<Personnel, 'id' | 'createdAt' | 'status'>) => {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...person, status: 'active' })
-        });
-
-        if (response.ok) {
-            const newPerson = await response.json();
-            setPersonnel(prev => [newPerson, ...prev]);
-            await addLog({
-                entityType: 'personnel',
-                entityId: newPerson.id,
-                action: 'created',
-                details: `Personal ${newPerson.names} registrado en BD.`
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...person, status: 'active' })
             });
-            return newPerson.id;
-        }
 
-        // Fallback
-        const id = Math.random().toString(36).substr(2, 9);
-        const newRecord: Personnel = { ...person, id, status: 'active', createdAt: new Date().toISOString() };
-        setPersonnel(prev => [newRecord, ...prev]);
-        return id;
+            if (response.ok) {
+                const newPerson = await response.json();
+                await fetchPersonnel();
+                await addLog({
+                    entityType: 'personnel',
+                    entityId: newPerson.id,
+                    action: 'created',
+                    details: `Personal ${newPerson.names} registrado.`
+                });
+                return newPerson.id;
+            }
+        } catch (e) {
+            console.error('Error adding personnel:', e);
+        }
     };
 
     const updatePersonnel = async (person: Personnel) => {
-        setPersonnel(prev => {
-            const oldPerson = prev.find(p => p.id === person.id);
-            if (oldPerson && oldPerson.vacationDays !== person.vacationDays) {
-                // If vacations were manually updated, log it and set lastUpdate
-                person.vacationLastUpdate = new Date().toISOString();
-                addLog({
+        try {
+            const response = await fetch(`${API_URL}/${person.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(person)
+            });
+            if (response.ok) {
+                await fetchPersonnel();
+                await addLog({
                     entityType: 'personnel',
                     entityId: person.id,
                     action: 'updated',
-                    details: `Días de vacaciones actualizados manualmente de ${oldPerson.vacationDays} a ${person.vacationDays}.`
+                    details: `Personal ${person.names} actualizado.`
                 });
             }
-            return prev.map(p => p.id === person.id ? person : p);
-        });
-        await addLog({
-            entityType: 'personnel',
-            entityId: person.id,
-            action: 'updated',
-            newValue: person,
-            details: `Personal ${person.names} actualizado.`
-        });
+        } catch (e) {
+            console.error('Error updating personnel:', e);
+        }
     };
 
-    const deletePersonnel = async (id: string | number) => {
-        setPersonnel(prev => prev.map(p => p.id === id ? { ...p, status: 'inactive' as const, isArchived: true } : p));
+    const deletePersonnel = async (id: string) => {
+        try {
+            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                await fetchPersonnel();
+            }
+        } catch (e) {
+            console.error('Error deleting personnel:', e);
+        }
     };
 
     return (

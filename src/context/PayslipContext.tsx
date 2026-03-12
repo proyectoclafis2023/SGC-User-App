@@ -1,75 +1,83 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Payslip, Advance, PayslipContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const PayslipContext = createContext<PayslipContextType | undefined>(undefined);
 
-const PAYSLIP_STORAGE_KEY = 'condo_payslips';
-const ADVANCE_STORAGE_KEY = 'condo_advances';
-
-const generateId = () => Math.random().toString(36).substring(2, 15);
+const PAYSLIPS_API = `${API_BASE_URL}/payslips`;
+const ADVANCES_API = `${API_BASE_URL}/employee_advances`;
 
 export const PayslipProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [payslips, setPayslips] = useState<Payslip[]>(() => {
-        const stored = localStorage.getItem(PAYSLIP_STORAGE_KEY);
-        return stored ? JSON.parse(stored) : [];
-    });
+    const [payslips, setPayslips] = useState<Payslip[]>([]);
+    const [advances, setAdvances] = useState<Advance[]>([]);
 
-    const [advances, setAdvances] = useState<Advance[]>(() => {
-        const stored = localStorage.getItem(ADVANCE_STORAGE_KEY);
-        return stored ? JSON.parse(stored) : [];
-    });
+    const fetchAll = async () => {
+        try {
+            const [pRes, aRes] = await Promise.all([
+                fetch(PAYSLIPS_API),
+                fetch(ADVANCES_API)
+            ]);
+            if (pRes.ok) setPayslips(await pRes.json());
+            if (aRes.ok) setAdvances(await aRes.json());
+        } catch (e) { console.error('Error fetching payslips/advances:', e); }
+    };
 
     useEffect(() => {
-        localStorage.setItem(PAYSLIP_STORAGE_KEY, JSON.stringify(payslips));
-    }, [payslips]);
-
-    useEffect(() => {
-        localStorage.setItem(ADVANCE_STORAGE_KEY, JSON.stringify(advances));
-    }, [advances]);
+        fetchAll();
+    }, []);
 
     const addPayslip = async (data: Omit<Payslip, 'id' | 'folio' | 'generatedAt'>): Promise<Payslip> => {
         const lastFolio = payslips.length > 0 ? parseInt(payslips[0].folio) : 5000;
-        const newPayslip: Payslip = {
-            ...data,
-            id: generateId(),
-            folio: (lastFolio + 1).toString(),
-            generatedAt: new Date().toISOString(),
-        };
+        const folio = (lastFolio + 1).toString();
+        const generatedAt = new Date().toISOString();
 
-        setPayslips(prev => [newPayslip, ...prev]);
+        const response = await fetch(PAYSLIPS_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...data, folio, generatedAt })
+        });
 
-        // Auto-mark pending advances as deducted if they match the person and period?
-        // For now, the UI will handle selecting which advances to deduct.
-        return newPayslip;
+        if (response.ok) {
+            const newPayslip = await response.json();
+            fetchAll();
+            return newPayslip;
+        }
+        throw new Error('Failed to create payslip');
     };
 
     const deletePayslip = async (id: string) => {
-        setPayslips(prev => prev.filter(p => p.id !== id));
-        // Reset advances that were linked to this payslip
-        setAdvances(prev => prev.map(adv =>
-            adv.payslipId === id ? { ...adv, status: 'pending', payslipId: undefined } : adv
-        ));
+        const response = await fetch(`${PAYSLIPS_API}/${id}`, { method: 'DELETE' });
+        if (response.ok) fetchAll();
     };
 
     const addAdvance = async (data: Omit<Advance, 'id' | 'status'>) => {
-        const id = generateId();
-        const newAdvance: Advance = {
-            ...data,
-            id,
-            status: 'pending'
-        };
-        setAdvances(prev => [newAdvance, ...prev]);
-        return id;
+        const response = await fetch(ADVANCES_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...data, status: 'pending' })
+        });
+        if (response.ok) {
+            const newAdvance = await response.json();
+            fetchAll();
+            return newAdvance.id;
+        }
     };
 
     const updateAdvanceStatus = async (id: string, status: Advance['status'], payslipId?: string) => {
-        setAdvances(prev => prev.map(adv =>
-            adv.id === id ? { ...adv, status, payslipId } : adv
-        ));
+        const advance = advances.find(a => a.id === id);
+        if (advance) {
+            const response = await fetch(`${ADVANCES_API}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...advance, status, payslipId })
+            });
+            if (response.ok) fetchAll();
+        }
     };
 
     const deleteAdvance = async (id: string) => {
-        setAdvances(prev => prev.filter(adv => adv.id !== id));
+        const response = await fetch(`${ADVANCES_API}/${id}`, { method: 'DELETE' });
+        if (response.ok) fetchAll();
     };
 
     return (

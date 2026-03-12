@@ -3,7 +3,7 @@ import { useSettings } from '../context/SettingsContext';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { formatRUT } from '../utils/formatters';
-import { Settings as SettingsIcon, Save, Info, Building2, AlertTriangle, RefreshCw, FileText, Download, CheckCircle2 } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Info, Building2, AlertTriangle, RefreshCw, FileText, Download, CheckCircle2, CreditCard } from 'lucide-react';
 import { resetSystemData } from '../utils/dataManagement';
 
 const TEMPLATES = [
@@ -36,6 +36,12 @@ export const SettingsPage: React.FC = () => {
     const [cameraBackupDays, setCameraBackupDays] = useState(settings.cameraBackupDays || 7);
     const [vacationAccrualRate, setVacationAccrualRate] = useState(settings.vacationAccrualRate || 1.25);
     const [deletionPassword, setDeletionPassword] = useState(settings.deletionPassword || '');
+    
+    // Billing Settings
+    const [paymentDeadlineDay, setPaymentDeadlineDay] = useState(settings.paymentDeadlineDay || 5);
+    const [maxArrearsMonths, setMaxArrearsMonths] = useState(settings.maxArrearsMonths || 3);
+    const [arrearsFineAmount, setArrearsFineAmount] = useState(settings.arrearsFineAmount || 0);
+
     const [isDarkMode, setIsDarkMode] = useState(settings.darkMode);
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState('');
@@ -81,6 +87,7 @@ export const SettingsPage: React.FC = () => {
         await new Promise(resolve => setTimeout(resolve, 600));
 
         updateSettings({
+            ...settings,
             systemName: name,
             systemIcon: icon.charAt(0).toUpperCase(),
             systemLogo: logo,
@@ -93,6 +100,9 @@ export const SettingsPage: React.FC = () => {
             adminSignature: signature,
             cameraBackupDays: Number(cameraBackupDays),
             vacationAccrualRate: Number(vacationAccrualRate),
+            paymentDeadlineDay: Number(paymentDeadlineDay),
+            maxArrearsMonths: Number(maxArrearsMonths),
+            arrearsFineAmount: Number(arrearsFineAmount),
             deletionPassword,
             darkMode: isDarkMode
         });
@@ -130,7 +140,12 @@ Esta acción borrará TODOS los datos maestros y operativos de la plataforma:
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 max-w-full overflow-hidden">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Ajustes del Sistema</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <div className="p-2 bg-indigo-600 rounded-xl">
+                            <SettingsIcon className="w-5 h-5 text-white" />
+                        </div>
+                        Ajustes del Sistema
+                    </h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">Gestión de identidad, configuración legal y mantenimiento de datos.</p>
                 </div>
                 {message && (
@@ -152,7 +167,7 @@ Esta acción borrará TODOS los datos maestros y operativos de la plataforma:
                                 <img src={logo} alt="System Logo" className="h-16 w-auto object-contain drop-shadow-md" />
                             ) : (
                                 <div className="w-16 h-16 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-3xl">
-                                    {icon.charAt(0).toUpperCase() || '?'}
+                                    {icon?.charAt(0).toUpperCase() || '?'}
                                 </div>
                             )}
                             <div className="text-center z-10">
@@ -193,7 +208,7 @@ Esta acción borrará TODOS los datos maestros y operativos de la plataforma:
                                     <Input
                                         label="Nombre de la Comunidad"
                                         value={name}
-                                        onChange={(e) => setName(e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
                                         placeholder="ej. Condominio Las Camelias"
                                         required
                                     />
@@ -201,7 +216,7 @@ Esta acción borrará TODOS los datos maestros y operativos de la plataforma:
                                 <Input
                                     label="Icono / Inicial"
                                     value={icon}
-                                    onChange={(e) => setIcon(e.target.value.substring(0, 1).toUpperCase())}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIcon(e.target.value.substring(0, 1).toUpperCase())}
                                     placeholder="Ej: G"
                                     maxLength={1}
                                     required
@@ -238,38 +253,38 @@ Esta acción borrará TODOS los datos maestros y operativos de la plataforma:
                                     <Input
                                         label="Administrador Responsable"
                                         value={adminName}
-                                        onChange={(e) => setAdminName(e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdminName(e.target.value)}
                                         placeholder="Nombre completo"
                                     />
                                     <Input
                                         label="RUT Administrador"
                                         value={adminRut}
-                                        onChange={(e) => setAdminRut(formatRUT(e.target.value))}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdminRut(formatRUT(e.target.value))}
                                         placeholder="12.345.678-9"
                                     />
                                     <Input
                                         label="RUT del Condominio"
                                         value={condoRut}
-                                        onChange={(e) => setCondoRut(formatRUT(e.target.value))}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCondoRut(formatRUT(e.target.value))}
                                         placeholder="76.543.210-K"
                                     />
                                     <Input
                                         label="Dirección Oficial"
                                         value={condoAddress}
-                                        onChange={(e) => setCondoAddress(e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCondoAddress(e.target.value)}
                                         placeholder="Av. Principal #123"
                                     />
                                     <Input
                                         label="Teléfono Admin"
                                         value={adminPhone}
-                                        onChange={(e) => setAdminPhone(e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdminPhone(e.target.value)}
                                         placeholder="+56 9 1234 5678"
                                     />
                                     <Input
                                         label="Días Respaldo Cámaras"
                                         type="number"
                                         value={cameraBackupDays}
-                                        onChange={(e) => setCameraBackupDays(Number(e.target.value))}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCameraBackupDays(Number(e.target.value))}
                                         min={1}
                                         max={365}
                                     />
@@ -278,7 +293,7 @@ Esta acción borrará TODOS los datos maestros y operativos de la plataforma:
                                         type="number"
                                         step="0.01"
                                         value={vacationAccrualRate}
-                                        onChange={(e) => setVacationAccrualRate(Number(e.target.value))}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVacationAccrualRate(Number(e.target.value))}
                                         min={0}
                                         max={10}
                                     />
@@ -286,7 +301,7 @@ Esta acción borrará TODOS los datos maestros y operativos de la plataforma:
                                         label="Clave de Eliminación Maestro"
                                         type="password"
                                         value={deletionPassword}
-                                        onChange={(e) => setDeletionPassword(e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDeletionPassword(e.target.value)}
                                         placeholder="Clave para borrados críticos"
                                     />
                                     <div className="space-y-1.5">
@@ -307,6 +322,42 @@ Esta acción borrará TODOS los datos maestros y operativos de la plataforma:
                                             )}
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Billing Section */}
+                            <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+                                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                                    <CreditCard className="w-5 h-5 text-indigo-600" />
+                                    Gestión de Cobranza y Mora
+                                </h3>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <Input
+                                        label="Día Tope de Pago"
+                                        type="number"
+                                        value={paymentDeadlineDay}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPaymentDeadlineDay(Number(e.target.value))}
+                                        min={1}
+                                        max={31}
+                                        placeholder="Ej: 5"
+                                    />
+                                    <Input
+                                        label="Meses Máximos de Mora"
+                                        type="number"
+                                        value={maxArrearsMonths}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaxArrearsMonths(Number(e.target.value))}
+                                        min={1}
+                                        placeholder="Ej: 3"
+                                    />
+                                    <Input
+                                        label="Monto Multa Fija ($)"
+                                        type="number"
+                                        value={arrearsFineAmount}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setArrearsFineAmount(Number(e.target.value))}
+                                        min={0}
+                                        placeholder="Ej: 5000"
+                                    />
                                 </div>
                             </div>
 

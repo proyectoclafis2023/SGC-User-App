@@ -6,11 +6,11 @@ const UnitTypeContext = createContext<UnitTypeContextType | undefined>(undefined
 const STORAGE_KEY = 'unit_types_data';
 
 const INITIAL_TYPES: UnitType[] = [
-    { id: 't1', name: 'Departamento Estándar', baseCommonExpense: 55000 },
-    { id: 't2', name: 'Departamento Duplex', baseCommonExpense: 85000 },
-    { id: 't3', name: 'Penthouse', baseCommonExpense: 120000 },
-    { id: 't4', name: 'Estacionamiento', baseCommonExpense: 15000 },
-    { id: 't5', name: 'Bodega', baseCommonExpense: 8000 },
+    { id: 't1', name: 'Departamento Estándar', baseCommonExpense: 55000, defaultM2: 60 },
+    { id: 't2', name: 'Departamento Duplex', baseCommonExpense: 85000, defaultM2: 120 },
+    { id: 't3', name: 'Penthouse', baseCommonExpense: 120000, defaultM2: 250 },
+    { id: 't4', name: 'Estacionamiento', baseCommonExpense: 15000, defaultM2: 12 },
+    { id: 't5', name: 'Bodega', baseCommonExpense: 8000, defaultM2: 4 },
 ];
 
 export const UnitTypeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

@@ -1,42 +1,29 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { EmergencyNumber, EmergencyNumberContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const EmergencyNumberContext = createContext<EmergencyNumberContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'sgc_emergency_numbers_data';
-
-const INITIAL_DATA: Omit<EmergencyNumber, 'id' | 'createdAt'>[] = [
-    { category: 'SEGURIDAD', name: 'Seguridad Pública', phone: '+56 9 7386 7772', description: 'Atención 24/7' },
-    { category: 'SEGURIDAD', name: 'Plan Cuadrante N°9', phone: '+56 9 9265 5480', description: '5ta Comisaria Miraflores' },
-    { category: 'EMERGENCIA', name: 'SAMU', phone: '131', description: 'Servicio de Atención Médico de Urgencias' },
-    { category: 'EMERGENCIA', name: 'PDI', phone: '134', description: 'Policía de Investigaciones' },
-    { category: 'EMERGENCIA', name: 'Bomberos', phone: '132', description: 'Cuerpo de Bomberos' },
-    { category: 'SERVICIOS_BASICOS', name: 'GasValpo', phone: '600 600 7000', description: 'Opción 1' },
-    { category: 'SERVICIOS_BASICOS', name: 'Chilquinta', phone: '600 600 5000', webUrl: 'https://www.chilquinta.cl/reportar-corte' },
-    { category: 'SERVICIOS_BASICOS', name: 'Esval', phone: '600 600 6060', webUrl: 'https://www.esval.cl/personas/ayuda/problemas-agua-calle/' }
-];
+const BACKEND_URL = `${API_BASE_URL}/emergency_numbers`;
 
 export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [numbers, setNumbers] = useState<EmergencyNumber[]>(() => {
+    const [numbers, setNumbers] = useState<EmergencyNumber[]>([]);
+
+    const fetchNumbers = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (!stored) {
-                return INITIAL_DATA.map(n => ({
-                    ...n,
-                    id: Math.random().toString(36).substr(2, 9),
-                    createdAt: new Date().toISOString()
-                }));
+            const response = await fetch(BACKEND_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setNumbers(data);
             }
-            return JSON.parse(stored);
         } catch (e) {
-            console.error('Error loading emergency numbers:', e);
-            return [];
+            console.error('Error fetching emergency numbers:', e);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(numbers));
-    }, [numbers]);
+        fetchNumbers();
+    }, []);
 
     const addNumber = async (number: Omit<EmergencyNumber, 'id' | 'createdAt'>) => {
         const id = Math.random().toString(36).substr(2, 9);
@@ -45,15 +32,50 @@ export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ chi
             id,
             createdAt: new Date().toISOString()
         };
-        setNumbers(prev => [...prev, newRecord]);
+
+        try {
+            const resp = await fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newRecord)
+            });
+            if (resp.ok) {
+                fetchNumbers();
+            }
+        } catch (e) {
+            console.error('API Error adding emergency number:', e);
+        }
     };
 
     const updateNumber = async (id: string, number: Omit<EmergencyNumber, 'id' | 'createdAt'>) => {
-        setNumbers(prev => prev.map(n => n.id === id ? { ...n, ...number } : n));
+        const existing = numbers.find(n => n.id === id);
+        if (!existing) return;
+
+        const updated = { ...existing, ...number };
+
+        try {
+            const resp = await fetch(`${BACKEND_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated)
+            });
+            if (resp.ok) {
+                fetchNumbers();
+            }
+        } catch (e) {
+            console.error('API Error updating emergency number:', e);
+        }
     };
 
     const deleteNumber = async (id: string) => {
-        setNumbers(prev => prev.filter(n => n.id !== id));
+        try {
+            const resp = await fetch(`${BACKEND_URL}/${id}`, { method: 'DELETE' });
+            if (resp.ok) {
+                fetchNumbers();
+            }
+        } catch (e) {
+            console.error('API Error deleting emergency number:', e);
+        }
     };
 
     return (

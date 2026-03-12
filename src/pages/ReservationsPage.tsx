@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCommonSpaces } from '../context/CommonSpaceContext';
 import { useReservations } from '../context/ReservationContext';
 import { useAuth } from '../context/AuthContext';
+import { useInfrastructure } from '../context/InfrastructureContext';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import {
@@ -28,6 +29,10 @@ export const ReservationsPage: React.FC = () => {
     const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [error, setError] = useState<string | null>(null);
+
+    const { towers } = useInfrastructure();
+    const [selectedTower, setSelectedTower] = useState('');
+    const [selectedUnit, setSelectedUnit] = useState('');
 
     const [spaceId, setSpaceId] = useState('');
     const [date, setDate] = useState('');
@@ -80,13 +85,17 @@ export const ReservationsPage: React.FC = () => {
             startTime,
             endTime,
             userId: user?.name || 'Sistema',
-            notes: ''
+            notes: '',
+            towerId: selectedTower,
+            unitId: selectedUnit
         });
 
         setIsModalOpen(false);
         setSpaceId('');
         setDate('');
         setStartTime('');
+        setSelectedTower('');
+        setSelectedUnit('');
     };
 
     const getSpaceName = (id: string) => spaces.find(s => s.id === id)?.name || 'Espacio no encontrado';
@@ -374,6 +383,41 @@ export const ReservationsPage: React.FC = () => {
                                             <option key={s.id} value={s.id}>{s.name} ({s.location})</option>
                                         ))}
                                     </select>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-black text-gray-500 ml-1 uppercase tracking-widest">Torre</label>
+                                        <select
+                                            value={selectedTower}
+                                            onChange={(e) => {
+                                                setSelectedTower(e.target.value);
+                                                setSelectedUnit('');
+                                            }}
+                                            className="w-full rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                                            required
+                                        >
+                                            <option value="">Seleccione Torre...</option>
+                                            {towers.map(t => (
+                                                <option key={t.id} value={t.id}>{t.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-black text-gray-500 ml-1 uppercase tracking-widest">Unidad</label>
+                                        <select
+                                            value={selectedUnit}
+                                            onChange={(e) => setSelectedUnit(e.target.value)}
+                                            className="w-full rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all disabled:opacity-50"
+                                            required
+                                            disabled={!selectedTower}
+                                        >
+                                            <option value="">Seleccione Unidad...</option>
+                                            {towers.find(t => t.id === selectedTower)?.departments.map(d => (
+                                                <option key={d.id} value={`${towers.find(t => t.id === selectedTower)?.name} - ${d.number}`}>{d.number}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <Input

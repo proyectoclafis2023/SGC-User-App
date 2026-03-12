@@ -1,52 +1,28 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { Correspondence } from '../types';
-
-export interface CorrespondenceContextType {
-    items: Correspondence[];
-    addItem: (item: Omit<Correspondence, 'id' | 'folio' | 'createdAt'>) => Promise<void>;
-    updateItemStatus: (id: string, status: Correspondence['status'], deliveredAt?: string) => Promise<void>;
-    deleteItem: (id: string) => Promise<void>;
-}
+import type { Correspondence, CorrespondenceContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const CorrespondenceContext = createContext<CorrespondenceContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'correspondence_data';
-const API_URL = 'http://localhost:3001/api/correspondence';
+const BACKEND_URL = `${API_BASE_URL}/correspondence`;
 
 export const CorrespondenceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [items, setItems] = useState<Correspondence[]>(() => {
+    const [items, setItems] = useState<Correspondence[]>([]);
+
+    const fetchItems = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) return JSON.parse(stored);
-            return [];
-        } catch (e) {
-            return [];
-        }
-    });
-
-    useEffect(() => {
-        const fetchItems = async () => {
-            try {
-                const response = await fetch(API_URL);
-                if (response.ok) setItems(await response.json());
-            } catch (e) { }
-        };
-        fetchItems();
-    }, []);
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    }, [items]);
-
-    // Cross-tab synchronization
-    useEffect(() => {
-        const handleSync = (e: StorageEvent) => {
-            if (e.key === STORAGE_KEY && e.newValue) {
-                setItems(JSON.parse(e.newValue));
+            const response = await fetch(BACKEND_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setItems(data);
             }
-        };
-        window.addEventListener('storage', handleSync);
-        return () => window.removeEventListener('storage', handleSync);
+        } catch (e) {
+            console.error('Error fetching correspondence:', e);
+        }
+    };
+
+    useEffect(() => {
+        fetchItems();
     }, []);
 
     const addItem = async (item: Omit<Correspondence, 'id' | 'folio' | 'createdAt'>) => {
@@ -54,26 +30,55 @@ export const CorrespondenceProvider: React.FC<{ children: ReactNode }> = ({ chil
         const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
         const folio = `COR-${date}-${rand}`;
 
-        const resp = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...item, folio })
-        });
+        try {
+            const resp = await fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...item, folio })
+            });
 
-        if (resp.ok) {
-            const fresh = await fetch(API_URL);
-            if (fresh.ok) setItems(await fresh.json());
+            if (resp.ok) {
+                fetchItems();
+            }
+        } catch (e) {
+            console.error('API Error adding correspondence:', e);
         }
     };
 
     const updateItemStatus = async (id: string, status: Correspondence['status'], deliveredAt?: string) => {
-        setItems(prev => prev.map(item =>
-            item.id === id ? { ...item, status, deliveredAt: deliveredAt || item.deliveredAt } : item
-        ));
+        const item = items.find(i => i.id === id);
+        if (!item) return;
+
+        const updated = { 
+            ...item, 
+            status, 
+            deliveredAt: status === 'delivered' ? (deliveredAt || new Date().toISOString()) : item.deliveredAt 
+        };
+
+        try {
+            const resp = await fetch(`${BACKEND_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated)
+            });
+
+            if (resp.ok) {
+                fetchItems();
+            }
+        } catch (e) {
+            console.error('API Error updating correspondence:', e);
+        }
     };
 
     const deleteItem = async (id: string) => {
-        setItems(prev => prev.filter(item => item.id !== id));
+        try {
+            const resp = await fetch(`${BACKEND_URL}/${id}`, { method: 'DELETE' });
+            if (resp.ok) {
+                fetchItems();
+            }
+        } catch (e) {
+            console.error('API Error deleting correspondence:', e);
+        }
     };
 
     return (

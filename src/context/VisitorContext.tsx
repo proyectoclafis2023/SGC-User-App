@@ -1,34 +1,27 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Visitor, VisitorContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const VisitorContext = createContext<VisitorContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'sgc_visitors_data';
-
 export const VisitorProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [visitors, setVisitors] = useState<Visitor[]>(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (!stored) return [];
-            const parsed = JSON.parse(stored);
+    const [visitors, setVisitors] = useState<Visitor[]>([]);
 
-            // Retrocompatibility for folios
-            return (parsed as Visitor[]).map(v => {
-                if (!v.folio) {
-                    const dateStr = (v.createdAt || new Date().toISOString()).slice(0, 10).replace(/-/g, '');
-                    return { ...v, folio: `VIS-${dateStr}-${v.id.slice(-4).toUpperCase()}` };
-                }
-                return v;
-            });
+    const fetchVisitors = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/visitors`);
+            if (response.ok) {
+                const data = await response.json();
+                setVisitors(data);
+            }
         } catch (e) {
-            console.error('Error loading visitors:', e);
-            return [];
+            console.error('Error fetching visitors:', e);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(visitors));
-    }, [visitors]);
+        fetchVisitors();
+    }, []);
 
     const generateFolio = (prefix: string) => {
         const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -44,23 +37,54 @@ export const VisitorProvider: React.FC<{ children: ReactNode }> = ({ children })
             folio: generateFolio('VIS'),
             createdAt: new Date().toISOString()
         };
-        setVisitors(prev => [newRecord, ...prev]);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/visitors`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newRecord)
+            });
+            if (response.ok) {
+                fetchVisitors();
+            }
+        } catch (e) {
+            console.error('API Error adding visitor:', e);
+        }
     };
 
     const updateVisitorStatus = async (id: string, status: Visitor['status'], time?: string) => {
-        setVisitors(prev => prev.map(v => {
-            if (v.id === id) {
-                const updated = { ...v, status };
-                if (status === 'entered') updated.entryTime = time || new Date().toLocaleTimeString();
-                if (status === 'exited') updated.exitTime = time || new Date().toLocaleTimeString();
-                return updated;
+        const visitor = visitors.find(v => v.id === id);
+        if (!visitor) return;
+
+        const updated = { ...visitor, status };
+        if (status === 'entered') updated.entryTime = time || new Date().toLocaleTimeString();
+        if (status === 'exited') updated.exitTime = time || new Date().toLocaleTimeString();
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/visitors/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated)
+            });
+            if (response.ok) {
+                fetchVisitors();
             }
-            return v;
-        }));
+        } catch (e) {
+            console.error('API Error updating visitor:', e);
+        }
     };
 
     const deleteVisitor = async (id: string) => {
-        setVisitors(prev => prev.filter(v => v.id !== id));
+        try {
+            const response = await fetch(`${API_BASE_URL}/visitors/${id}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                fetchVisitors();
+            }
+        } catch (e) {
+            console.error('API Error deleting visitor:', e);
+        }
     };
 
     return (

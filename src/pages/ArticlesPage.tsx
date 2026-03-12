@@ -98,9 +98,9 @@ export const ArticlesPage: React.FC = () => {
                         <div className="p-2 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-500/20">
                             <ShieldCheck className="w-8 h-8 text-white" />
                         </div>
-                        Maestro EPP
+                        Maestro Insumos y EPP
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium ml-1">E.P.P, Artículos de Aseo y Materiales de Oficina.</p>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium ml-1">E.P.P, Artículos de Aseo, Materiales de Oficina e Insumos diarios.</p>
                 </div>
                 <div className="flex gap-2">
                     <input

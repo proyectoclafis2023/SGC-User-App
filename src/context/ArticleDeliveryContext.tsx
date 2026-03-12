@@ -1,32 +1,29 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { ArticleDelivery, ArticleDeliveryContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const ArticleDeliveryContext = createContext<ArticleDeliveryContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'article_deliveries_data';
+const API_URL = `${API_BASE_URL}/article_deliveries`;
 
 export const ArticleDeliveryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [deliveries, setDeliveries] = useState<ArticleDelivery[]>(() => {
+    const [deliveries, setDeliveries] = useState<ArticleDelivery[]>([]);
+
+    const fetchDeliveries = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (!stored) return [];
-            const parsed = JSON.parse(stored);
-            return (parsed as ArticleDelivery[]).map(d => {
-                if (!d.folio) {
-                    const dateStr = (d.createdAt || new Date().toISOString()).slice(0, 10).replace(/-/g, '');
-                    return { ...d, folio: `DEL-${dateStr}-${d.id.slice(-4).toUpperCase()}` };
-                }
-                return d;
-            });
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setDeliveries(data);
+            }
         } catch (e) {
-            console.error('Error loading deliveries:', e);
-            return [];
+            console.error('Error fetching deliveries:', e);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(deliveries));
-    }, [deliveries]);
+        fetchDeliveries();
+    }, []);
 
     const generateFolio = (prefix: string) => {
         const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -42,16 +39,37 @@ export const ArticleDeliveryProvider: React.FC<{ children: ReactNode }> = ({ chi
             folio: generateFolio('DEL'),
             createdAt: new Date().toISOString()
         };
-        setDeliveries(prev => [newRecord, ...prev]);
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newRecord)
+            });
+            if (response.ok) {
+                await fetchDeliveries();
+                return newRecord.id;
+            }
+        } catch (e) { console.error('Error adding delivery:', e); }
         return id;
     };
 
     const updateDelivery = async (delivery: ArticleDelivery) => {
-        setDeliveries(prev => prev.map(d => d.id === delivery.id ? delivery : d));
+        try {
+            const response = await fetch(`${API_URL}/${delivery.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(delivery)
+            });
+            if (response.ok) await fetchDeliveries();
+        } catch (e) { console.error('Error updating delivery:', e); }
     };
 
     const deleteDelivery = async (id: string) => {
-        setDeliveries(prev => prev.filter(d => d.id !== id));
+        try {
+            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            if (response.ok) await fetchDeliveries();
+        } catch (e) { console.error('Error deleting delivery:', e); }
     };
 
     return (

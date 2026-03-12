@@ -5,6 +5,7 @@ interface HistoryLogContextType {
     logs: HistoryLog[];
     addLog: (log: Omit<HistoryLog, 'id' | 'timestamp'>) => Promise<void>;
     getLogsByEntity: (entityType: HistoryLog['entityType'], entityId: string) => HistoryLog[];
+    getLogsByUnit: (unitId: string) => HistoryLog[];
 }
 
 const HistoryLogContext = createContext<HistoryLogContextType | undefined>(undefined);
@@ -39,8 +40,12 @@ export const HistoryLogProvider: React.FC<{ children: ReactNode }> = ({ children
         return logs.filter(l => l.entityType === entityType && l.entityId === entityId);
     };
 
+    const getLogsByUnit = (unitId: string) => {
+        return logs.filter(l => l.unitId === unitId);
+    };
+
     return (
-        <HistoryLogContext.Provider value={{ logs, addLog, getLogsByEntity }}>
+        <HistoryLogContext.Provider value={{ logs, addLog, getLogsByEntity, getLogsByUnit }}>
             {children}
         </HistoryLogContext.Provider>
     );

@@ -1,34 +1,27 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { ShiftReport, ShiftReportContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const ShiftReportContext = createContext<ShiftReportContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'sgc_shift_reports_data';
-
 export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [reports, setReports] = useState<ShiftReport[]>(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (!stored) return [];
-            const parsed = JSON.parse(stored);
+    const [reports, setReports] = useState<ShiftReport[]>([]);
 
-            // Retrocompatibility for folios
-            return (parsed as ShiftReport[]).map(r => {
-                if (!r.folio) {
-                    const dateStr = (r.createdAt || new Date().toISOString()).slice(0, 10).replace(/-/g, '');
-                    return { ...r, folio: `SHR-${dateStr}-${r.id.slice(-4).toUpperCase()}` };
-                }
-                return r;
-            });
+    const fetchReports = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/shift_reports`);
+            if (response.ok) {
+                const data = await response.json();
+                setReports(data);
+            }
         } catch (e) {
-            console.error('Error loading shift reports:', e);
-            return [];
+            console.error('Error fetching shift reports:', e);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-    }, [reports]);
+        fetchReports();
+    }, []);
 
     const generateFolio = (prefix: string) => {
         const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -48,46 +41,74 @@ export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ childre
             folio: generateFolio('SHR'),
             createdAt: new Date().toISOString()
         };
-        setReports(prev => [newRecord, ...prev]);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/shift_reports`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newRecord)
+            });
+            if (response.ok) {
+                fetchReports();
+            }
+        } catch (e) {
+            console.error('API Error adding shift report:', e);
+        }
     };
 
     const updateReport = async (id: string, data: Partial<ShiftReport>) => {
-        setReports(prev => prev.map(r =>
-            r.id === id ? { ...r, ...data } : r
-        ));
+        const report = reports.find(r => r.id === id);
+        if (!report) return;
+
+        const updated = { ...report, ...data };
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/shift_reports/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated)
+            });
+            if (response.ok) {
+                fetchReports();
+            }
+        } catch (e) {
+            console.error('API Error updating shift report:', e);
+        }
     };
 
     const closeShift = async (id: string, data: Partial<ShiftReport>) => {
-        setReports(prev => prev.map(r =>
-            r.id === id ? {
-                ...r,
-                ...data,
-                status: 'closed',
-                closedAt: new Date().toISOString()
-            } : r
-        ));
+        await updateReport(id, {
+            ...data,
+            status: 'closed',
+            closedAt: new Date().toISOString()
+        });
     };
 
     const reopenShift = async (id: string, adminName: string, reason: string) => {
-        setReports(prev => prev.map(r =>
-            r.id === id ? {
-                ...r,
-                status: 'open',
-                adminReopenedBy: adminName,
-                adminReopenReason: reason,
-                closedAt: undefined
-            } : r
-        ));
+        await updateReport(id, {
+            status: 'open',
+            adminReopenedBy: adminName,
+            adminReopenReason: reason,
+            closedAt: undefined
+        });
     };
 
-    const deleteReport = (id: string) => {
-        setReports(prev => prev.filter(r => r.id !== id));
+    const deleteReport = async (id: string) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/shift_reports/${id}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                fetchReports();
+            }
+        } catch (e) {
+            console.error('API Error deleting shift report:', e);
+        }
     };
 
     const clearAllReports = () => {
         if (window.confirm('¿Está seguro de que desea eliminar TODO el historial de turnos? Esta acción no se puede deshacer.')) {
-            setReports([]);
-            localStorage.removeItem(STORAGE_KEY);
+            // Usually requires a specific DELETE ALL endpoint, skipping for safety
         }
     };
 
