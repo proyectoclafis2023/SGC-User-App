@@ -116,7 +116,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, c
                     className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
                 >
                     <Icon className="w-5 h-5 shrink-0" />
-                    <span className="flex-1 text-left text-[9px] uppercase tracking-[0.2em]">{label}</span>
+                    <span className="flex-1 text-left text-[12px] uppercase tracking-[0.2em] font-black">{label}</span>
                     {isOpen ? <ChevronDown className="w-4 h-4 shrink-0 transition-transform" /> : <ChevronRight className="w-4 h-4 shrink-0 transition-transform text-gray-400" />}
                 </button>
                 {isOpen && (
@@ -136,7 +136,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, c
                                             <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                                                 expandedHeaders.includes(section.header.label) ? 'bg-indigo-500 scale-110' : 'bg-gray-300 dark:bg-gray-700'
                                             }`}></div>
-                                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-left">
+                                            <span className="text-[10px] font-black uppercase tracking-[0.15em] text-left">
                                                 {section.header.label}
                                             </span>
                                         </div>
@@ -146,14 +146,14 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, c
                                     </button>
                                 )}
                                 <div className={`space-y-1 overflow-hidden transition-all duration-300 ${
-                                    (!section.header || expandedHeaders.includes(section.header.label)) ? 'max-h-[500px] opacity-100 py-1' : 'max-h-0 opacity-0'
+                                    (!section.header || expandedHeaders.includes(section.header.label)) ? 'max-h-[1200px] opacity-100 py-1' : 'max-h-0 opacity-0'
                                 }`}>
                                     {section.items.map((child, idx) => (
                                         <NavLink
                                             key={idx}
                                             to={child.path || '#'}
                                             className={({ isActive }) =>
-                                                `flex items-center gap-3 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isActive
+                                                `flex items-center gap-3 px-4 py-2 rounded-xl text-[9px] font-bold uppercase tracking-[0.1em] transition-all duration-300 ${isActive
                                                     ? (settings.theme === 'modern' ? 'bg-white text-indigo-900 shadow-md translate-x-1' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 translate-x-1')
                                                     : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/5 hover:translate-x-1'
                                                 }`
@@ -180,7 +180,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, c
                 title={isCollapsed ? label : ""}
             >
                 <Icon className="w-5 h-5 shrink-0" />
-                {!isCollapsed && <span className="text-[9px] uppercase tracking-[0.2em]">{label}</span>}
+                {!isCollapsed && <span className="text-[12px] uppercase tracking-[0.2em] font-black">{label}</span>}
             </NavLink>
         );
     }
@@ -241,160 +241,142 @@ export const Layout: React.FC = () => {
                         </div>
                     )}
                 </div>
-
                 <nav className="flex-1 p-6 space-y-2 overflow-y-auto custom-scrollbar">
                     <NavItem to="/" icon={LayoutDashboard} label="Dashboard" isCollapsed={isCollapsed} />
 
-                    {/* OPERACIÓN & GESTIÓN DIARIA (Admins & Workers) */}
+                    {/* SECCIÓN OPERACIONES */}
                     {(isAdmin || isWorker) && (
-                        <>
-                            <div className={`pt-12 pb-4 px-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                                <h3 className="text-[13px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.4em] flex items-center gap-3 mb-2">
-                                    <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-                                        <Zap className="w-4 h-4 fill-indigo-600/20" /> 
-                                    </div>
-                                    OPERACIONES
-                                </h3>
-                                <div className="h-[2px] w-full bg-gradient-to-r from-indigo-500/30 to-transparent rounded-full opacity-50"></div>
-                            </div>
-                            <NavItem to="/reporte-diario" icon={FileText} label="Reporte Diario" isCollapsed={isCollapsed} />
-                            <NavItem to="/bitacora-turnos" icon={History} label="Bitácora Turnos" isCollapsed={isCollapsed} />
-                            <NavItem to="/visitas" icon={Users} label="Control de Visitas" isCollapsed={isCollapsed} />
-                            <NavItem to="/correspondencia" icon={Package} label="Control de Encomiendas" isCollapsed={isCollapsed} />
-                            <NavItem to="/registro-contratistas" icon={HardHat} label="Control de Contratistas" isCollapsed={isCollapsed} />
-                            <NavItem to="/solicitud-insumos" icon={Package} label="Solicitud Insumos" isCollapsed={isCollapsed} />
-                            <NavItem to="/camaras" icon={Video} label="Cámaras / Grabaciones" isCollapsed={isCollapsed} />
-                        </>
+                        <NavItem 
+                            icon={Zap} 
+                            label="Operaciones" 
+                            isCollapsed={isCollapsed}
+                            children={[
+                                { label: 'Reporte Diario', path: '/reporte-diario', icon: FileText },
+                                { label: 'Bitácora Turnos', path: '/bitacora-turnos', icon: History },
+                                { label: 'Controles', isHeader: true },
+                                { label: 'Visitas', path: '/visitas', icon: Users },
+                                { label: 'Encomiendas', path: '/correspondencia', icon: Package },
+                                { label: 'Contratistas', path: '/registro-contratistas', icon: HardHat },
+                                { label: 'Solicitud Insumos', path: '/solicitud-insumos', icon: Package },
+                                { label: 'Cámaras / Grabaciones', path: '/camaras', icon: Video },
+                            ]}
+                        />
                     )}
 
-                    {/* MI HOGAR (Resident or Owner) */}
+                    {/* SECCIÓN MI HOGAR */}
                     {isResidentOrOwner && (
-                        <>
-                            <div className={`pt-12 pb-4 px-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                                <h3 className="text-[13px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-3 mb-2">
-                                    <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                                        <Home className="w-4 h-4 fill-emerald-600/20" /> 
-                                    </div>
-                                    MI HOGAR
-                                </h3>
-                                <div className="h-[2px] w-full bg-gradient-to-r from-emerald-500/30 to-transparent rounded-full opacity-50"></div>
-                            </div>
-                            <NavItem to="/gastos-comunes" icon={Wallet} label="Mis Pagos" isCollapsed={isCollapsed} />
-                        </>
+                        <NavItem 
+                            icon={Home} 
+                            label="Mi Hogar" 
+                            isCollapsed={isCollapsed} 
+                            children={[
+                                { label: 'Mis Pagos', path: '/gastos-comunes', icon: Wallet },
+                            ]}
+                        />
                     )}
 
-                    {/* SOPORTE & SERVICIOS (Public for all) */}
-                    <div className={`pt-12 pb-4 px-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                        <h3 className="text-[13px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-[0.4em] flex items-center gap-3 mb-2">
-                            <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
-                                <LifeBuoy className="w-4 h-4 fill-amber-600/20" /> 
-                            </div>
-                            SOPORTE Y SERVICIOS
-                        </h3>
-                        <div className="h-[2px] w-full bg-gradient-to-r from-amber-500/30 to-transparent rounded-full opacity-50"></div>
-                    </div>
-                    <NavItem to="/emergencias" icon={Phone} label="Números Emergencia" isCollapsed={isCollapsed} />
-                    <NavItem to="/servicios-residentes" icon={HardHat} label="Directorio de Servicios" isCollapsed={isCollapsed} />
-                    <NavItem to="/reservas" icon={Calendar} label="Reserva Espacios Comunes" isCollapsed={isCollapsed} />
-                    <NavItem to="/reclamos" icon={LifeBuoy} label="Atención y Soporte" isCollapsed={isCollapsed} />
+                    {/* SECCIÓN SOPORTE & SERVICIOS */}
+                    <NavItem 
+                        icon={LifeBuoy} 
+                        label="Soporte y Servicios" 
+                        isCollapsed={isCollapsed}
+                        children={[
+                            { label: 'Atención y Soporte', path: '/reclamos', icon: LifeBuoy },
+                            { label: 'Reserva Espacios Comunes', path: '/reservas', icon: Calendar },
+                            { label: 'Directorio de Servicios', path: '/servicios-residentes', icon: HardHat },
+                            { label: 'Números Emergencia', path: '/emergencias', icon: Phone },
+                        ]}
+                    />
 
-                    {/* ADMINISTRACIÓN (Admins only) */}
+                    {/* SECCIÓN ADMINISTRACIÓN */}
                     {isAdmin && (
-                        <>
-                            <div className={`pt-12 pb-4 px-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                                <h3 className="text-[13px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.4em] flex items-center gap-3 mb-2">
-                                    <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                                        <Database className="w-4 h-4 fill-blue-600/20" /> 
-                                    </div>
-                                    ADMINISTRACIÓN
-                                </h3>
-                                <div className="h-[2px] w-full bg-gradient-to-r from-blue-500/30 to-transparent rounded-full opacity-50"></div>
-                            </div>
-                             <NavItem to="/dashboard-kpi" icon={BarChart3} label="Gestión Estratégica" isCollapsed={isCollapsed} />
-                             <NavItem to="/tickets" icon={ClipboardCheck} label="Centro de Gestiones" isCollapsed={isCollapsed} />
-                            <NavItem
-                                icon={Building2}
-                                label="Comunidad"
-                                isCollapsed={isCollapsed}
-                                children={[
-                                    { label: 'Residentes', path: '/residentes', icon: Users },
-                                    { label: 'Propietarios', path: '/propietarios', icon: ShieldCheck },
-                                    { label: 'Directiva', path: '/directiva', icon: Landmark },
-                                    { label: 'Mensajes Dirigidos', path: '/mensajes-dirigidos', icon: Mail },
-                                    { label: 'Avisos del Sistema', path: '/mensajes', icon: Bell },
-                                ]}
-                            />
-                            <NavItem
-                                icon={Users}
-                                label="Recursos Humanos"
-                                isCollapsed={isCollapsed}
-                                children={[
-                                    { label: 'Maestro Personal', path: '/personal', icon: Briefcase },
-                                    { label: 'Servicios / Contratistas', path: '/contratistas', icon: HardHat },
-                                    { label: 'Gestión de Nómina', path: '/liquidaciones', icon: Banknote },
-                                    { label: 'Entrega de EPP', path: '/entregas-articulos', icon: Package },
-                                    { label: 'Maestro Insumos y EPP', path: '/articulos-personal', icon: ShieldCheck },
-                                    { label: 'Certificados', path: '/certificados', icon: FileText },
-                                ]}
-                            />
-                            <NavItem
-                                icon={Landmark}
-                                label="Finanzas"
-                                isCollapsed={isCollapsed}
-                                children={[
-                                    { label: 'Gastos Comunes Admin', path: '/gastos-comunes' },
-                                    { label: 'Registro de Egresos', path: '/registro-gastos' },
-                                    { label: 'Reglas de Cobro', path: '/reglas-gastos-comunes' },
-                                    { label: 'Fondos Especiales', path: '/maestro-fondos' },
-                                    { label: 'Activo Fijo', path: '/activo-fijo' },
-                                 ]}
-                             />
+                        <NavItem 
+                            icon={Shield} 
+                            label="Administración" 
+                            isCollapsed={isCollapsed}
+                            children={[
+                                { label: 'Gestión Estratégica', path: '/dashboard-kpi', icon: BarChart3 },
+                                { label: 'Centro de Gestiones', path: '/tickets', icon: ClipboardCheck },
+                                
+                                { label: 'Comunidad', isHeader: true },
+                                { label: 'Residentes', path: '/residentes', icon: Users },
+                                { label: 'Propietarios', path: '/propietarios', icon: ShieldCheck },
+                                { label: 'Directiva', path: '/directiva', icon: Landmark },
+                                { label: 'Mensajes Dirigidos', path: '/mensajes-dirigidos', icon: Mail },
+                                { label: 'Avisos del Sistema', path: '/mensajes', icon: Bell },
 
-                            <div className={`mt-6 mb-4 px-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                                <h3 className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.4em]">Configuración y Maestros</h3>
-                            </div>
+                                { label: 'Recursos Humanos', isHeader: true },
+                                { label: 'Maestro Personal', path: '/personal', icon: Briefcase },
+                                { label: 'Servicios / Contratistas', path: '/contratistas', icon: HardHat },
+                                { label: 'Gestión de Nómina', path: '/liquidaciones', icon: Banknote },
+                                { label: 'Entrega de EPP', path: '/entregas-articulos', icon: Package },
+                                { label: 'Maestro Insumos y EPP', path: '/articulos-personal', icon: ShieldCheck },
+                                { label: 'Certificados', path: '/certificados', icon: FileText },
 
-                            <NavItem
-                                icon={Settings}
-                                label="Ajustes de Sistema"
-                                isCollapsed={isCollapsed}
-                                children={[
-                                    { label: 'Parámetros Generales', path: '/parametros' },
-                                    { label: 'Configuración Comunidad', path: '/configuracion' },
-                                    { label: 'Configuración Email', path: '/maestro-correos' },
-                                    { label: 'Perfiles de Acceso', path: '/perfiles' },
-                                    { label: 'Carga Masiva de Datos', path: '/carga-masiva' },
-                                ]}
-                            />
-
-                            <NavItem
-                                icon={Database}
-                                label="Maestros Base"
-                                isCollapsed={isCollapsed}
-                                children={[
-                                    { label: 'Infraestructura', isHeader: true },
-                                    { label: 'Edificios y propiedades', path: '/infraestructura' },
-                                    { label: 'Tipos de Unidad', path: '/tipos-unidad' },
-                                    { label: 'Espacios Comunes', path: '/espacios' },
-                                    { label: 'Estacionamientos', path: '/estacionamientos' },
-                                    
-                                    { label: 'Recursos Humanos', isHeader: true },
-                                    { label: 'Previsiones', path: '/previsiones' },
-                                    { label: 'AFPs', path: '/afps' },
-                                    
-                                    { label: 'Finanzas y Operación', isHeader: true },
-                                    { label: 'Bancos', path: '/bancos' },
-                                    { label: 'Maestro IPC', path: '/maestro-ipc' },
-                                    { label: 'Bitácora / Cámaras', path: '/maestros-operativos' },
-                                    { label: 'Mensajes Prefijados', path: '/maestro-mensajes' },
-                                    { label: 'Números Emergencia', path: '/maestro-emergencias' },
-                                    { label: 'Condiciones Especiales', path: '/condiciones-especiales' },
-                                ]}
-                            />
-
-                        </>
+                                { label: 'Finanzas', isHeader: true },
+                                { label: 'Gastos Comunes Admin', path: '/gastos-comunes', icon: Banknote },
+                                { label: 'Registro de Egresos', path: '/registro-gastos', icon: Wallet },
+                                { label: 'Reglas de Cobro', path: '/reglas-gastos-comunes', icon: Settings },
+                                { label: 'Fondos Especiales', path: '/maestro-fondos', icon: Database },
+                                { label: 'Activo Fijo', path: '/activo-fijo', icon: Landmark },
+                            ]}
+                        />
                     )}
 
+                    {/* SECCIÓN AJUSTES DE SISTEMA */}
+                    {isAdmin && (
+                        <NavItem 
+                            icon={Settings} 
+                            label="Ajustes de Sistema" 
+                            isCollapsed={isCollapsed}
+                            children={[
+                                { label: 'Configuración Comunidad', path: '/configuracion', icon: Building2 },
+                                { label: 'Configuración Email', path: '/maestro-correos', icon: Mail },
+                            ]}
+                        />
+                    )}
+
+                    {/* SECCIÓN MAESTROS BASE */}
+                    {isAdmin && (
+                        <NavItem 
+                            icon={Database} 
+                            label="Maestros Base" 
+                            isCollapsed={isCollapsed}
+                            children={[
+                                { label: 'Infraestructura', isHeader: true },
+                                { label: 'Edificios y propiedades', path: '/infraestructura', icon: Building2 },
+                                { label: 'Tipos de Unidad', path: '/tipos-unidad', icon: Home },
+                                { label: 'Espacios Comunes', path: '/espacios', icon: Landmark },
+                                { label: 'Estacionamientos', path: '/estacionamientos', icon: Zap },
+
+                                { label: 'Recursos Humanos', isHeader: true },
+                                { label: 'Previsiones', path: '/previsiones', icon: Briefcase },
+                                { label: 'AFPs', path: '/afps', icon: ShieldCheck },
+
+                                { label: 'Finanzas y Operación', isHeader: true },
+                                { label: 'Bancos', path: '/bancos', icon: Landmark },
+                                { label: 'Maestro IPC', path: '/maestro-ipc', icon: BarChart3 },
+                                { label: 'Bitácora y Cámaras', path: '/maestros-operativos', icon: History },
+                                { label: 'Mensajes Prefijados', path: '/maestro-mensajes', icon: Mail },
+                                { label: 'Números Emergencia', path: '/maestro-emergencias', icon: Phone },
+                                { label: 'Condiciones Especiales', path: '/condiciones-especiales', icon: Shield },
+                            ]}
+                        />
+                    )}
+
+                    {/* SECCIÓN SUPER ADMIN */}
+                    {isAdmin && (
+                        <NavItem 
+                            icon={ShieldCheck} 
+                            label="Super Admin" 
+                            isCollapsed={isCollapsed}
+                            children={[
+                                { label: 'Carga Masiva de Datos', path: '/carga-masiva', icon: UploadCloud },
+                                { label: 'Parámetros Generales', path: '/parametros', icon: Settings },
+                                { label: 'Perfiles de Acceso', path: '/perfiles', icon: ShieldCheck },
+                            ]}
+                        />
+                    )}
                 </nav>
 
                 <div className={`p-6 border-t border-gray-50 dark:border-gray-800 transition-all ${isCollapsed ? 'px-2' : ''}`}>
