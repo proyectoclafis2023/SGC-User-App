@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useParkings } from '../context/ParkingContext';
+import { useInfrastructure } from '../context/InfrastructureContext';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-import { Plus, Trash2, Edit2, X, Car, MapPin, Accessibility } from 'lucide-react';
-import type { Parking } from '../types';
+import { Plus, Trash2, Edit2, X, Car, MapPin, Accessibility, Link } from 'lucide-react';
+import type { Parking, Department } from '../types';
 
 export const ParkingPage: React.FC = () => {
     const { parkings, addParking, updateParking, deleteParking } = useParkings();
+    const { towers, departments } = useInfrastructure();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingParking, setEditingParking] = useState<Parking | null>(null);
 
@@ -14,6 +16,8 @@ export const ParkingPage: React.FC = () => {
     const [location, setLocation] = useState('');
     const [isHandicapped, setIsHandicapped] = useState(false);
     const [notes, setNotes] = useState('');
+    const [departmentId, setDepartmentId] = useState('');
+    const [selectedTowerId, setSelectedTowerId] = useState('');
 
     const handleOpenModal = (p?: Parking) => {
         if (p) {
@@ -22,19 +26,25 @@ export const ParkingPage: React.FC = () => {
             setLocation(p.location || '');
             setIsHandicapped(p.isHandicapped || false);
             setNotes(p.notes || '');
+            setDepartmentId(p.departmentId || '');
+            const dept = departments.find((d: Department) => d.id === p.departmentId);
+            if (dept) setSelectedTowerId(dept.towerId);
+            else setSelectedTowerId('');
         } else {
             setEditingParking(null);
             setNumber('');
             setLocation('');
             setIsHandicapped(false);
             setNotes('');
+            setDepartmentId('');
         }
         setIsModalOpen(true);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { number, location, isHandicapped, notes };
+        const relatedUnit = departments.find((d: Department) => d.id === departmentId)?.number || '';
+        const data = { number, location, isHandicapped, notes, departmentId, relatedUnit };
         if (editingParking) {
             await updateParking({ ...editingParking, ...data });
         } else {
@@ -54,7 +64,7 @@ export const ParkingPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {parkings.filter(p => !p.isArchived).map(p => (
+                {parkings.filter((p: Parking) => !p.isArchived).map((p: Parking) => (
                     <div key={p.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 rounded-2xl shadow-sm relative group hover:shadow-md transition-all">
                         <div className="absolute top-4 right-4 flex opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={() => handleOpenModal(p)} className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"><Edit2 className="w-4 h-4" /></button>
@@ -65,12 +75,20 @@ export const ParkingPage: React.FC = () => {
                                 <Car className="w-10 h-10" />
                             </div>
                             <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1">N° {p.number}</h3>
-                            <div className="flex items-center gap-1.5 text-xs text-gray-500 font-bold uppercase tracking-wider">
-                                <MapPin className="w-3 h-3 text-indigo-500" />
-                                <span>{p.location || 'Sin Ubicación'}</span>
+                            <div className="flex flex-col gap-2 mt-2">
+                                <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-500 font-black uppercase tracking-widest">
+                                    <MapPin className="w-3 h-3 text-indigo-500" />
+                                    <span>{p.location || 'Sin Ubicación'}</span>
+                                </div>
+                                <div className="flex items-center justify-center gap-2 py-2 px-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/20 mt-2">
+                                    <Link className="w-3 h-3 text-indigo-500" />
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${p.departmentId ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-500 animate-pulse'}`}>
+                                        {p.relatedUnit ? `${towers.find(t => t.id === departments.find(d => d.id === p.departmentId)?.towerId)?.name || ''} - Unidad ${p.relatedUnit}` : 'Sin Asociar'}
+                                    </span>
+                                </div>
                             </div>
                             {p.isHandicapped && (
-                                <div className="mt-3 flex items-center gap-1 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                                <div className="mt-3 flex items-center gap-1 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border border-blue-200">
                                     <Accessibility className="w-3 h-3" /> Preferencial
                                 </div>
                             )}
@@ -80,46 +98,87 @@ export const ParkingPage: React.FC = () => {
             </div>
 
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md shadow-2xl border border-white/20 animate-in zoom-in-95 duration-300">
-                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                            <h2 className="text-xl font-bold flex items-center gap-2 font-black uppercase tracking-tight"><Car className="text-indigo-600" /> {editingParking ? 'Editar' : 'Nuevo'} Estacionamiento</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-full transition-colors"><X /></button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-gray-900 rounded-[3rem] w-full max-w-md shadow-2xl border border-white/20 dark:border-gray-800 overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="p-8 border-b dark:border-gray-800 flex items-center justify-between">
+                            <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+                                <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-500/30">
+                                    <Car className="w-5 h-5" />
+                                </div>
+                                {editingParking ? 'Editar Espacio' : 'Nuevo Estacionamiento'}
+                            </h2>
+                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 p-3 rounded-2xl transition-all"><X className="w-6 h-6" /></button>
                         </div>
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            <Input label="Número / Código" value={number} onChange={(e) => setNumber(e.target.value)} required placeholder="Ej: E-101" />
-                            <Input label="Ubicación" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ej: Piso -1 (Subterráneo)" />
+                        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Input label="Número / Código" value={number} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNumber(e.target.value)} required placeholder="Ej: E-101" />
+                                <div className="space-y-1.5">
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Edificio / Torre</label>
+                                    <select
+                                        value={selectedTowerId}
+                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                            setSelectedTowerId(e.target.value);
+                                            setDepartmentId('');
+                                        }}
+                                        className="w-full h-12 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all dark:text-white appearance-none cursor-pointer"
+                                    >
+                                        <option value="">-- Seleccionar --</option>
+                                        {towers.map(t => (
+                                            <option key={t.id} value={t.id}>{t.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
 
-                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
-                                <div className="flex items-center gap-3">
-                                    <Accessibility className="text-blue-500 w-5 h-5" />
+                            <div className="space-y-1.5">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Unidad Asociada</label>
+                                <select
+                                    value={departmentId}
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setDepartmentId(e.target.value)}
+                                    className="w-full h-12 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all dark:text-white appearance-none cursor-pointer"
+                                    disabled={!selectedTowerId}
+                                >
+                                    <option value="">-- Seleccionar Unidad --</option>
+                                    {departments.filter(d => d.towerId === selectedTowerId).map((d: Department) => (
+                                        <option key={d.id} value={d.id}>Unidad {d.number}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <Input label="Ubicación" value={location} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocation(e.target.value)} placeholder="Ej: Piso -1 (Subterráneo)" />
+
+                            <div className="flex items-center justify-between p-5 bg-gray-50 dark:bg-gray-800/40 rounded-3xl border border-gray-100 dark:border-gray-800 hover:bg-white dark:hover:bg-gray-800 transition-all group">
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isHandicapped ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40' : 'bg-gray-100 text-gray-400 dark:bg-gray-800'}`}>
+                                        <Accessibility className="w-5 h-5" />
+                                    </div>
                                     <div>
-                                        <p className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-tighter">Espacio Preferencial</p>
-                                        <p className="text-[10px] text-gray-500">¿Es para personas con discapacidad?</p>
+                                        <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tighter">Preferencial</p>
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">¿Es para discapacidad?</p>
                                     </div>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => setIsHandicapped(!isHandicapped)}
-                                    className={`w-12 h-6 rounded-full transition-all relative ${isHandicapped ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-700'}`}
+                                    className={`w-14 h-8 rounded-full transition-all relative p-1 ${isHandicapped ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-700'}`}
                                 >
-                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isHandicapped ? 'left-7' : 'left-1'}`} />
+                                    <div className={`w-6 h-6 bg-white rounded-full transition-all shadow-sm ${isHandicapped ? 'translate-x-6' : 'translate-x-0'}`} />
                                 </button>
                             </div>
 
-                            <div className="space-y-1.5">
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Notas Adicionales</label>
+                            <div className="space-y-2">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Notas del Espacio</label>
                                 <textarea
                                     value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    className="w-full h-24 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all dark:text-white"
+                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
+                                    className="w-full h-24 rounded-[2rem] border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all dark:text-white"
                                     placeholder="Detalles sobre el acceso, pilares, etc."
                                 />
                             </div>
 
-                            <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 dark:border-gray-800">
-                                <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                                <Button type="submit">Guardar Estacionamiento</Button>
+                            <div className="flex gap-4 pt-4">
+                                <Button type="button" variant="secondary" className="flex-1 h-14 rounded-2xl font-black uppercase text-xs tracking-widest" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                                <Button type="submit" className="flex-1 h-14 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-500/20">Guardar Cambios</Button>
                             </div>
                         </form>
                     </div>

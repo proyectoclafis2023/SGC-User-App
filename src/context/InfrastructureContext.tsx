@@ -14,8 +14,10 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
                 fetch(`${API_BASE_URL}/towers`),
                 fetch(`${API_BASE_URL}/departments`)
             ]);
-            if (towersRes.ok) setTowers(await towersRes.json());
-            if (deptsRes.ok) setDepartments(await deptsRes.json());
+            const tData = towersRes.ok ? await towersRes.json() : [];
+            const dData = deptsRes.ok ? await deptsRes.json() : [];
+            setTowers(Array.isArray(tData) ? tData : []);
+            setDepartments(Array.isArray(dData) ? dData : []);
         } catch (e) {
             console.error('Error fetching data:', e);
         }

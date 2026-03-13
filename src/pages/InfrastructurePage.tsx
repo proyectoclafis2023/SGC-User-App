@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useInfrastructure } from '../context/InfrastructureContext';
 import { useHistoryLogs } from '../context/HistoryLogContext';
-import { useUsers } from '../context/UserContext';
 import { useOwners } from '../context/OwnerContext';
 import { useResidents } from '../context/ResidentContext';
 import { useUnitTypes } from '../context/UnitTypeContext';
@@ -11,11 +10,12 @@ import { Input } from '../components/Input';
 import {
     Building2, Plus, Copy, Trash2, Edit2, Dog,
     AlertTriangle, Save, X, Home, Droplets, Zap,
-    Flame, UserCheck, Clock, Search, UserPlus
+    Flame, UserCheck, Clock, Search, UserPlus,
+    DollarSign, BedDouble, Bath, Car, Maximize, Map, Camera
 } from 'lucide-react';
 import { formatRUT } from '../utils/formatters';
 import { useSettings } from '../context/SettingsContext';
-import type { Department, Tower } from '../types';
+import type { Department, Tower, Owner, Resident, UnitType, SpecialCondition, HistoryLog } from '../types';
 
 export const InfrastructurePage: React.FC = () => {
     const { towers, addTower, deleteTower, updateTower, duplicateTower, addDepartment, updateDepartment, deleteDepartment } = useInfrastructure();
@@ -56,7 +56,7 @@ export const InfrastructurePage: React.FC = () => {
     useEffect(() => {
         // Solo cargar m2 si es una unidad nueva o si m2 es 0/vacío
         if (unitTypeId) {
-            const type = unitTypes.find(t => t.id === unitTypeId);
+            const type = unitTypes.find((t: UnitType) => t.id === unitTypeId);
             if (type && type.defaultM2) {
                 // Only update if current m2 is 0 or if we are creating a new one
                 if (m2 === 0 || !editingDept) {
@@ -70,6 +70,18 @@ export const InfrastructurePage: React.FC = () => {
     const [ownerId, setOwnerId] = useState('');
     const [residentId, setResidentId] = useState('');
 
+    // New fields
+    const [value, setValue] = useState(0);
+    const [dormitorios, setDormitorios] = useState(0);
+    const [banos, setBanos] = useState(0);
+    const [estacionamientos, setEstacionamientos] = useState(0);
+    const [terrainM2, setTerrainM2] = useState(0);
+    const [yearBuilt, setYearBuilt] = useState(new Date().getFullYear());
+    const [isAvailable, setIsAvailable] = useState(false);
+    const [publishType, setPublishType] = useState<'venta' | 'arriendo'>('venta');
+    const [image, setImage] = useState('');
+    const [locationMapUrl, setLocationMapUrl] = useState('');
+
     const [quickNames, setQuickNames] = useState('');
     const [quickLastNames, setQuickLastNames] = useState('');
     const [quickDni, setQuickDni] = useState('');
@@ -77,20 +89,20 @@ export const InfrastructurePage: React.FC = () => {
     const [quickEmail, setQuickEmail] = useState('');
 
     const filteredOwners = useMemo(() => {
-        const activeOwners = owners.filter((o: any) => !o.isArchived);
+        const activeOwners = owners.filter((o: Owner) => !o.isArchived);
         if (!ownerSearch.trim()) return [];
         const q = ownerSearch.toLowerCase();
-        return activeOwners.filter((o: any) =>
+        return activeOwners.filter((o: Owner) =>
             `${o.names} ${o.lastNames}`.toLowerCase().includes(q) ||
             o.dni.toLowerCase().includes(q)
         );
     }, [owners, ownerSearch]);
 
     const filteredResidents = useMemo(() => {
-        const activeResidents = residents.filter((r: any) => !r.isArchived);
+        const activeResidents = residents.filter((r: Resident) => !r.isArchived);
         if (!residentSearch.trim()) return [];
         const q = residentSearch.toLowerCase();
-        return activeResidents.filter((r: any) =>
+        return activeResidents.filter((r: Resident) =>
             `${r.names} ${r.lastNames}`.toLowerCase().includes(q) ||
             r.dni.toLowerCase().includes(q)
         );
@@ -132,8 +144,18 @@ export const InfrastructurePage: React.FC = () => {
             setGasClientId(dept.gasClientId || '');
             setOwnerId(dept.ownerId || '');
             setResidentId(dept.residentId || '');
+            setValue(dept.value || 0);
+            setDormitorios(dept.dormitorios || 0);
+            setBanos(dept.banos || 0);
+            setEstacionamientos(dept.estacionamientos || 0);
+            setTerrainM2(dept.terrainM2 || 0);
+            setYearBuilt(dept.yearBuilt || new Date().getFullYear());
+            setIsAvailable(dept.isAvailable || false);
+            setPublishType(dept.publishType || 'venta');
+            setImage(dept.image || '');
+            setLocationMapUrl(dept.locationMapUrl || '');
         } else {
-            setCurrentTower(towers.find(t => t.id === towerId) || null);
+            setCurrentTower(towers.find((t: Tower) => t.id === towerId) || null);
             setEditingDept(null);
             setDeptNumber('');
             setUnitTypeId('');
@@ -145,6 +167,16 @@ export const InfrastructurePage: React.FC = () => {
             setGasClientId('');
             setOwnerId('');
             setResidentId('');
+            setValue(0);
+            setDormitorios(0);
+            setBanos(0);
+            setEstacionamientos(0);
+            setTerrainM2(0);
+            setYearBuilt(new Date().getFullYear());
+            setIsAvailable(false);
+            setPublishType('venta');
+            setImage('');
+            setLocationMapUrl('');
         }
         setIsDeptModalOpen(true);
     };
@@ -173,6 +205,16 @@ export const InfrastructurePage: React.FC = () => {
             gasClientId,
             ownerId: ownerId || undefined,
             residentId: residentId || undefined,
+            value: Number(value),
+            dormitorios: Number(dormitorios),
+            banos: Number(banos),
+            estacionamientos: Number(estacionamientos),
+            terrainM2: Number(terrainM2),
+            yearBuilt: Number(yearBuilt),
+            isAvailable,
+            publishType,
+            image,
+            locationMapUrl
         };
 
         try {
@@ -232,7 +274,7 @@ export const InfrastructurePage: React.FC = () => {
 
     const handleDuplicateOwnerToResident = async () => {
         if (!ownerId) return;
-        const owner = owners.find(o => o.id === ownerId);
+        const owner = owners.find((o: Owner) => o.id === ownerId);
         if (!owner) return;
         const id = await addResident({
             names: owner.names,
@@ -249,9 +291,9 @@ export const InfrastructurePage: React.FC = () => {
         setResidentId(id);
     };
 
-    const getOwnerName = (id?: string) => owners.find(o => o.id === id) ? `${owners.find(o => o.id === id)?.names} ${owners.find(o => o.id === id)?.lastNames}` : 'Sin asignar';
-    const getResidentName = (id?: string) => residents.find(r => r.id === id) ? `${residents.find(r => r.id === id)?.names} ${residents.find(r => r.id === id)?.lastNames}` : 'Sin asignar';
-    const getUnitTypeName = (id?: string) => unitTypes.find(t => t.id === id)?.name || 'Sin tipo';
+    const getOwnerName = (id?: string) => owners.find((o: Owner) => o.id === id) ? `${owners.find((o: Owner) => o.id === id)?.names} ${owners.find((o: Owner) => o.id === id)?.lastNames}` : 'Sin asignar';
+    const getResidentName = (id?: string) => residents.find((r: Resident) => r.id === id) ? `${residents.find((r: Resident) => r.id === id)?.names} ${residents.find((r: Resident) => r.id === id)?.lastNames}` : 'Sin asignar';
+    const getUnitTypeName = (id?: string) => unitTypes.find((t: UnitType) => t.id === id)?.name || 'Sin tipo';
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -259,9 +301,9 @@ export const InfrastructurePage: React.FC = () => {
                 <div>
                     <h1 className={`text-2xl font-black flex items-center gap-2 ${settings.theme === 'modern' ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                         <Building2 className="w-8 h-8 text-indigo-600" />
-                        Maestro Edificios y Unidades
+                        Maestro Edificios y Propiedades
                     </h1>
-                    <p className={`text-sm mt-1 font-bold ${settings.theme === 'modern' ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'}`}>Gestión de edificios, unidades y tipos de unidad.</p>
+                    <p className={`text-sm mt-1 font-bold ${settings.theme === 'modern' ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'}`}>Gestión de edificios, propiedades y tipos de unidad.</p>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="secondary" onClick={() => window.location.href = '/propietarios'}>
@@ -280,7 +322,7 @@ export const InfrastructurePage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-8">
-                {towers.filter(t => !t.isArchived).sort((a, b) => a.name.localeCompare(b.name)).map((tower) => (
+                {(towers || []).filter((t: Tower) => !t.isArchived).sort((a: Tower, b: Tower) => (a.name || '').localeCompare(b.name || '')).map((tower: Tower) => (
                     <div key={tower.id} className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden group hover:shadow-xl transition-all duration-500">
                         <div className="p-8 border-b border-gray-50 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="flex items-center gap-6">
@@ -288,9 +330,16 @@ export const InfrastructurePage: React.FC = () => {
                                     <Building2 className="w-8 h-8 text-indigo-600" />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">{tower.name}</h2>
+                                    <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                                        {tower.name}
+                                        {tower.departments.filter((d: Department) => !d.isArchived).length === 0 && (
+                                            <span className="px-2 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 rounded-lg text-[8px] font-black uppercase tracking-widest border border-rose-200 flex items-center gap-1 animate-pulse">
+                                                <AlertTriangle className="w-3 h-3" /> Sin Unidades
+                                            </span>
+                                        )}
+                                    </h2>
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                        ID: {tower.id} • {tower.departments.filter(d => !d.isArchived).length} UNIDADES REGISTRADAS
+                                        ID: {tower.id} • {tower.departments.filter((d: Department) => !d.isArchived).length} UNIDADES REGISTRADAS
                                     </p>
                                 </div>
                             </div>
@@ -309,7 +358,7 @@ export const InfrastructurePage: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => {
-                                        if (window.confirm(`¿Está seguro de eliminar la ${tower.name}? Se perderán todos sus departamentos.`)) {
+                                        if (window.confirm(`¿Está seguro de eliminar la ${tower.name}? Se perderán todas sus unidades.`)) {
                                             deleteTower(tower.id);
                                         }
                                     }}
@@ -322,20 +371,29 @@ export const InfrastructurePage: React.FC = () => {
 
                         <div className="p-8">
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                                {tower.departments.filter(d => !d.isArchived).map((dept) => {
-                                    const resInfo = residents.find(r => r.id === dept.residentId);
+                                {((tower as any).departments || []).filter((d: Department) => !d.isArchived).map((dept: Department) => {
+                                    const resInfo = residents.find((r: Resident) => r.id === dept.residentId);
+                                    const censusFrequency = settings.censusFrequencyYears || 1;
+                                    const isCensusOverdue = !dept.lastCensusDate || 
+                                        new Date(dept.lastCensusDate).getTime() + (censusFrequency * 365 * 24 * 60 * 60 * 1000) < new Date().getTime();
+
                                     return (
-                                        <div key={dept.id} className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:shadow-md transition-all group relative">
+                                        <div key={dept.id} className={`p-4 rounded-xl border ${isCensusOverdue ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800/50'} hover:shadow-md transition-all group relative`}>
                                             <div className="flex items-start justify-between mb-2">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="p-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-300">
+                                                    <div className={`p-1.5 ${isCensusOverdue ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'} rounded-lg`}>
                                                         <Home className="w-4 h-4" />
                                                     </div>
                                                     <div>
                                                         <span className="font-bold text-gray-900 dark:text-white block text-sm">Unidad {dept.number}</span>
                                                         <div className="flex items-center gap-1 mt-0.5">
                                                             <span className="text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded font-bold uppercase tracking-tighter">{getUnitTypeName(dept.unitTypeId)}</span>
-                                                            {dept.floor && <span className="text-[9px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded font-bold uppercase tracking-tighter">Piso {dept.floor}</span>}
+                                                            {isCensusOverdue && (
+                                                                <span className="text-[8px] px-1.5 py-0.5 bg-rose-100 text-rose-600 rounded font-black uppercase tracking-widest animate-pulse border border-rose-200">Sin Censo</span>
+                                                            )}
+                                                            {!dept.residentId && (
+                                                                <span className="text-[8px] px-1.5 py-0.5 bg-amber-100 text-amber-600 rounded font-black uppercase tracking-widest border border-amber-200">Sin Residente</span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -352,10 +410,10 @@ export const InfrastructurePage: React.FC = () => {
                                                     <p className="truncate text-gray-700 dark:text-gray-300 transition-colors"><span className="text-gray-400 font-bold uppercase mr-1">Res:</span> {getResidentName(dept.residentId)}</p>
                                                 </div>
                                                 <div className="flex items-center gap-1.5 px-1">
-                                                    {resInfo && resInfo.conditionIds.length > 0 && (
+                                                    {resInfo && (resInfo.conditionIds || []).length > 0 && (
                                                         <div className="flex gap-0.5">
-                                                            {resInfo.conditionIds.map(cid => (
-                                                                <span key={cid} title={conditions.find(c => c.id === cid)?.name}><AlertTriangle className="w-3 h-3 text-red-500" /></span>
+                                                            {(resInfo.conditionIds || []).map((cid: string) => (
+                                                                <span key={cid} title={conditions.find((c: SpecialCondition) => c.id === cid)?.name}><AlertTriangle className="w-3 h-3 text-red-500" /></span>
                                                             ))}
                                                         </div>
                                                     )}
@@ -385,7 +443,7 @@ export const InfrastructurePage: React.FC = () => {
                             <button onClick={() => setIsTowerModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-500"><X /></button>
                         </div>
                         <form onSubmit={handleSaveTower} className="p-6 space-y-4">
-                            <Input label="Nombre del Edificio" value={towerName} onChange={(e) => setTowerName(e.target.value)} required placeholder="Ej: Torre A" />
+                            <Input label="Nombre del Edificio" value={towerName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTowerName(e.target.value)} required placeholder="Ej: Torre A" />
                             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                                 <Button type="button" variant="secondary" onClick={() => setIsTowerModalOpen(false)}>Cancelar</Button>
                                 <Button type="submit">Guardar Edificio</Button>
@@ -411,12 +469,12 @@ export const InfrastructurePage: React.FC = () => {
                                 <div className="space-y-4">
                                     <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em]">Ficha Técnica</h3>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <Input label="Número" value={deptNumber} onChange={(e) => setDeptNumber(e.target.value)} required />
+                                        <Input label="Número" value={deptNumber} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDeptNumber(e.target.value)} required />
                                         <div className="space-y-1.5">
                                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Edificio</label>
                                             <select
                                                 value={editingDept ? editingDept.towerId : currentTower?.id || ''}
-                                                onChange={(e) => setCurrentTower(towers.find(t => t.id === e.target.value) || null)}
+                                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCurrentTower(towers.find((t: Tower) => t.id === e.target.value) || null)}
                                                 className="w-full h-[42px] px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none transition-all"
                                                 disabled={!!editingDept}
                                                 required
@@ -427,17 +485,86 @@ export const InfrastructurePage: React.FC = () => {
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Tipo de Unidad</label>
-                                            <select value={unitTypeId} onChange={(e) => setUnitTypeId(e.target.value)} className="w-full h-[42px] px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none transition-all" required>
+                                            <select value={unitTypeId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setUnitTypeId(e.target.value)} className="w-full h-[42px] px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none transition-all" required>
                                                 <option value="">Seleccionar...</option>
                                                 {unitTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                             </select>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <Input label="Metros²" type="number" value={m2} onChange={(e) => setM2(Number(e.target.value))} required min="0" />
-                                        <Input label="Piso" type="number" value={floor} onChange={(e) => setFloor(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Ej: 5" />
+                                        <Input label="Metros²" type="number" value={m2} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setM2(Number(e.target.value))} required min="0" />
+                                        <Input label="Piso" type="number" value={floor} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFloor(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Ej: 5" />
                                     </div>
-                                    <Input label="Rol SII" value={propertyRole} onChange={(e) => setPropertyRole(e.target.value)} />
+                                    <Input label="Rol SII" value={propertyRole} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPropertyRole(e.target.value)} />
+                                    
+                                    <div className="md:col-span-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                        <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Información Comercial y Portal</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Input label="Valor Comercial ($)" type="number" value={value} onChange={(e) => setValue(Number(e.target.value))} />
+                                            <div className="space-y-1.5">
+                                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Tipo Publicación</label>
+                                                <select value={publishType} onChange={(e) => setPublishType(e.target.value as any)} className="w-full h-[42px] px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none transition-all">
+                                                    <option value="venta">Venta</option>
+                                                    <option value="arriendo">Arriendo</option>
+                                                </select>
+                                            </div>
+                                            <Input label="Dormitorios" type="number" value={dormitorios} onChange={(e) => setDormitorios(Number(e.target.value))} min="0" />
+                                            <Input label="Baños" type="number" value={banos} onChange={(e) => setBanos(Number(e.target.value))} min="0" />
+                                            <Input label="Estacionamientos" type="number" value={estacionamientos} onChange={(e) => setEstacionamientos(Number(e.target.value))} min="0" />
+                                            <Input label="m² Terreno" type="number" value={terrainM2} onChange={(e) => setTerrainM2(Number(e.target.value))} min="0" />
+                                            <Input label="Año Construcción" type="number" value={yearBuilt} onChange={(e) => setYearBuilt(Number(e.target.value))} />
+                                            <div className="flex items-center gap-4 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                                                <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Disponible</label>
+                                                <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="mt-4 space-y-4">
+                                            <div className="relative">
+                                                <Map className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="URL Mapa (Google Maps / Waze)" 
+                                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                                                    value={locationMapUrl}
+                                                    onChange={(e) => setLocationMapUrl(e.target.value)}
+                                                />
+                                            </div>
+                                            
+                                            <div className="flex gap-4">
+                                                <div className="relative group flex-1">
+                                                    <div className="w-full h-32 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-800/50">
+                                                        {image ? (
+                                                            <img src={image} className="w-full h-full object-cover" alt="Vista previa" />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center gap-2">
+                                                                <Camera className="w-8 h-8 text-gray-300" />
+                                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Subir Foto Unidad</span>
+                                                            </div>
+                                                        )}
+                                                        <input 
+                                                            type="file" 
+                                                            accept="image/*" 
+                                                            onChange={(e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    const reader = new FileReader();
+                                                                    reader.onloadend = () => setImage(reader.result as string);
+                                                                    reader.readAsDataURL(file);
+                                                                }
+                                                            }} 
+                                                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                                                        />
+                                                    </div>
+                                                    {image && (
+                                                        <button type="button" onClick={() => setImage('')} className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full shadow-lg">
+                                                            <X className="w-3 h-3" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="space-y-4">
                                     <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em]">Servicios Básicos</h3>
@@ -449,7 +576,7 @@ export const InfrastructurePage: React.FC = () => {
                                                 placeholder="N° Cliente Agua"
                                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-mono dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                                                 value={waterClientId}
-                                                onChange={(e) => setWaterClientId(e.target.value)}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWaterClientId(e.target.value)}
                                             />
                                         </div>
                                         <div className="relative">
@@ -459,7 +586,7 @@ export const InfrastructurePage: React.FC = () => {
                                                 placeholder="N° Cliente Electricidad"
                                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-mono dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500/20"
                                                 value={electricityClientId}
-                                                onChange={(e) => setElectricityClientId(e.target.value)}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setElectricityClientId(e.target.value)}
                                             />
                                         </div>
                                         <div className="relative">
@@ -469,7 +596,7 @@ export const InfrastructurePage: React.FC = () => {
                                                 placeholder="N° Cliente Gas"
                                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-mono dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
                                                 value={gasClientId}
-                                                onChange={(e) => setGasClientId(e.target.value)}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGasClientId(e.target.value)}
                                             />
                                         </div>
                                     </div>
@@ -503,13 +630,13 @@ export const InfrastructurePage: React.FC = () => {
                                                         placeholder="Escriba nombres, apellidos o DNI para buscar..."
                                                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm outline-none dark:text-gray-200 focus:ring-2 focus:ring-indigo-500/10"
                                                         value={ownerSearch}
-                                                        onChange={(e) => setOwnerSearch(e.target.value)}
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOwnerSearch(e.target.value)}
                                                     />
                                                 </div>
                                                 {ownerSearch.trim() && (
                                                     <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
                                                         {filteredOwners.length > 0 ? (
-                                                            filteredOwners.map((o: any) => (
+                                                            filteredOwners.map((o: Owner) => (
                                                                 <button
                                                                     key={o.id}
                                                                     type="button"
@@ -564,13 +691,13 @@ export const InfrastructurePage: React.FC = () => {
                                                         placeholder="Escriba nombres, apellidos o DNI para buscar..."
                                                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm outline-none dark:text-gray-200 focus:ring-2 focus:ring-emerald-500/10"
                                                         value={residentSearch}
-                                                        onChange={(e) => setResidentSearch(e.target.value)}
+                                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setResidentSearch(e.target.value)}
                                                     />
                                                 </div>
                                                 {residentSearch.trim() && (
                                                     <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
                                                         {filteredResidents.length > 0 ? (
-                                                            filteredResidents.map((r: any) => (
+                                                            filteredResidents.map((r: Resident) => (
                                                                 <button
                                                                     key={r.id}
                                                                     type="button"
@@ -608,9 +735,9 @@ export const InfrastructurePage: React.FC = () => {
                     <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md shadow-2xl border border-white/20">
                         <div className="p-6 border-b flex items-center justify-between"><h2 className="text-lg font-bold flex items-center gap-2"><UserPlus className="w-5 h-5 text-indigo-600" />{isQuickCreateOwnerOpen ? 'Nuevo Propietario' : 'Nuevo Residente'}</h2><button onClick={() => { setIsQuickCreateOwnerOpen(false); setIsQuickCreateResidentOpen(false); }} className="text-gray-400 hover:bg-gray-100 p-2 rounded-full"><X className="w-5 h-5" /></button></div>
                         <form onSubmit={isQuickCreateOwnerOpen ? handleQuickCreateOwner : handleQuickCreateResident} className="p-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4"><Input label="Nombres" value={quickNames} onChange={(e) => setQuickNames(e.target.value)} required /><Input label="Apellidos" value={quickLastNames} onChange={(e) => setQuickLastNames(e.target.value)} required /></div>
-                            <Input label="RUT / DNI" value={quickDni} onChange={(e) => setQuickDni(formatRUT(e.target.value))} required />
-                            <div className="grid grid-cols-2 gap-4"><Input label="Teléfono" value={quickPhone} onChange={(e) => setQuickPhone(e.target.value)} required /><Input label="Email" type="email" value={quickEmail} onChange={(e) => setQuickEmail(e.target.value)} required /></div>
+                            <div className="grid grid-cols-2 gap-4"><Input label="Nombres" value={quickNames} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuickNames(e.target.value)} required /><Input label="Apellidos" value={quickLastNames} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuickLastNames(e.target.value)} required /></div>
+                            <Input label="RUT / DNI" value={quickDni} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuickDni(formatRUT(e.target.value))} required />
+                            <div className="grid grid-cols-2 gap-4"><Input label="Teléfono" value={quickPhone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuickPhone(e.target.value)} required /><Input label="Email" type="email" value={quickEmail} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuickEmail(e.target.value)} required /></div>
                             <div className="flex justify-end gap-3 pt-4"><Button type="button" variant="secondary" onClick={() => { setIsQuickCreateOwnerOpen(false); setIsQuickCreateResidentOpen(false); }}>Cancelar</Button><Button type="submit" className="bg-emerald-600 text-white">Crear y Seleccionar</Button></div>
                         </form>
                     </div>
@@ -621,13 +748,13 @@ export const InfrastructurePage: React.FC = () => {
             {isHistoryModalOpen && historyDept && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300 transition-all">
                     <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-xl shadow-2xl border border-white/20">
-                        <div className="p-6 border-b flex items-center justify-between"><h2 className="text-xl font-bold flex items-center gap-2"><Clock className="w-5 h-5 text-indigo-600" /> Historial Depto {historyDept.number}</h2><button onClick={() => setIsHistoryModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-500"><X /></button></div>
+                        <div className="p-6 border-b flex items-center justify-between"><h2 className="text-xl font-bold flex items-center gap-2"><Clock className="w-5 h-5 text-indigo-600" /> Historial Unidad {historyDept.number}</h2><button onClick={() => setIsHistoryModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-500"><X /></button></div>
                         <div className="p-6 max-h-[60vh] overflow-y-auto space-y-4">
                             {(() => {
                                 const unitLogs = getLogsByUnit(historyDept.id);
                                 if (unitLogs.length === 0) return <p className="text-center text-gray-400 py-10 font-bold italic">Sin registros históricos para esta unidad.</p>;
                                 
-                                return unitLogs.map(log => (
+                                return unitLogs.map((log: HistoryLog) => (
                                     <div key={log.id} className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 flex justify-between items-center transition-hover hover:border-indigo-200">
                                         <div className="space-y-1 pr-4">
                                             <div className="flex items-center gap-2">

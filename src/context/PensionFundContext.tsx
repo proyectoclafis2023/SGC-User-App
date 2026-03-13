@@ -1,49 +1,63 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { PensionFund, PensionFundContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const PensionFundContext = createContext<PensionFundContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'pension_funds_data';
-
-const DEFAULT_FUNDS: PensionFund[] = [
-    { id: '1', name: 'AFP Capital', discountRate: 11.44 },
-    { id: '2', name: 'AFP Cuprum', discountRate: 11.44 },
-    { id: '3', name: 'AFP Habitat', discountRate: 11.27 },
-    { id: '4', name: 'AFP Modelo', discountRate: 10.58 },
-    { id: '5', name: 'AFP PlanVital', discountRate: 11.16 },
-    { id: '6', name: 'AFP ProVida', discountRate: 11.45 },
-    { id: '7', name: 'AFP Uno', discountRate: 10.69 }
-];
+const API_URL = `${API_BASE_URL}/pension_funds`;
 
 export const PensionFundProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [funds, setFunds] = useState<PensionFund[]>(() => {
+    const [funds, setFunds] = useState<PensionFund[]>([]);
+
+    const fetchFunds = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            return stored ? JSON.parse(stored) : DEFAULT_FUNDS;
-        } catch (e) {
-            console.error('Error loading pension funds:', e);
-            return DEFAULT_FUNDS;
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setFunds(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch pension funds:', error);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(funds));
-    }, [funds]);
+        fetchFunds();
+    }, []);
 
     const addFund = async (fund: Omit<PensionFund, 'id'>) => {
-        const newFund: PensionFund = {
-            ...fund,
-            id: Math.random().toString(36).substr(2, 9),
-        };
-        setFunds(prev => [...prev, newFund]);
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fund)
+            });
+            await fetchFunds();
+        } catch (error) {
+            console.error('Error adding pension fund:', error);
+        }
     };
 
     const updateFund = async (fund: PensionFund) => {
-        setFunds(prev => prev.map(f => f.id === fund.id ? fund : f));
+        try {
+            await fetch(`${API_URL}/${fund.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fund)
+            });
+            await fetchFunds();
+        } catch (error) {
+            console.error('Error updating pension fund:', error);
+        }
     };
 
     const deleteFund = async (id: string) => {
-        setFunds(prev => prev.map(f => f.id === id ? { ...f, isArchived: true } : f));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchFunds();
+        } catch (error) {
+            console.error('Error deleting pension fund:', error);
+        }
     };
 
     return (

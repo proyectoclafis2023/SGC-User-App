@@ -216,7 +216,7 @@ export const CameraRequestsPage: React.FC = () => {
                         <Building className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                         <input
                             type="text"
-                            placeholder="Unidad / Depto"
+                            placeholder="Unidad"
                             className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-sm font-bold"
                             value={filterUnit}
                             onChange={(e) => setFilterUnit(e.target.value)}
@@ -454,7 +454,7 @@ export const CameraRequestsPage: React.FC = () => {
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Unidad / Depto</label>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Unidad</label>
                                     <select
                                         required
                                         disabled={!selectedTower}
@@ -464,7 +464,7 @@ export const CameraRequestsPage: React.FC = () => {
                                     >
                                         <option value="">-- Elige Unidad --</option>
                                         {towers.find(t => t.id === selectedTower)?.departments.map(d => (
-                                            <option key={d.id} value={d.id}>Depto {d.number}</option>
+                                            <option key={d.id} value={d.id}>{d.number}</option>
                                         ))}
                                     </select>
                                 </div>

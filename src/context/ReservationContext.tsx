@@ -1,71 +1,62 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Reservation, ReservationContextType, ReservationLog } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const ReservationContext = createContext<ReservationContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'reservations_data';
-const LOGS_STORAGE_KEY = 'reservation_logs_data';
+const API_URL = `${API_BASE_URL}/reservations`;
+const LOGS_API_URL = `${API_BASE_URL}/reservation_logs`;
 
 export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [reservations, setReservations] = useState<Reservation[]>(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (!stored) return [];
-            const storedSpaces = localStorage.getItem('common_spaces_data');
-            const spaces = storedSpaces ? JSON.parse(storedSpaces) : [];
-            const parsed = JSON.parse(stored);
+    const [reservations, setReservations] = useState<Reservation[]>([]);
+    const [reservationLogs, setReservationLogs] = useState<ReservationLog[]>([]);
 
-            return (parsed as Reservation[]).map((res) => {
-                const updated = { ...res };
-                if (!updated.folio) {
-                    const dateStr = (updated.createdAt || new Date().toISOString()).slice(0, 10).replace(/-/g, '');
-                    updated.folio = `RES-${dateStr}-${updated.id.slice(0, 4).toUpperCase()}`;
-                }
-                if (!updated.endTime || updated.endTime.includes('NaN')) {
-                    if (updated.startTime) {
-                        const space = spaces.find((s: any) => s.id === updated.spaceId);
-                        const [hours, minutes] = updated.startTime.split(':').map(Number);
-                        const duration = space?.durationHours || 3;
-                        const endHours = (hours + duration) % 24;
-                        updated.endTime = `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-                    }
-                }
-                return updated;
+    const fetchReservations = async () => {
+        try {
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setReservations(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch reservations:', error);
+        }
+    };
+
+    const fetchLogs = async () => {
+        try {
+            const response = await fetch(LOGS_API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setReservationLogs(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch reservation logs:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchReservations();
+        fetchLogs();
+    }, []);
+
+    const addLog = async (resId: string, userId: string, action: ReservationLog['action'], details: string) => {
+        try {
+            await fetch(LOGS_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    reservationId: resId,
+                    userId,
+                    action,
+                    details,
+                    timestamp: new Date().toISOString()
+                })
             });
-        } catch (e) {
-            console.error('Error loading reservations:', e);
-            return [];
+            await fetchLogs();
+        } catch (error) {
+            console.error('Error adding reservation log:', error);
         }
-    });
-
-    const [reservationLogs, setReservationLogs] = useState<ReservationLog[]>(() => {
-        try {
-            const stored = localStorage.getItem(LOGS_STORAGE_KEY);
-            return stored ? JSON.parse(stored) : [];
-        } catch (e) {
-            console.error('Error loading logs:', e);
-            return [];
-        }
-    });
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
-    }, [reservations]);
-
-    useEffect(() => {
-        localStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(reservationLogs));
-    }, [reservationLogs]);
-
-    const addLog = (resId: string, userId: string, action: ReservationLog['action'], details: string) => {
-        const newLog: ReservationLog = {
-            id: Math.random().toString(36).substr(2, 9),
-            reservationId: resId,
-            userId,
-            action,
-            timestamp: new Date().toISOString(),
-            details
-        };
-        setReservationLogs((prev: ReservationLog[]) => [newLog, ...prev]);
     };
 
     const generateFolio = (prefix: string) => {
@@ -75,59 +66,90 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     const addReservation = async (reservation: Omit<Reservation, 'id' | 'folio' | 'createdAt' | 'status' | 'paymentStatus'>) => {
-        const id = Math.random().toString(36).substr(2, 9);
-        const newRes: Reservation = {
-            ...reservation,
-            id,
-            folio: generateFolio('RES'),
-            status: 'pending',
-            paymentStatus: 'pending',
-            createdAt: new Date().toISOString(),
-        };
-        setReservations((prev: Reservation[]) => [newRes, ...prev]);
-        addLog(id, reservation.userId, 'created', 'Reserva solicitada por el usuario');
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...reservation,
+                    folio: generateFolio('RES'),
+                    status: 'pending',
+                    paymentStatus: 'pending',
+                    createdAt: new Date().toISOString()
+                })
+            });
+            if (response.ok) {
+                const newRes = await response.json();
+                await fetchReservations();
+                await addLog(newRes.id, reservation.userId, 'created', 'Reserva solicitada por el usuario');
+            }
+        } catch (error) {
+            console.error('Error adding reservation:', error);
+        }
     };
 
     const updateReservation = async (reservation: Reservation) => {
-        setReservations((prev: Reservation[]) => prev.map((r: Reservation) => r.id === reservation.id ? reservation : r));
+        try {
+            await fetch(`${API_URL}/${reservation.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reservation)
+            });
+            await fetchReservations();
+        } catch (error) {
+            console.error('Error updating reservation:', error);
+        }
     };
 
     const deleteReservation = async (id: string) => {
-        setReservations((prev: Reservation[]) => prev.filter((r: Reservation) => r.id !== id));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchReservations();
+        } catch (error) {
+            console.error('Error deleting reservation:', error);
+        }
     };
 
     const approveReservation = async (id: string, adminId: string) => {
-        setReservations((prev: Reservation[]) => prev.map((r: Reservation) => r.id === id ? {
-            ...r,
+        const res = reservations.find(r => r.id === id);
+        if (!res) return;
+        await updateReservation({
+            ...res,
             status: 'approved',
             approvalUserId: adminId,
             approvalDate: new Date().toISOString()
-        } : r));
-        addLog(id, adminId, 'approved', 'Reserva aprobada por administración');
+        });
+        await addLog(id, adminId, 'approved', 'Reserva aprobada por administración');
     };
 
     const rejectReservation = async (id: string, adminId: string, reason: string) => {
-        setReservations((prev: Reservation[]) => prev.map((r: Reservation) => r.id === id ? {
-            ...r,
+        const res = reservations.find(r => r.id === id);
+        if (!res) return;
+        await updateReservation({
+            ...res,
             status: 'rejected',
             notes: reason
-        } : r));
-        addLog(id, adminId, 'rejected', `Reserva rechazada: ${reason}`);
+        });
+        await addLog(id, adminId, 'rejected', `Reserva rechazada: ${reason}`);
     };
 
     const confirmPayment = async (id: string, adminId: string) => {
-        setReservations((prev: Reservation[]) => prev.map((r: Reservation) => r.id === id ? {
-            ...r,
+        const res = reservations.find(r => r.id === id);
+        if (!res) return;
+        await updateReservation({
+            ...res,
             paymentStatus: 'paid'
-        } : r));
-        addLog(id, adminId, 'payment_confirmed', 'Pago registrado por administración');
+        });
+        await addLog(id, adminId, 'payment_confirmed', 'Pago registrado por administración');
     };
 
     const uploadSignedDocument = async (id: string, url: string) => {
-        setReservations((prev: Reservation[]) => prev.map((r: Reservation) => r.id === id ? {
-            ...r,
+        const res = reservations.find(r => r.id === id);
+        if (!res) return;
+        await updateReservation({
+            ...res,
             signedDocumentUrl: url
-        } : r));
+        });
     };
 
     return (

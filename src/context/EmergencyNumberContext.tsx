@@ -14,7 +14,7 @@ export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ chi
             const response = await fetch(BACKEND_URL);
             if (response.ok) {
                 const data = await response.json();
-                setNumbers(data);
+                setNumbers(Array.isArray(data) ? data : []);
             }
         } catch (e) {
             console.error('Error fetching emergency numbers:', e);

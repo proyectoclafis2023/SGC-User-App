@@ -1,47 +1,68 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Bank, BankContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const BankContext = createContext<BankContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'banks_data';
-const API_URL = 'http://localhost:3001/api/banks';
+const API_URL = `${API_BASE_URL}/banks`;
 
 export const BankProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [banks, setBanks] = useState<Bank[]>([]);
 
-    useEffect(() => {
-        const fetchBanks = async () => {
-            try {
-                const response = await fetch(API_URL);
-                if (response.ok) setBanks(await response.json());
-                else {
-                    const stored = localStorage.getItem(STORAGE_KEY);
-                    if (stored) setBanks(JSON.parse(stored));
-                }
-            } catch (e) {
-                const stored = localStorage.getItem(STORAGE_KEY);
-                if (stored) setBanks(JSON.parse(stored));
+    const fetchBanks = async () => {
+        try {
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setBanks(Array.isArray(data) ? data : []);
             }
-        };
+        } catch (error) {
+            console.error('Failed to fetch banks:', error);
+        }
+    };
+
+    useEffect(() => {
         fetchBanks();
     }, []);
 
-    useEffect(() => {
-        if (banks.length > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(banks));
-    }, [banks]);
-
     const addBank = async (bank: Omit<Bank, 'id'>) => {
-        const id = Math.random().toString(36).substr(2, 9);
-        setBanks(prev => [{ ...bank, id }, ...prev]);
-        return id;
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bank)
+            });
+            if (response.ok) {
+                const newBank = await response.json();
+                await fetchBanks();
+                return newBank.id;
+            }
+        } catch (error) {
+            console.error('Error adding bank:', error);
+        }
+        return '';
     };
 
     const updateBank = async (bank: Bank) => {
-        setBanks(prev => prev.map(b => b.id === bank.id ? bank : b));
+        try {
+            await fetch(`${API_URL}/${bank.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bank)
+            });
+            await fetchBanks();
+        } catch (error) {
+            console.error('Error updating bank:', error);
+        }
     };
 
     const deleteBank = async (id: string) => {
-        setBanks(prev => prev.map(b => b.id === id ? { ...b, isArchived: true } : b));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchBanks();
+        } catch (error) {
+            console.error('Error deleting bank:', error);
+        }
     };
 
     return (

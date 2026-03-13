@@ -1,57 +1,63 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { HealthProvider, HealthProviderContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const HealthProviderContext = createContext<HealthProviderContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'health_providers_data';
-
-const DEFAULT_PROVIDERS: HealthProvider[] = [
-    { id: '1', name: 'Fonasa', type: 'fonasa', discountRate: 7 },
-    { id: '2', name: 'Banmédica', type: 'isapre', discountRate: 7 },
-    { id: '3', name: 'Colmena', type: 'isapre', discountRate: 7 },
-    { id: '4', name: 'Consalud', type: 'isapre', discountRate: 7 },
-    { id: '5', name: 'Cruz Blanca', type: 'isapre', discountRate: 7 },
-    { id: '6', name: 'Nueva Masvida', type: 'isapre', discountRate: 7 },
-    { id: '7', name: 'Vida Tres', type: 'isapre', discountRate: 7 }
-];
+const API_URL = `${API_BASE_URL}/health_providers`;
 
 export const HealthProviderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [providers, setProviders] = useState<HealthProvider[]>(() => {
+    const [providers, setProviders] = useState<HealthProvider[]>([]);
+
+    const fetchProviders = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                return parsed.map((p: HealthProvider) => {
-                    const isDefault = DEFAULT_PROVIDERS.some(dp => dp.id === p.id);
-                    if (isDefault) return { ...p, discountRate: 7 };
-                    return p;
-                });
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setProviders(Array.isArray(data) ? data : []);
             }
-            return DEFAULT_PROVIDERS;
-        } catch (e) {
-            console.error('Error loading health providers:', e);
-            return DEFAULT_PROVIDERS;
+        } catch (error) {
+            console.error('Failed to fetch health providers:', error);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(providers));
-    }, [providers]);
+        fetchProviders();
+    }, []);
 
     const addProvider = async (provider: Omit<HealthProvider, 'id'>) => {
-        const newProvider: HealthProvider = {
-            ...provider,
-            id: Math.random().toString(36).substr(2, 9),
-        };
-        setProviders(prev => [...prev, newProvider]);
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(provider)
+            });
+            await fetchProviders();
+        } catch (error) {
+            console.error('Error adding health provider:', error);
+        }
     };
 
     const updateProvider = async (provider: HealthProvider) => {
-        setProviders(prev => prev.map(p => p.id === provider.id ? provider : p));
+        try {
+            await fetch(`${API_URL}/${provider.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(provider)
+            });
+            await fetchProviders();
+        } catch (error) {
+            console.error('Error updating health provider:', error);
+        }
     };
 
     const deleteProvider = async (id: string) => {
-        setProviders(prev => prev.map(p => p.id === id ? { ...p, isArchived: true } : p));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchProviders();
+        } catch (error) {
+            console.error('Error deleting health provider:', error);
+        }
     };
 
     return (

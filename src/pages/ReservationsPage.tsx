@@ -3,6 +3,8 @@ import { useCommonSpaces } from '../context/CommonSpaceContext';
 import { useReservations } from '../context/ReservationContext';
 import { useAuth } from '../context/AuthContext';
 import { useInfrastructure } from '../context/InfrastructureContext';
+import { useTickets } from '../context/TicketContext';
+import { useResidents } from '../context/ResidentContext';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import {
@@ -24,6 +26,9 @@ export const ReservationsPage: React.FC = () => {
         confirmPayment,
         uploadSignedDocument
     } = useReservations();
+    const { addTicket } = useTickets();
+    const { residents } = useResidents();
+    const [selectedResidentId, setSelectedResidentId] = useState('');
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
@@ -41,6 +46,7 @@ export const ReservationsPage: React.FC = () => {
     const [selectedReservationForVoucher, setSelectedReservationForVoucher] = useState<Reservation | null>(null);
 
     const isAdmin = user?.role === 'admin' || user?.role === 'global_admin';
+    const isWorker = user?.role === 'worker';
 
     const calculateEndTime = (start: string, duration?: number) => {
         if (!start) return '';
@@ -79,15 +85,27 @@ export const ReservationsPage: React.FC = () => {
             return;
         }
 
+        const selectedResident = residents.find(r => r.id === selectedResidentId);
+        const reservationUserId = selectedResident ? `${selectedResident.names} ${selectedResident.lastNames}` : (user?.name || 'Sistema');
+
         await addReservation({
             spaceId,
             date,
             startTime,
             endTime,
-            userId: user?.name || 'Sistema',
+            userId: reservationUserId,
             notes: '',
             towerId: selectedTower,
             unitId: selectedUnit
+        });
+
+        // Registrar Ticket/KPI en Centro de Gestiones
+        await addTicket({
+            userId: user?.id || 'system',
+            type: 'reservation',
+            subject: `Solicitud Reserva - ${space.name}`,
+            description: `Fecha: ${date}. Horario: ${startTime} - ${endTime}. Solicitante: ${reservationUserId}.`,
+            status: 'pending'
         });
 
         setIsModalOpen(false);
@@ -96,6 +114,7 @@ export const ReservationsPage: React.FC = () => {
         setStartTime('');
         setSelectedTower('');
         setSelectedUnit('');
+        setSelectedResidentId('');
     };
 
     const getSpaceName = (id: string) => spaces.find(s => s.id === id)?.name || 'Espacio no encontrado';
@@ -384,6 +403,30 @@ export const ReservationsPage: React.FC = () => {
                                         ))}
                                     </select>
                                 </div>
+
+                                {(isAdmin || isWorker) && (
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-black text-gray-500 ml-1 uppercase tracking-widest text-indigo-600">Representar a Residente</label>
+                                        <select
+                                            value={selectedResidentId}
+                                            onChange={(e) => {
+                                                const resId = e.target.value;
+                                                setSelectedResidentId(resId);
+                                                const res = residents.find(r => r.id === resId);
+                                                if (res) {
+                                                    if (res.towerId) setSelectedTower(res.towerId);
+                                                    if (res.unitId) setSelectedUnit(res.unitId);
+                                                }
+                                            }}
+                                            className="w-full rounded-2xl border border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/30 dark:bg-indigo-900/10 p-4 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                                        >
+                                            <option value="">Buscar residente...</option>
+                                            {residents.filter(r => !r.isArchived).map(r => (
+                                                <option key={r.id} value={r.id}>{r.names} {r.lastNames} ({r.towerId} - {r.unitId})</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">

@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useReservations } from '../context/ReservationContext';
 import { useTickets } from '../context/TicketContext';
+import { useDirectedMessages } from '../context/DirectedMessageContext';
 import { useCommonSpaces } from '../context/CommonSpaceContext';
+import { useOwners } from '../context/OwnerContext';
 import {
     Calendar, MessageSquare, Wallet, Bell, Clock,
     CheckCircle, Package, Video, HardHat, Building,
@@ -13,19 +16,22 @@ import { useCameraRequests } from '../context/CameraRequestContext';
 import { useInfrastructure } from '../context/InfrastructureContext';
 import { useCommonExpenses } from '../context/CommonExpenseContext';
 import { useUnitTypes } from '../context/UnitTypeContext';
-import { Link } from 'react-router-dom';
+import { useSystemMessages } from '../context/SystemMessageContext';
 import { AlertCircle, TrendingUp, TrendingDown, FileText } from 'lucide-react';
 
 export const ResidentDashboard: React.FC = () => {
     const { user } = useAuth();
     const { reservations } = useReservations();
-    const { tickets } = useTickets();
+    const { tickets: allTickets } = useTickets(); // Renamed to avoid conflict with myTickets
+    const { messages: directedMessages } = useDirectedMessages(); // Destructure messages as directedMessages
     const { spaces } = useCommonSpaces();
-    const { items: correspondence } = useCorrespondence();
+    const { items: correspondence } = useCorrespondence(); // Renamed to avoid conflict with packages if it were used
     const { requests: cameraRequests } = useCameraRequests();
     const { towers, departments } = useInfrastructure();
     const { payments, communityExpenses } = useCommonExpenses();
     const { unitTypes } = useUnitTypes();
+    const { messages: systemMessages } = useSystemMessages(); // Renamed to avoid conflict with directedMessages
+    const { owners } = useOwners();
 
     const activeUserId = user?.name || '';
     const isOwner = user?.role === 'owner';
@@ -33,21 +39,26 @@ export const ResidentDashboard: React.FC = () => {
     // Gastos comunes mockeados para residente
     const hasDeudamora = false;
 
-    const myReservations = reservations.filter(r => r.userId === activeUserId);
-    const myTickets = tickets.filter(t => t.userId === activeUserId);
+    const myReservations = reservations.filter((r: any) => r.userId === activeUserId);
+    const myTickets = allTickets.filter((t: any) => t.userId === activeUserId);
 
-    const pendingTickets = myTickets.filter(t => t.status !== 'solved').length;
-    const approvedReservations = myReservations.filter(r => r.status === 'approved').length;
+    const pendingTickets = myTickets.filter((t: any) => t.status !== 'solved').length;
+    const approvedReservations = myReservations.filter((r: any) => r.status === 'approved').length;
 
     const myUnits = isOwner
-        ? departments.filter(d => d.ownerId === user?.relatedId)
-        : departments.filter(d => d.id === (user as any).relatedId);
+        ? departments.filter((d: any) => d.ownerId === user?.relatedId)
+        : departments.filter((d: any) => d.residentId === user?.relatedId);
 
-    const myCorrespondence = correspondence.filter(i =>
-        myUnits.some(u => u.id === i.departmentId) && i.status !== 'delivered'
+    const canSeeFinancials = isOwner || myUnits.some((unit: any) => {
+        const owner = owners.find((o: any) => o.id === unit.ownerId);
+        return owner?.canResidentSeeArrears;
+    });
+
+    const myCorrespondence = correspondence.filter((i: any) =>
+        myUnits.some((u: any) => u.id === i.departmentId) && i.status !== 'delivered'
     );
 
-    const myRequests = cameraRequests.filter(r => r.userId === user?.name);
+    const myRequests = cameraRequests.filter((r: any) => r.userId === user?.name);
 
     const financials = (() => {
         const now = new Date();
@@ -87,6 +98,33 @@ export const ResidentDashboard: React.FC = () => {
         };
     })();
 
+    // Avisos dirigidos al residente (Globales o de su Unidad)
+    const myAnnouncements = React.useMemo(() => {
+        const systemMsg = systemMessages.filter(m => {
+            if (!m.isActive || m.isArchived) return false;
+            // Si no tiene tags, es global
+            if (!m.tags || m.tags.length === 0 || m.tags.includes('all')) return true;
+            // Si tiene tag de su unidad
+            return myUnits.some(u => m.tags?.includes(`unit:${u.number}`));
+        });
+
+        const myDirected = directedMessages.filter(m =>
+            m.isActive && m.unitId && myUnits.some(u => u.id === m.unitId)
+        ).map(m => ({
+            id: m.id,
+            text: m.text,
+            type: m.type as any,
+            createdAt: m.createdAt,
+            isActive: true,
+            isDirected: true,
+            tags: [`unit:${myUnits.find(u => u.id === m.unitId)?.number || ''}`]
+        }));
+
+        return [...systemMsg, ...myDirected].sort((a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+    }, [systemMessages, myUnits, directedMessages]);
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 bg-indigo-600 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl shadow-indigo-500/20">
@@ -125,7 +163,7 @@ export const ResidentDashboard: React.FC = () => {
                                 </div>
                                 <div>
                                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-0.5">Unidad {unit.number}</p>
-                                    <p className="text-lg font-black text-gray-900 dark:text-white">Depto. {unit.number}</p>
+                                    <p className="text-lg font-black text-gray-900 dark:text-white">Unidad {unit.number}</p>
                                     <div className="flex items-center gap-1.5 mt-1">
                                         <MapPin className="w-3 h-3 text-indigo-500" />
                                         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">Piso {Math.floor(parseInt(unit.number) / 100)} • Edificio A</span>
@@ -143,6 +181,51 @@ export const ResidentDashboard: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* Avisos Dirigidos Section */}
+            {myAnnouncements.length > 0 && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                        <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+                            <Bell className="w-6 h-6 text-indigo-500" />
+                            Avisos para ti
+                        </h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {myAnnouncements.map(msg => (
+                            <div key={msg.id} className={`p-6 rounded-[2.5rem] border flex items-start gap-4 shadow-sm transition-all hover:shadow-md animate-in slide-in-from-top-4 duration-500 ${
+                                msg.type === 'danger' ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/20 text-red-700 dark:text-red-400' :
+                                msg.type === 'warning' ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/20 text-amber-700 dark:text-amber-400' :
+                                msg.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/20 text-emerald-700 dark:text-emerald-400' :
+                                'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-900/20 text-indigo-700 dark:text-indigo-400'
+                            }`}>
+                                <div className={`p-3 rounded-2xl shrink-0 ${
+                                    msg.type === 'danger' ? 'bg-red-200/50' :
+                                    msg.type === 'warning' ? 'bg-amber-200/50' :
+                                    msg.type === 'success' ? 'bg-emerald-200/50' :
+                                    'bg-indigo-200/50'
+                                }`}>
+                                    <Bell className="w-6 h-6" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-black leading-tight mb-2 drop-shadow-sm">{msg.text}</p>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
+                                            msg.tags?.some(t => t.startsWith('unit:')) 
+                                                ? 'bg-blue-500/20 text-blue-600 dark:text-blue-300' 
+                                                : 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300'
+                                        }`}>
+                                            {msg.tags?.some(t => t.startsWith('unit:')) ? 'Mensaje Unitario' : 'Comunicado General'}
+                                        </span>
+                                        <span className="text-[10px] opacity-40">•</span>
+                                        <span className="text-[10px] font-bold opacity-60">{new Date(msg.createdAt).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Link to="/reservas" className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden flex flex-col items-center text-center">
@@ -213,13 +296,21 @@ export const ResidentDashboard: React.FC = () => {
             </div>
 
             {/* Community Financial Transparency */}
-            <div className="space-y-6">
+            <div className={`space-y-6 transition-all duration-700 ${!canSeeFinancials ? 'opacity-40 grayscale pointer-events-none select-none relative h-40 overflow-hidden' : ''}`}>
                 <div className="flex items-center justify-between px-2">
                     <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
                         <Wallet className="w-6 h-6 text-indigo-500" />
                         Finanzas de la Comunidad ({financials.currentMonthName})
                     </h2>
                 </div>
+                
+                {!canSeeFinancials && (
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gray-50/20 backdrop-blur-sm p-4 text-center">
+                        <AlertCircle className="w-10 h-10 text-indigo-600 mb-2" />
+                        <p className="text-sm font-black text-indigo-900 uppercase tracking-widest">Acceso Restringido</p>
+                        <p className="text-[10px] font-bold text-gray-500 max-w-[200px]">Solo residentes seleccionados por administración pueden ver el detalle de morosidad.</p>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-1 bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-8 shadow-sm">
@@ -279,7 +370,7 @@ export const ResidentDashboard: React.FC = () => {
                                     <p className="text-[10px] font-bold uppercase tracking-widest">No hay gastos reportados este mes</p>
                                 </div>
                             ) : (
-                                financials.monthCommunityExpenses.map(exp => (
+                                financials.monthCommunityExpenses.map((exp: any) => (
                                     <div key={exp.id} className="p-4 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center justify-between">
                                         <div>
                                             <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{exp.description}</p>
@@ -307,11 +398,11 @@ export const ResidentDashboard: React.FC = () => {
                         Próximas Reservas
                     </h3>
                     <div className="space-y-4 relative z-10">
-                        {myReservations.filter(r => r.status === 'approved').slice(0, 3).length === 0 ? (
+                        {myReservations.filter((r: any) => r.status === 'approved').slice(0, 3).length === 0 ? (
                             <div className="p-8 text-center bg-gray-50 dark:bg-gray-800/40 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800">
                                 <p className="text-sm font-bold text-gray-400 italic">No tienes reservas aprobadas próximamente.</p>
                             </div>
-                        ) : myReservations.filter(r => r.status === 'approved').slice(0, 3).map(res => (
+                        ) : myReservations.filter((r: any) => r.status === 'approved').slice(0, 3).map((res: any) => (
                             <div key={res.id} className="p-5 rounded-[2rem] bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:bg-white dark:hover:bg-gray-800 transition-all shadow-sm hover:shadow-md">
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1">{spaces.find(s => s.id === res.spaceId)?.name}</p>

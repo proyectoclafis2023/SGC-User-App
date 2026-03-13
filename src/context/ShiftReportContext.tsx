@@ -12,7 +12,7 @@ export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ childre
             const response = await fetch(`${API_BASE_URL}/shift_reports`);
             if (response.ok) {
                 const data = await response.json();
-                setReports(data);
+                setReports(Array.isArray(data) ? data : []);
             }
         } catch (e) {
             console.error('Error fetching shift reports:', e);
@@ -49,7 +49,7 @@ export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ childre
                 body: JSON.stringify(newRecord)
             });
             if (response.ok) {
-                fetchReports();
+                await fetchReports();
             }
         } catch (e) {
             console.error('API Error adding shift report:', e);

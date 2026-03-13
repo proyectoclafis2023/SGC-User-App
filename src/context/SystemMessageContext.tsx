@@ -1,64 +1,70 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { SystemMessage, SystemMessageContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const SystemMessageContext = createContext<SystemMessageContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'system_messages_data';
+const API_URL = `${API_BASE_URL}/system_messages`;
 
 export const SystemMessageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [messages, setMessages] = useState<SystemMessage[]>(() => {
+    const [messages, setMessages] = useState<SystemMessage[]>([]);
+
+    const fetchMessages = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            return stored ? JSON.parse(stored) : [
-                { id: '1', text: 'Portón principal en reparación - Acceso por lateral', type: 'warning', isActive: true, createdAt: new Date().toISOString() },
-                { id: '2', text: 'Corte de agua programado - Miércoles 10:00 AM', type: 'danger', isActive: true, createdAt: new Date().toISOString() },
-                { id: '3', text: 'Mantenimiento de piscinas finalizado', type: 'success', isActive: true, createdAt: new Date().toISOString() },
-                { id: '4', text: 'Proton malo o con fallas. Operar de forma manual.', type: 'danger', isActive: false, createdAt: new Date(Date.now() - 86400000).toISOString() },
-                { id: '5', text: 'Problemas con hidropack, se está gestionando servicio técnico.', type: 'warning', isActive: false, createdAt: new Date(Date.now() - 172800000).toISOString() },
-                { id: '6', text: 'Corte de servicio eléctrico programado - Viernes 14:00 PM', type: 'warning', isActive: false, createdAt: new Date(Date.now() - 259200000).toISOString() }
-            ];
-        } catch (e) {
-            console.error('Error loading system messages:', e);
-            return [];
-        }
-    });
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    }, [messages]);
-
-    // Escuchar cambios desde otras pestañas (ej: Master de Mensajes -> Visor)
-    useEffect(() => {
-        const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === STORAGE_KEY && e.newValue) {
-                setMessages(JSON.parse(e.newValue));
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setMessages(Array.isArray(data) ? data : []);
             }
-        };
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        } catch (error) {
+            console.error('Failed to fetch messages:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchMessages();
     }, []);
 
     const addMessage = async (message: Omit<SystemMessage, 'id' | 'createdAt'>) => {
-        const newMessage: SystemMessage = {
-            ...message,
-            id: Math.random().toString(36).substr(2, 9),
-            createdAt: new Date().toISOString(),
-        };
-        setMessages(prev => [newMessage, ...prev]);
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...message, createdAt: new Date().toISOString() })
+            });
+            await fetchMessages();
+        } catch (error) {
+            console.error('Error adding message:', error);
+        }
     };
 
     const updateMessage = async (message: SystemMessage) => {
-        setMessages(prev => prev.map(m => m.id === message.id ? message : m));
+        try {
+            await fetch(`${API_URL}/${message.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(message)
+            });
+            await fetchMessages();
+        } catch (error) {
+            console.error('Error updating message:', error);
+        }
     };
 
     const deleteMessage = async (id: string) => {
-        setMessages(prev => prev.map(m => m.id === id ? { ...m, isArchived: true } : m));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchMessages();
+        } catch (error) {
+            console.error('Error deleting message:', error);
+        }
     };
 
     const toggleMessageStatus = async (id: string) => {
-        setMessages(prev => prev.map(m =>
-            m.id === id ? { ...m, isActive: !m.isActive } : m
-        ));
+        const msg = messages.find(m => m.id === id);
+        if (msg) {
+            await updateMessage({ ...msg, isActive: !msg.isActive });
+        }
     };
 
     return (

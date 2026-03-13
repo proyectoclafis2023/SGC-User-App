@@ -23,7 +23,7 @@ export const ArticleProvider: React.FC<{ children: ReactNode }> = ({ children })
             const response = await fetch(API_URL);
             if (response.ok) {
                 const data = await response.json();
-                setArticles(data);
+                setArticles(Array.isArray(data) ? data : []);
             }
         } catch (e) {
             console.error('Error fetching articles:', e);

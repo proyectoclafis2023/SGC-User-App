@@ -14,7 +14,7 @@ export const ArticleDeliveryProvider: React.FC<{ children: ReactNode }> = ({ chi
             const response = await fetch(API_URL);
             if (response.ok) {
                 const data = await response.json();
-                setDeliveries(data);
+                setDeliveries(Array.isArray(data) ? data : []);
             }
         } catch (e) {
             console.error('Error fetching deliveries:', e);

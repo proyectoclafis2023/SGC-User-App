@@ -11,13 +11,13 @@ const TEMPLATES = [
     { id: 'residentes', name: 'Residentes', desc: 'Habitantes y contactos' },
     { id: 'propietarios', name: 'Propietarios', desc: 'Dueños de unidades' },
     { id: 'inventario', name: 'Inventario', desc: 'Artículos y stock' },
-    { id: 'infraestructura', name: 'Infraestructura', desc: 'Torres y Departamentos' },
+    { id: 'infraestructura', name: 'Infraestructura', desc: 'Torres y Unidades' },
     { id: 'bancos', name: 'Bancos', desc: 'Maestro de bancos' },
     { id: 'afps', name: 'AFPs', desc: 'Instituciones de previsión' },
     { id: 'prevision', name: 'Salud', desc: 'Isapres y Fonasa' },
     { id: 'contratistas', name: 'Contratistas', desc: 'Empresas externas' },
     { id: 'estacionamientos', name: 'Estacionamientos', desc: 'Nómina de parkings' },
-    { id: 'tipos_unidad', name: 'Tipos Unidad', desc: 'Modelos de depto' },
+    { id: 'tipos_unidad', name: 'Tipos Unidad', desc: 'Modelos de unidades' },
     { id: 'emergencias', name: 'Emergencias', desc: 'Números útiles' }
 ];
 
@@ -118,7 +118,7 @@ Esta acción borrará TODOS los datos maestros y operativos de la plataforma:
 - Personal y Liquidaciones
 - Residentes y Propietarios
 - Inventario y Artículos
-- Torres y Departamentos
+- Torres y Unidades
 - Bancos, AFPs y Isapres
 - Historial de Visitas, Encomiendas e Incidentes
 - Números de Emergencia y Mensajes del Sistema

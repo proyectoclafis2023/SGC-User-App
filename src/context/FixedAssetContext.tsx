@@ -14,7 +14,7 @@ export const FixedAssetProvider: React.FC<{ children: ReactNode }> = ({ children
             const response = await fetch(API_URL);
             if (response.ok) {
                 const data = await response.json();
-                setAssets(data);
+                setAssets(Array.isArray(data) ? data : []);
             }
         } catch (e) {
             console.error('Error fetching fixed assets:', e);

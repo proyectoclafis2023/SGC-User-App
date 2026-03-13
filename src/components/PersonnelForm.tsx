@@ -8,6 +8,7 @@ import { usePensionFunds } from '../context/PensionFundContext';
 import { useBanks } from '../context/BankContext';
 import { useArticles } from '../context/ArticleContext';
 import { useArticleDeliveries } from '../context/ArticleDeliveryContext';
+import { useJornadaGroups } from '../context/JornadaGroupContext';
 import { formatRUT } from '../utils/formatters';
 import { useNavigate } from 'react-router-dom';
 import { usePayslips } from '../context/PayslipContext';
@@ -34,6 +35,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
     const { payslips, advances } = usePayslips();
     const { settings } = useSettings();
     const { getLogsByEntity } = useHistoryLogs();
+    const { groups: jornadaGroups } = useJornadaGroups();
     const navigate = useNavigate();
 
     const [names, setNames] = useState('');
@@ -61,6 +63,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
     const [isHonorary, setIsHonorary] = useState(false);
     const [bankId, setBankId] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
+    const [jornadaGroupId, setJornadaGroupId] = useState('');
     const [assignedArticles, setAssignedArticles] = useState<AssignedArticle[]>([]);
 
     // Quick add bank states
@@ -105,6 +108,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
             setIsHonorary(!!initialData.isHonorary);
             setBankId(initialData.bankId || '');
             setAccountNumber(initialData.accountNumber || '');
+            setJornadaGroupId(initialData.jornadaGroupId || '');
             setAssignedArticles(initialData.assignedArticles || []);
         } else {
             setNames('');
@@ -132,6 +136,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
             setIsHonorary(false);
             setBankId('');
             setAccountNumber('');
+            setJornadaGroupId('');
             setAssignedArticles([]);
         }
     }, [initialData, isOpen]);
@@ -238,6 +243,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
             pensionFundId: isHonorary ? undefined : pensionFundId,
             hasComplementaryInsurance: isHonorary ? false : hasComplementaryInsurance,
             hasAPV: isHonorary ? false : hasAPV,
+            jornadaGroupId: jornadaGroupId || undefined,
         }, initialData?.id);
     };
 
@@ -343,6 +349,22 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                         <option value="Mañana">Mañana</option>
                                         <option value="Tarde">Tarde</option>
                                         <option value="Noche">Noche</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1 flex items-center gap-2">
+                                        <Calendar className="w-4 h-4 text-indigo-500" />
+                                        Jornada Laboral
+                                    </label>
+                                    <select
+                                        value={jornadaGroupId}
+                                        onChange={(e) => setJornadaGroupId(e.target.value)}
+                                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
+                                    >
+                                        <option value="">Seleccione jornada...</option>
+                                        {jornadaGroups.filter(g => !g.isArchived).map(g => (
+                                            <option key={g.id} value={g.id}>{g.name} ({g.startTime} - {g.endTime})</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
@@ -576,7 +598,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                             </div>
 
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                {articles.filter(a => a.isActive && !a.isArchived).map(art => {
+                                {articles.filter(a => a.isActive && !a.isArchived && a.category === 'EPP').map(art => {
                                     const assignment = assignedArticles.find(a => a.articleId === art.id);
                                     const isSelected = !!assignment;
 

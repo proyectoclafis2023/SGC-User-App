@@ -18,12 +18,28 @@ import { useShiftReport } from '../context/ShiftReportContext';
 import { useContractorVisits } from '../context/ContractorVisitContext';
 import { useContractors } from '../context/ContractorContext';
 import { useSettings } from '../context/SettingsContext';
-import type { User } from '../types';
+import { useFixedAssets } from '../context/FixedAssetContext';
+import type { 
+    User,
+    Reservation, 
+    ArticleDelivery, 
+    CommonExpensePayment, 
+    CommunityExpense, 
+    Department, 
+    UnitType, 
+    Visitor, 
+    ShiftReport, 
+    ContractorVisit, 
+    Correspondence,
+    FixedAsset,
+    Contractor
+} from '../types';
 import {
     Plus, Search, Users as UsersIcon, ShieldCheck, UserCheck,
     Calendar, FileWarning, Wallet,
-    CheckCircle, XCircle, Landmark,
-    Package, HardHat, PieChart, Activity, X, FileText, AlertCircle, TrendingDown, TrendingUp, CreditCard
+    XCircle, Landmark,
+    Package, HardHat, PieChart, Activity, X, FileText, AlertCircle, TrendingDown, TrendingUp,
+    Wrench
 } from 'lucide-react';
 import { Input } from '../components/Input';
 
@@ -31,7 +47,7 @@ export const Dashboard: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const { users, addUser, updateUser, deleteUser } = useUsers();
-    const { towers } = useInfrastructure();
+    const { departments } = useInfrastructure();
     const { reservations } = useReservations();
     const { deliveries } = useArticleDeliveries();
     const { payments, communityExpenses, addCommunityExpense, deleteCommunityExpense, funds } = useCommonExpenses();
@@ -42,6 +58,7 @@ export const Dashboard: React.FC = () => {
     const { visits: contractorVisits } = useContractorVisits();
     const { contractors } = useContractors();
     const { settings } = useSettings();
+    const { assets } = useFixedAssets();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -77,21 +94,17 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    const filteredUsers = users.filter(user =>
+    const filteredUsers = users.filter((user: User) =>
         !user.isArchived && user.status !== 'pending_approval' && user.status !== 'setting_up' &&
         (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.email.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    const pendingUsers = users.filter(user => user.status === 'pending_approval');
+    const pendingUsers = users.filter((user: User) => user.status === 'pending_approval');
 
-    const handleApproveUser = (userToApprove: User) => {
-        if (window.confirm(`¿Aprobar solicitud de acceso de ${userToApprove.name}?`)) {
-            updateUser(userToApprove.id, {
-                ...userToApprove,
-                status: 'active'
-            });
-        }
+    const handleCompleteRegistration = (pendingUser: User) => {
+        // Redirigir al Maestro de Residentes pasando el usuario pendiente en el state route
+        navigate('/residentes', { state: { pendingUser } });
     };
 
     const handleRejectUser = (userToReject: User) => {
@@ -126,50 +139,44 @@ export const Dashboard: React.FC = () => {
     }
 
     const stats = [
-        { label: 'Reservas Pendientes', value: reservations.filter(r => r.status === 'pending').length, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/20', url: '/reservas' },
-        { label: 'Entregas s/Respaldo', value: deliveries.filter(d => !d.signedDocument).length, icon: FileWarning, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20', url: '/entregas-articulos' },
+        { label: 'Reservas Pendientes', value: reservations.filter((r: Reservation) => r.status === 'pending').length, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/20', url: '/reservas' },
+        { label: 'Entregas s/Respaldo', value: deliveries.filter((d: ArticleDelivery) => !d.signedDocument).length, icon: FileWarning, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20', url: '/entregas-articulos' },
         { 
-            label: 'Unidades con Mora', 
-            style: 'danger',
-            value: towers.flatMap(t => t.departments).filter(d => {
+            label: 'Unidades en Mora',
+            value: (departments || []).filter((d: Department) => {
                 const now = new Date();
                 const currentMonth = now.getMonth() + 1;
                 const currentYear = now.getFullYear();
                 const deadline = settings.paymentDeadlineDay || 5;
                 
-                const paymentsForDept = payments.filter(p => p.departmentId === d.id);
-                const ut = unitTypes.find(u => u.id === d.unitTypeId);
+                const paymentsForDept = payments.filter((p: CommonExpensePayment) => p.departmentId === d.id);
+                const ut = unitTypes.find((u: UnitType) => u.id === d.unitTypeId);
                 const targetAmount = (ut?.baseCommonExpense || 0);
                 
                 const paidThisMonth = paymentsForDept
-                    .filter((p: any) => p.periodMonth === currentMonth && p.periodYear === currentYear)
-                    .reduce((acc: number, p: any) => acc + p.amountPaid, 0);
-
-                const isAfterDeadline = now.getDate() > deadline;
+                    .filter((p: CommonExpensePayment) => p.periodMonth === currentMonth && p.periodYear === currentYear)
+                    .reduce((acc: number, p: CommonExpensePayment) => acc + p.amountPaid, 0);
                 
-                // Active arrear: After deadline OR has debt from previous months
-                const hasPreviousDebt = paymentsForDept.some((p: any) => p.status === 'pending');
-                
-                return (isAfterDeadline && paidThisMonth < targetAmount) || hasPreviousDebt;
+                const isLate = now.getDate() > deadline;
+                return paidThisMonth < targetAmount && isLate;
             }).length, 
-            icon: CreditCard, 
-            color: 'text-red-600', 
-            bg: 'bg-red-50 dark:bg-red-900/20', 
+            icon: Wallet, 
+            color: 'text-amber-600', 
+            bg: 'bg-amber-50 dark:bg-amber-900/20', 
             url: '/gastos-comunes' 
         },
         { 
-            label: 'Mora Crítica', 
-            style: 'danger',
-            value: towers.flatMap(t => t.departments).filter(d => {
+            label: 'Unidades Críticas',
+            value: (departments || []).filter((d: Department) => {
                 const maxMonths = settings.maxArrearsMonths || 3;
                 // Count unpaid periods for this unit
-                const paymentsForDept = payments.filter((p: any) => p.departmentId === d.id && p.status === 'pending');
+                const paymentsForDept = payments.filter((p: CommonExpensePayment) => p.departmentId === d.id && p.status === 'pending');
                 return paymentsForDept.length >= maxMonths;
             }).length, 
             icon: AlertCircle, 
             color: 'text-rose-700', 
-            bg: 'bg-rose-100 dark:bg-rose-900/40', 
-            url: '/comunicaciones' 
+            bg: 'bg-rose-50 dark:bg-rose-900/20', 
+            url: '/gastos-comunes' 
         },
         { 
             label: 'Encomiendas s/Retirar', 
@@ -178,36 +185,45 @@ export const Dashboard: React.FC = () => {
             color: 'text-blue-600', 
             bg: 'bg-blue-50 dark:bg-blue-900/20', 
             url: '/correspondencia' 
+        },
+        {
+            label: 'Activos en Alerta',
+            style: 'danger',
+            value: assets.filter((a: FixedAsset) => a.requiresMaintenance || (a.nextMaintenanceDate && new Date(a.nextMaintenanceDate) <= new Date())).length,
+            icon: Wrench,
+            color: 'text-amber-700',
+            bg: 'bg-amber-100 dark:bg-amber-900/40',
+            url: '/activos-fijos'
         }
     ];
 
     const today = new Date().toISOString().split('T')[0];
-    const todayReservations = reservations.filter((r: any) => r.status === 'approved' && r.date === today).length;
-    const todayContractors = contractorVisits.filter((c: any) => c.createdAt && c.createdAt.startsWith(today) && c.status !== 'exited').length;
+    const todayReservations = reservations.filter((r: Reservation) => r.status === 'approved' && r.date === today).length;
+    const todayContractors = contractorVisits.filter((c: ContractorVisit) => c.createdAt && c.createdAt.startsWith(today) && c.status !== 'exited').length;
     const currentMonth = new Date().getMonth(); // 0-indexed
     const currentYear = new Date().getFullYear();
 
-    const todayVisitors = visitors.filter(v => v.visitDate === today).length;
-    const todayDeliveries = correspondence.filter(i => i.status === 'received' && i.receivedAt?.startsWith(today)).length;
+    const todayVisitors = visitors.filter((v: Visitor) => v.visitDate === today).length;
+    const todayDeliveries = correspondence.filter((i: Correspondence) => i.status === 'received' && i.receivedAt?.startsWith(today)).length;
 
-    const monthVisitors = visitors.filter(v => v.visitDate.startsWith(`${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`)).length;
-    const monthDeliveries = correspondence.filter(i => i.receivedAt?.startsWith(`${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`)).length;
+    const monthVisitors = visitors.filter((v: Visitor) => v.visitDate.startsWith(`${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`)).length;
+    const monthDeliveries = correspondence.filter((i: Correspondence) => i.receivedAt?.startsWith(`${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`)).length;
 
-    const monthShifts = shiftReports.filter(sr => sr.shiftDate.startsWith(`${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`));
-    const closedMonthShifts = monthShifts.filter(sr => sr.status === 'closed').length;
+    const monthShifts = shiftReports.filter((sr: ShiftReport) => sr.shiftDate.startsWith(`${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`));
+    const closedMonthShifts = monthShifts.filter((sr: ShiftReport) => sr.status === 'closed').length;
     // Expected shifts: 3 per day until today
     const daysPassed = new Date().getDate();
     const expectedShifts = daysPassed * 3;
     const shiftCompliance = expectedShifts > 0 ? (closedMonthShifts / expectedShifts) * 100 : 0;
 
-    const complianceByShift = ['Mañana', 'Tarde', 'Noche'].map(type => {
-        const totalClosed = monthShifts.filter(sr => sr.shiftType === type && sr.status === 'closed').length;
+    const complianceByShift = ['Mañana', 'Tarde', 'Noche'].map((type: string) => {
+        const totalClosed = monthShifts.filter((sr: ShiftReport) => sr.shiftType === type && sr.status === 'closed').length;
         const expected = daysPassed;
         return { type, percentage: expected > 0 ? (totalClosed / expected) * 100 : 0, closed: totalClosed };
     });
 
     // Maintenance logic
-    const scheduledMaintenances = contractors.filter(c => {
+    const scheduledMaintenances = contractors.filter((c: Contractor) => {
         if (!c.isActive || c.maintenanceFrequency === 'none') return false;
         if (c.maintenanceFrequency === 'monthly') return true;
 
@@ -230,26 +246,26 @@ export const Dashboard: React.FC = () => {
         const currentMonthName = months[now.getMonth()];
         const currentYearNum = now.getFullYear();
 
-        const allDepts = towers.flatMap(t => t.departments).filter(d => !d.isArchived);
-        const gcTarget = allDepts.reduce((acc, dept) => {
-            const ut = unitTypes.find(u => u.id === dept.unitTypeId);
+        const allDepts = (departments || []).filter((d: Department) => !d.isArchived);
+        const gcTarget = allDepts.reduce((acc: number, dept: Department) => {
+            const ut = unitTypes.find((u: UnitType) => u.id === dept.unitTypeId);
             return acc + (ut?.baseCommonExpense || 0);
         }, 0);
 
         const currentMonthNum = now.getMonth() + 1;
         const gcCollected = payments
-            .filter(p => p.periodMonth === currentMonthNum && p.periodYear === currentYearNum)
-            .reduce((acc, p) => acc + p.amountPaid, 0);
+            .filter((p: CommonExpensePayment) => p.periodMonth === currentMonthNum && p.periodYear === currentYearNum)
+            .reduce((acc: number, p: CommonExpensePayment) => acc + p.amountPaid, 0);
 
         const gcPending = Math.max(0, gcTarget - gcCollected);
 
-        const monthCommunityExpenses = communityExpenses.filter(e => {
+        const monthCommunityExpenses = communityExpenses.filter((e: CommunityExpense) => {
             if (e.isArchived) return false;
             const d = new Date(e.date);
             return (d.getMonth() + 1) === currentMonthNum && d.getFullYear() === currentYearNum;
         });
 
-        const totalExpenses = monthCommunityExpenses.reduce((acc, e) => acc + e.amount, 0);
+        const totalExpenses = monthCommunityExpenses.reduce((acc: number, e: CommunityExpense) => acc + e.amount, 0);
 
         return {
             gcCollected,
@@ -342,7 +358,7 @@ export const Dashboard: React.FC = () => {
                             <div className="space-y-4">
                                 <p className="text-[10px] font-black uppercase text-gray-400">Mantenciones Programadas ({scheduledMaintenances.length})</p>
                                 <div className="flex flex-wrap gap-2">
-                                    {scheduledMaintenances.slice(0, 4).map((c: any) => (
+                                    {scheduledMaintenances.slice(0, 4).map((c: Contractor) => (
                                         <div key={c.id} title={`${c.name} - ${c.specialty}`} className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-indigo-600 border border-indigo-100 dark:border-indigo-800 group hover:bg-indigo-600 hover:text-white transition-all cursor-help relative">
                                             <HardHat className="w-5 h-5" />
                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[8px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
@@ -546,10 +562,14 @@ export const Dashboard: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => handleApproveUser(u)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors">
-                                            <CheckCircle className="w-6 h-6" />
+                                        <button 
+                                            onClick={() => handleCompleteRegistration(u)} 
+                                            title="Completar Registro"
+                                            className="px-4 py-2 text-xs font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl transition-colors border border-emerald-200"
+                                        >
+                                            Registrar
                                         </button>
-                                        <button onClick={() => handleRejectUser(u)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors">
+                                        <button onClick={() => handleRejectUser(u)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors" title="Rechazar/Eliminar Base">
                                             <XCircle className="w-6 h-6" />
                                         </button>
                                     </div>

@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useResidents } from '../context/ResidentContext';
 import { SecurityModal } from '../components/SecurityModal';
 import { useInfrastructure } from '../context/InfrastructureContext';
@@ -17,8 +18,9 @@ import { useUsers } from '../context/UserContext';
 import { compressImage } from '../utils/imageCompression';
 
 export const ResidentsPage: React.FC = () => {
+    const location = useLocation();
     const { residents, addResident, updateResident, deleteResident, uploadResidents } = useResidents();
-    const { users, addUser, resetPassword, deleteUser } = useUsers();
+    const { users, addUser, updateUser, resetPassword, deleteUser } = useUsers();
     const { getLogsByEntity } = useHistoryLogs();
     const { towers } = useInfrastructure();
     const { conditions } = useSpecialConditions();
@@ -35,6 +37,24 @@ export const ResidentsPage: React.FC = () => {
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
     const [showInactive, setShowInactive] = useState(false);
     const [credentialsPopup, setCredentialsPopup] = useState<{user: string, pass: string, name: string} | null>(null);
+    const [associatedPendingUser, setAssociatedPendingUser] = useState<any>(null);
+
+    // Initial effect to catch pending users from Dashboard
+    useEffect(() => {
+        if (location.state?.pendingUser) {
+            const pu = location.state.pendingUser;
+            setAssociatedPendingUser(pu);
+            handleOpenModal();
+            // Pre-fill what we know
+            const nameParts = pu.name.split(' ');
+            setNames(nameParts[0] || '');
+            setLastNames(nameParts.slice(1).join(' ') || '');
+            setEmail(pu.email || '');
+            
+            // Clean state so it doesn't trigger again on refresh
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
 
     // Form states
     const [names, setNames] = useState('');
@@ -93,6 +113,9 @@ export const ResidentsPage: React.FC = () => {
             setParkingIds([]);
             setIsTenant(false);
             setRentAmount(undefined);
+            if (!location.state?.pendingUser) {
+                setAssociatedPendingUser(null);
+            }
         }
         setIsModalOpen(true);
     };
@@ -128,9 +151,28 @@ export const ResidentsPage: React.FC = () => {
         if (editingResident) {
             await updateResident({ ...editingResident, ...data });
         } else {
-            await addResident(data);
+            // First create the resident to get its ID immediately (in our DB logic, it returns the inserted item)
+            // But since addResident doesn't strictly return the item yet in Context, we need the exact response.
+            // As a fallback in this monolithic Context structure, let's create it.
+            const newRes = await addResident(data);
+            
+            // If it comes from Dashboard pending (Google Auth)
+            if (associatedPendingUser) {
+                // we have to update the original Pending User linking it
+                // We will match the latest resident added by email or just assume backend will link it securely.
+                // However, since Backend /auth/google is now directly matching based on email, 
+                // simply changing the pending user to resident/active accomplishes the link!
+                await updateUser(associatedPendingUser.id, {
+                    ...associatedPendingUser,
+                    role: 'resident',
+                    status: 'active',
+                    name: `${names} ${lastNames}` 
+                    // The backend handles linking based on the similar email between user and resident.
+                });
+            }
         }
         setIsModalOpen(false);
+        setAssociatedPendingUser(null);
     };
 
     const selectedTower = towers.find(t => t.id === towerId);
@@ -142,17 +184,25 @@ export const ResidentsPage: React.FC = () => {
         if (!tower) return null;
         const unit = tower.departments.find(d => d.id === uId);
         if (!unit) return null;
-        return `Dpto ${unit.number}`;
+        return `Unidad ${unit.number}`;
     };
 
     const filteredResidents = residents.filter(r => {
-        if (r.isArchived) return false;
+        // Show only archived/inactive if showInactive is true
+        if (showInactive) {
+            if (!r.isArchived && r.status !== 'inactive') return false;
+        } else {
+            // Show only active if showInactive is false
+            if (r.isArchived || r.status === 'inactive') return false;
+        }
+
         const cleanSearch = searchTerm.toLowerCase().trim();
         const cleanDniSearch = searchTerm.replace(/[^0-9kK]/g, '').toLowerCase();
         const matchName = `${r.names} ${r.lastNames}`.toLowerCase().includes(cleanSearch);
         const matchDni = r.dni.replace(/[^0-9kK]/g, '').toLowerCase().includes(cleanDniSearch);
         return matchName || (cleanDniSearch.length > 0 && matchDni);
     });
+
 
     const cleanRutForPassword = (rut: string) => {
         // En base a la solicitud: RUT sin puntos ni guiones ni dígito verificador
@@ -203,27 +253,11 @@ export const ResidentsPage: React.FC = () => {
                     <p className="text-gray-500 dark:text-gray-400 mt-2 font-bold px-1">Censo y contacto de propietarios y arrendatarios.</p>
                 </div>
                 <div className="flex gap-3">
-                    <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                            try {
-                                const result = await uploadResidents(file);
-                                alert(result.message);
-                            } catch (err: any) {
-                                alert(err.message);
-                            }
-                        }
-                    }} />
-
-                    <Button variant="secondary" onClick={() => fileInputRef.current?.click()} className="rounded-2xl font-black uppercase text-[10px] tracking-widest h-12 px-6">
-                        <Upload className="w-4 h-4 mr-2" />
-                        Carga Masiva
-                    </Button>
-
                     <Button onClick={() => handleOpenModal()} className="rounded-2xl font-black uppercase text-[10px] tracking-widest h-12 px-6">
                         <Plus className="w-4 h-4 mr-2" />
                         Nuevo Residente
                     </Button>
+
                 </div>
             </div>
 
@@ -527,7 +561,7 @@ export const ResidentsPage: React.FC = () => {
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Unidad de Vivienda</label>
                                             <select value={unitId} onChange={(e) => setUnitId(e.target.value)} disabled={!towerId} className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm font-bold disabled:opacity-50 focus:ring-4 focus:ring-indigo-500/10 transition-all">
                                                 <option value="">Seleccione Unidad</option>
-                                                {availableUnits.map(u => <option key={u.id} value={u.id}>Depto {u.number}</option>)}
+                                                {availableUnits.map(u => <option key={u.id} value={u.id}>{u.number}</option>)}
                                             </select>
                                         </div>
                                     </div>
@@ -633,6 +667,10 @@ export const ResidentsPage: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            <p className="text-xs font-bold text-gray-400 mb-8 px-2">
+                                💡 Nota: El residente también puede ingresar automáticamente con el botón <span className="text-indigo-500">Log In con Google</span> sin usar contraseñas, si ingresa su cuenta "{credentialsPopup.user}".
+                            </p>
                             
                             <Button onClick={() => setCredentialsPopup(null)} className="w-full h-14 font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-indigo-500/20 text-sm">
                                 Entendido, Cerrar

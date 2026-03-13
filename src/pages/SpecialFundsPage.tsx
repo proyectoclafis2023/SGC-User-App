@@ -429,7 +429,7 @@ export const SpecialFundsPage: React.FC = () => {
                                                     if (activeDepts.length === 0) return;
 
                                                     // Calcular peso total basado en el gasto común base de cada tipo de unidad
-                                                    // Esto asegura un prorrateo equitativo según el tamaño/valor del depto
+                                                    // Esto asegura un prorrateo equitativo según el tamaño/valor de la unidad
                                                     const totalWeight = activeDepts.reduce((acc, d) => {
                                                         const ut = unitTypes.find(u => u.id === d.unitTypeId);
                                                         return acc + (ut?.baseCommonExpense || 0);
@@ -458,7 +458,7 @@ export const SpecialFundsPage: React.FC = () => {
                                                     }
                                                 }}
                                             >
-                                                Prorratear Deptos
+                                                Prorratear Unidades
                                             </Button>
                                         </div>
                                     </div>

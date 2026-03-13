@@ -23,6 +23,7 @@ export const CommunityExpensesPage: React.FC = () => {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [fundId, setFundId] = useState<string>(''); // Vacio = Gasto Común
     const [receiptImages, setReceiptImages] = useState<string[]>([]);
+    const [isProjected, setIsProjected] = useState(false);
 
     const filteredExpenses = communityExpenses.filter(e => {
         const search = searchTerm.toLowerCase();
@@ -40,7 +41,7 @@ export const CommunityExpensesPage: React.FC = () => {
         setCategory('Otros');
         setDate(new Date().toISOString().split('T')[0]);
         setFundId('');
-        setReceiptImages([]);
+        setIsProjected(false);
         setIsModalOpen(true);
     };
 
@@ -54,6 +55,7 @@ export const CommunityExpensesPage: React.FC = () => {
             date,
             receiptImages: receiptImages.length > 0 ? receiptImages : undefined,
             isArchived: false,
+            isProjected,
         });
 
         setIsModalOpen(false);
@@ -67,7 +69,7 @@ export const CommunityExpensesPage: React.FC = () => {
         }
     };
 
-    const totalExpenses = filteredExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+    const totalExpenses = filteredExpenses.filter(e => !e.isProjected).reduce((acc, curr) => acc + curr.amount, 0);
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -162,9 +164,16 @@ export const CommunityExpensesPage: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <span className="text-rose-600 dark:text-rose-400 font-black">
-                                                -${expense.amount.toLocaleString()}
-                                            </span>
+                                            <div className="flex flex-col items-end">
+                                                <span className={`${expense.isProjected ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'} font-black`}>
+                                                    -${expense.amount.toLocaleString()}
+                                                </span>
+                                                {expense.isProjected && (
+                                                    <span className="text-[10px] uppercase tracking-widest text-amber-500 font-black bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full mt-1 border border-amber-200 dark:border-amber-800">
+                                                        Proyectivo
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <button
@@ -302,6 +311,20 @@ export const CommunityExpensesPage: React.FC = () => {
                                             <p className="text-[10px] text-gray-400 mt-1 uppercase">PNG, JPG hasta 5MB (Auto-optimizado)</p>
                                         </div>
                                     </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-900/30">
+                                    <div className="flex-1">
+                                        <p className="text-sm font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest">¿Es un Gasto Proyectivo?</p>
+                                        <p className="text-[10px] text-amber-600 dark:text-amber-500 font-bold italic">No afectará el saldo real, se usará para análisis de proyección financiera.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsProjected(!isProjected)}
+                                        className={`w-14 h-8 rounded-full transition-all duration-300 relative ${isProjected ? 'bg-amber-500 shadow-lg shadow-amber-500/30' : 'bg-gray-200 dark:bg-gray-700'}`}
+                                    >
+                                        <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-sm ${isProjected ? 'translate-x-6' : ''}`} />
+                                    </button>
                                 </div>
                             </div>
 

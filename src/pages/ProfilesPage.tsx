@@ -104,7 +104,7 @@ export const ProfilesPage: React.FC = () => {
         resetForm();
     };
 
-    const filteredProfiles = profiles.filter(p =>
+    const filteredProfiles = (profiles || []).filter(p =>
         !p.isArchived && p.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -128,8 +128,8 @@ export const ProfilesPage: React.FC = () => {
                 { label: 'Perfiles (Gestionar)', key: 'canManageProfiles' },
                 { label: 'Configuración (Ver)', key: 'canViewSettings' },
                 { label: 'Configuración (Gestionar)', key: 'canManageSettings' },
-                { label: 'Torres/Deptos (Ver)', key: 'canViewInfrastructure' },
-                { label: 'Torres/Deptos (Gestionar)', key: 'canManageInfrastructure' },
+                { label: 'Torres/Unidades (Ver)', key: 'canViewInfrastructure' },
+                { label: 'Torres/Unidades (Gestionar)', key: 'canManageInfrastructure' },
                 { label: 'Residentes (Ver)', key: 'canViewResidents' },
                 { label: 'Residentes (Gestionar)', key: 'canManageResidents' },
                 { label: 'Propietarios (Ver)', key: 'canViewOwners' },
@@ -252,7 +252,7 @@ export const ProfilesPage: React.FC = () => {
                                 </div>
                                 <div>
                                     <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-none mb-1">
-                                        {editingProfile ? 'Editar Perfil' : 'Nuevo Perfil Access'}
+                                        {editingProfile ? 'Editar Perfil' : 'Nuevo Perfil de Acceso'}
                                     </h2>
                                     <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none">Control de Seguridad de la Plataforma</p>
                                 </div>

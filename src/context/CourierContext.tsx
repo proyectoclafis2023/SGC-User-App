@@ -1,55 +1,63 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-export interface Courier {
-    id: string;
-    name: string;
-    isArchived: boolean;
-}
-
-interface CourierContextType {
-    couriers: Courier[];
-    addCourier: (name: string) => Promise<void>;
-    updateCourier: (id: string, name: string) => Promise<void>;
-    deleteCourier: (id: string) => Promise<void>;
-}
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import type { Courier, CourierContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const CourierContext = createContext<CourierContextType | undefined>(undefined);
 
-const DEFAULT_COURIERS = [
-    { id: '1', name: 'Rappi', isArchived: false },
-    { id: '2', name: 'UberEats', isArchived: false },
-    { id: '3', name: 'Starken', isArchived: false },
-    { id: '4', name: 'Chilexpress', isArchived: false },
-    { id: '5', name: 'Correos de Chile', isArchived: false },
-    { id: '6', name: 'BlueExpress', isArchived: false },
-    { id: '7', name: 'PedidosYa', isArchived: false },
-];
+const API_URL = `${API_BASE_URL}/couriers`;
 
-export const CourierProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [couriers, setCouriers] = useState<Courier[]>(() => {
-        const saved = localStorage.getItem('sgc_couriers');
-        return saved ? JSON.parse(saved) : DEFAULT_COURIERS;
-    });
+export const CourierProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [couriers, setCouriers] = useState<Courier[]>([]);
 
-    useEffect(() => {
-        localStorage.setItem('sgc_couriers', JSON.stringify(couriers));
-    }, [couriers]);
-
-    const addCourier = async (name: string) => {
-        const newCourier: Courier = {
-            id: Date.now().toString(),
-            name,
-            isArchived: false
-        };
-        setCouriers(prev => [...prev, newCourier]);
+    const fetchCouriers = async () => {
+        try {
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setCouriers(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch couriers:', error);
+        }
     };
 
-    const updateCourier = async (id: string, name: string) => {
-        setCouriers(prev => prev.map(c => c.id === id ? { ...c, name } : c));
+    useEffect(() => {
+        fetchCouriers();
+    }, []);
+
+    const addCourier = async (courier: Omit<Courier, 'id'>) => {
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(courier)
+            });
+            await fetchCouriers();
+        } catch (error) {
+            console.error('Error adding courier:', error);
+        }
+    };
+
+    const updateCourier = async (courier: Courier) => {
+        try {
+            await fetch(`${API_URL}/${courier.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(courier)
+            });
+            await fetchCouriers();
+        } catch (error) {
+            console.error('Error updating courier:', error);
+        }
     };
 
     const deleteCourier = async (id: string) => {
-        setCouriers(prev => prev.map(c => c.id === id ? { ...c, isArchived: true } : c));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchCouriers();
+        } catch (error) {
+            console.error('Error deleting courier:', error);
+        }
     };
 
     return (

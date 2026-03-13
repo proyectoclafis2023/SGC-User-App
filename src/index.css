@@ -58,7 +58,8 @@
   }
 
   body {
-    @apply transition-colors duration-300 antialiased font-sans;
+    @apply transition-colors duration-300 antialiased;
+    font-family: 'Outfit', sans-serif;
     background-color: var(--app-bg);
     color: var(--text-primary);
   }

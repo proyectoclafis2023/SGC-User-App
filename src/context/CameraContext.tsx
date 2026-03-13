@@ -1,61 +1,67 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Camera, CameraContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const CameraContext = createContext<CameraContextType | undefined>(undefined);
 
-export const CameraProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [cameras, setCameras] = useState<Camera[]>(() => {
-        const saved = localStorage.getItem('sgc_cameras');
-        if (!saved) return [
-            { id: '1', name: 'Acceso Principal', backupHours: 720, createdAt: new Date().toISOString() },
-            { id: '2', name: 'Estacionamiento -1', backupHours: 720, createdAt: new Date().toISOString() },
-            { id: '3', name: 'Piscina', backupHours: 480, createdAt: new Date().toISOString() },
-        ];
+const API_URL = `${API_BASE_URL}/cameras`;
+
+export const CameraProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [cameras, setCameras] = useState<Camera[]>([]);
+
+    const fetchCameras = async () => {
         try {
-            return JSON.parse(saved);
-        } catch (e) {
-            return [];
-        }
-    });
-
-    useEffect(() => {
-        localStorage.setItem('sgc_cameras', JSON.stringify(cameras));
-    }, [cameras]);
-
-    useEffect(() => {
-        const handleSync = (e: StorageEvent) => {
-            if (e.key === 'sgc_cameras' && e.newValue) {
-                setCameras(JSON.parse(e.newValue));
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setCameras(Array.isArray(data) ? data : []);
             }
-        };
-        window.addEventListener('storage', handleSync);
-        return () => window.removeEventListener('storage', handleSync);
+        } catch (error) {
+            console.error('Failed to fetch cameras:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchCameras();
     }, []);
 
-    const addCamera = async (cameraData: Omit<Camera, 'id' | 'createdAt'>) => {
-        const newCamera: Camera = {
-            ...cameraData,
-            id: Date.now().toString(),
-            createdAt: new Date().toISOString(),
-        };
-        setCameras(prev => [...prev, newCamera]);
+    const addCamera = async (camera: Omit<Camera, 'id' | 'createdAt'>) => {
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...camera, createdAt: new Date().toISOString() })
+            });
+            await fetchCameras();
+        } catch (error) {
+            console.error('Error adding camera:', error);
+        }
     };
 
     const updateCamera = async (camera: Camera) => {
-        setCameras(prev => prev.map(c => c.id === camera.id ? camera : c));
+        try {
+            await fetch(`${API_URL}/${camera.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(camera)
+            });
+            await fetchCameras();
+        } catch (error) {
+            console.error('Error updating camera:', error);
+        }
     };
 
     const deleteCamera = async (id: string) => {
-        setCameras(prev => prev.map(c => c.id === id ? { ...c, isArchived: true } : c));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchCameras();
+        } catch (error) {
+            console.error('Error deleting camera:', error);
+        }
     };
 
     return (
-        <CameraContext.Provider value={{
-            cameras,
-            addCamera,
-            updateCamera,
-            deleteCamera
-        }}>
+        <CameraContext.Provider value={{ cameras, addCamera, updateCamera, deleteCamera }}>
             {children}
         </CameraContext.Provider>
     );
@@ -63,8 +69,6 @@ export const CameraProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 export const useCameras = () => {
     const context = useContext(CameraContext);
-    if (context === undefined) {
-        throw new Error('useCameras must be used within a CameraProvider');
-    }
+    if (!context) throw new Error('useCameras must be used within CameraProvider');
     return context;
 };

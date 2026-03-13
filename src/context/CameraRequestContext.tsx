@@ -1,38 +1,28 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { CameraRequest, CameraRequestContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const CameraRequestContext = createContext<CameraRequestContextType | undefined>(undefined);
 
-export const CameraRequestProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [requests, setRequests] = useState<CameraRequest[]>(() => {
-        const saved = localStorage.getItem('sgc_camera_requests');
-        if (!saved) return [];
+const API_URL = `${API_BASE_URL}/camera_requests`;
+
+export const CameraRequestProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [requests, setRequests] = useState<CameraRequest[]>([]);
+
+    const fetchRequests = async () => {
         try {
-            const parsed = JSON.parse(saved);
-            return (parsed as CameraRequest[]).map(r => {
-                if (!r.folio) {
-                    const dateStr = (r.createdAt || new Date().toISOString()).slice(0, 10).replace(/-/g, '');
-                    return { ...r, folio: `CAM-${dateStr}-${r.id.slice(-4).toUpperCase()}` };
-                }
-                return r;
-            });
-        } catch (e) {
-            return [];
-        }
-    });
-
-    useEffect(() => {
-        localStorage.setItem('sgc_camera_requests', JSON.stringify(requests));
-    }, [requests]);
-
-    useEffect(() => {
-        const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'sgc_camera_requests' && e.newValue) {
-                setRequests(JSON.parse(e.newValue));
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setRequests(Array.isArray(data) ? data : []);
             }
-        };
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        } catch (error) {
+            console.error('Failed to fetch camera requests:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchRequests();
     }, []);
 
     const generateFolio = (prefix: string) => {
@@ -41,37 +31,51 @@ export const CameraRequestProvider: React.FC<{ children: React.ReactNode }> = ({
         return `${prefix}-${date}-${rand}`;
     };
 
-    const addRequest = async (requestData: Omit<CameraRequest, 'id' | 'folio' | 'status' | 'createdAt'>) => {
-        const id = `CAMREQ-${Date.now()}`;
-        const newRequest: CameraRequest = {
-            ...requestData,
-            id,
-            folio: generateFolio('CAM'),
-            status: 'pending',
-            createdAt: new Date().toISOString(),
-        };
-        setRequests(prev => [newRequest, ...prev]);
+    const addRequest = async (request: Omit<CameraRequest, 'id' | 'folio' | 'status' | 'createdAt'>) => {
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...request,
+                    folio: generateFolio('CAM'),
+                    status: 'pending',
+                    createdAt: new Date().toISOString()
+                })
+            });
+            await fetchRequests();
+        } catch (error) {
+            console.error('Error adding camera request:', error);
+        }
     };
 
     const updateRequestStatus = async (id: string, status: CameraRequest['status'], adminNotes?: string) => {
-        setRequests(prev => prev.map(r =>
-            r.id === id
-                ? { ...r, status, adminNotes: adminNotes !== undefined ? adminNotes : r.adminNotes }
-                : r
-        ));
+        try {
+            const req = requests.find(r => r.id === id);
+            if (req) {
+                await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...req, status, adminNotes })
+                });
+                await fetchRequests();
+            }
+        } catch (error) {
+            console.error('Error updating camera request status:', error);
+        }
     };
 
     const deleteRequest = async (id: string) => {
-        setRequests(prev => prev.filter(r => r.id !== id));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchRequests();
+        } catch (error) {
+            console.error('Error deleting camera request:', error);
+        }
     };
 
     return (
-        <CameraRequestContext.Provider value={{
-            requests,
-            addRequest,
-            updateRequestStatus,
-            deleteRequest
-        }}>
+        <CameraRequestContext.Provider value={{ requests, addRequest, updateRequestStatus, deleteRequest }}>
             {children}
         </CameraRequestContext.Provider>
     );
@@ -79,8 +83,6 @@ export const CameraRequestProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useCameraRequests = () => {
     const context = useContext(CameraRequestContext);
-    if (context === undefined) {
-        throw new Error('useCameraRequests must be used within a CameraRequestProvider');
-    }
+    if (!context) throw new Error('useCameraRequests must be used within CameraRequestProvider');
     return context;
 };

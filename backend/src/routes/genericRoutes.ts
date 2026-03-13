@@ -14,6 +14,11 @@ const entities = [
     'departments',
     'unit_types',
     'parking',
+    'infrastructure_items',
+    'equipment_items',
+    'common_spaces',
+    'reservations',
+    'special_conditions',
     
     // People
     'owners',
@@ -24,7 +29,10 @@ const entities = [
     'shift_reports',
     'visitors',
     'correspondence',
+    'couriers',
     'camera_requests',
+    'cameras',
+    'contractor_visits',
     
     // Finance
     'special_funds',
@@ -33,6 +41,7 @@ const entities = [
     'community_expenses',
     'employee_advances',
     'payslips',
+    'weighted_ipc',
     
     // Maintenance
     'contractors',
@@ -48,13 +57,19 @@ const entities = [
     'system_messages',
     'communication_templates',
     'communication_history',
+    'ipc_projections',
+    'jornada_groups',
+    'directed_messages',
     
     // System
     'profiles',
     'profile_permissions',
     'system_parameters',
     'system_settings',
-    'history_logs'
+    'history_logs',
+    'banks',
+    'health_providers',
+    'pension_funds'
 ];
 
 entities.forEach(entity => {

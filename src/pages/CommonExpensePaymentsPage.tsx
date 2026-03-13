@@ -101,7 +101,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedDeptId) {
-            alert('Por favor seleccione un departamento');
+            alert('Por favor seleccione una unidad');
             return;
         }
 
@@ -164,7 +164,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                         type="text"
-                        placeholder={activeTab === 'payments' ? "Buscar por número de departamento..." : "Filtrar reporte..."}
+                        placeholder={activeTab === 'payments' ? "Buscar por número de unidad..." : "Filtrar reporte..."}
                         className="w-full pl-12 pr-4 py-3 rounded-xl border-none bg-gray-50 dark:bg-gray-800 text-sm font-bold outline-none"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -193,7 +193,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                                     <Landmark className="text-indigo-600 w-8 h-8" />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-2xl font-black text-gray-900 dark:text-white">Depto {dept?.number}</h3>
+                                                    <h3 className="text-2xl font-black text-gray-900 dark:text-white">{dept?.number}</h3>
                                                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest">{tower?.name}</p>
                                                 </div>
                                             </div>
@@ -313,7 +313,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                     return (
                                         <tr key={dept.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/20 transition-colors group">
                                             <td className="px-6 py-4">
-                                                <p className="font-black text-gray-900 dark:text-white leading-none">Depto {dept.number}</p>
+                                                <p className="font-black text-gray-900 dark:text-white leading-none">Unidad {dept.number}</p>
                                                 <p className="text-[10px] font-bold text-gray-400 uppercase mt-1">{tower?.name}</p>
                                             </td>
                                             <td className="px-6 py-4">
@@ -396,7 +396,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                                 </select>
                                             </div>
                                             <div className="space-y-1.5">
-                                                <label className="text-xs font-black text-gray-500 ml-1 uppercase">Departamento</label>
+                                                <label className="text-xs font-black text-gray-500 ml-1 uppercase">Unidad</label>
                                                 <select
                                                     className="w-full p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-black outline-none focus:border-indigo-500 transition-all shadow-sm"
                                                     value={selectedDeptId}
@@ -405,7 +405,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                                     disabled={!selectedTowerId}
                                                 >
                                                     <option value="">Seleccione...</option>
-                                                    {selectedTower?.departments.filter(d => !d.isArchived).map(d => <option key={d.id} value={d.id}>Depto {d.number}</option>)}
+                                                    {selectedTower?.departments.filter(d => !d.isArchived).map(d => <option key={d.id} value={d.id}>{d.number}</option>)}
                                                 </select>
                                             </div>
                                         </div>
@@ -528,7 +528,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                     <AlertCircle className="w-4 h-4" />
                                     <p className="text-[10px] font-black uppercase tracking-widest">Información de Sistema</p>
                                 </div>
-                                <p className="text-xs text-gray-500 font-bold max-w-[200px]">Este pago quedará registrado en el historial anual del departamento.</p>
+                                <p className="text-xs text-gray-500 font-bold max-w-[200px]">Este pago quedará registrado en el historial anual de la unidad.</p>
                             </div>
                             <div className="flex gap-4 flex-1">
                                 <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 text-xs font-black uppercase tracking-widest rounded-2xl">

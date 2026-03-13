@@ -17,8 +17,10 @@ export const PayslipProvider: React.FC<{ children: ReactNode }> = ({ children })
                 fetch(PAYSLIPS_API),
                 fetch(ADVANCES_API)
             ]);
-            if (pRes.ok) setPayslips(await pRes.json());
-            if (aRes.ok) setAdvances(await aRes.json());
+            const pData = pRes.ok ? await pRes.json() : [];
+            const aData = aRes.ok ? await aRes.json() : [];
+            setPayslips(Array.isArray(pData) ? pData : []);
+            setAdvances(Array.isArray(aData) ? aData : []);
         } catch (e) { console.error('Error fetching payslips/advances:', e); }
     };
 

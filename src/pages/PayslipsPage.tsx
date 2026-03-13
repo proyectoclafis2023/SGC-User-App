@@ -5,6 +5,7 @@ import { usePensionFunds } from '../context/PensionFundContext';
 import { usePayslips } from '../context/PayslipContext';
 import { useSettings } from '../context/SettingsContext';
 import { useCommonExpenses } from '../context/CommonExpenseContext';
+import { useShiftReport } from '../context/ShiftReportContext';
 import { Button } from '../components/Button';
 import {
     Banknote,
@@ -29,6 +30,7 @@ export const PayslipsPage: React.FC = () => {
     const { providers } = useHealthProviders();
     const { funds } = usePensionFunds();
     const { payslips, advances, addPayslip, deletePayslip, addAdvance, deleteAdvance, updateAdvanceStatus } = usePayslips();
+    const { reports } = useShiftReport();
     const { settings } = useSettings();
     const { addCommunityExpense } = useCommonExpenses();
 
@@ -36,6 +38,7 @@ export const PayslipsPage: React.FC = () => {
     const [selectedPersonId, setSelectedPersonId] = useState<string>('');
     const [month, setMonth] = useState<number>(new Date().getMonth() + 1);
     const [year, setYear] = useState<number>(new Date().getFullYear());
+    const [manualWorkedDays, setManualWorkedDays] = useState<number | null>(null);
 
     // Advance State
     const [advanceData, setAdvanceData] = useState({
@@ -54,6 +57,18 @@ export const PayslipsPage: React.FC = () => {
         personnel.find(p => p.id === selectedPersonId),
         [personnel, selectedPersonId]);
 
+    const workedDaysFromReports = useMemo(() => {
+        if (!selectedPersonId) return 0;
+        return reports.filter(r => 
+            r.workerId === selectedPersonId && 
+            r.status === 'closed' &&
+            new Date(r.shiftDate).getMonth() + 1 === month &&
+            new Date(r.shiftDate).getFullYear() === year
+        ).length;
+    }, [reports, selectedPersonId, month, year]);
+
+    const finalWorkedDays = manualWorkedDays !== null ? manualWorkedDays : workedDaysFromReports;
+
     const pendingAdvances = useMemo(() => {
         if (!selectedPersonId) return 0;
         return advances
@@ -62,7 +77,13 @@ export const PayslipsPage: React.FC = () => {
     }, [advances, selectedPersonId]);
 
     // Calculation logic
-    const calculateDeductions = () => {
+    const calculateGrossSalary = () => {
+        if (!selectedPerson) return 0;
+        // Simple proportional calculation: (Base / 30) * Days
+        return Math.round((selectedPerson.baseSalary / 30) * finalWorkedDays);
+    };
+
+    const calculateDeductions = (gross: number) => {
         if (!selectedPerson) return { health: 0, pension: 0, total: 0 };
 
         const healthProvider = providers.find(p => p.id === selectedPerson.healthInsuranceId);
@@ -71,8 +92,8 @@ export const PayslipsPage: React.FC = () => {
         const healthRate = healthProvider?.discountRate || 7; // Default Fonasa 7%
         const pensionRate = pensionFund?.discountRate || 10; // Default 10%
 
-        const healthDiscount = Math.round(selectedPerson.baseSalary * (healthRate / 100));
-        const pensionDiscount = Math.round(selectedPerson.baseSalary * (pensionRate / 100));
+        const healthDiscount = Math.round(gross * (healthRate / 100));
+        const pensionDiscount = Math.round(gross * (pensionRate / 100));
 
         return {
             health: healthDiscount,
@@ -84,17 +105,20 @@ export const PayslipsPage: React.FC = () => {
     const handleGenerate = async () => {
         if (!selectedPerson) return;
 
-        const deductions = calculateDeductions();
+        const grossSalary = calculateGrossSalary();
+        const deductions = calculateDeductions(grossSalary);
         const totalAdvances = pendingAdvances;
         const totalDeductions = deductions.total + totalAdvances;
-        const netSalary = selectedPerson.baseSalary - totalDeductions;
+        const netSalary = grossSalary - totalDeductions;
 
         const newPayslip = await addPayslip({
             personnelId: selectedPerson.id,
             month,
             year,
             baseSalary: selectedPerson.baseSalary,
-            grossSalary: selectedPerson.baseSalary, // Simple model for now
+            grossSalary,
+            workedDays: workedDaysFromReports,
+            adjustedWorkedDays: manualWorkedDays !== null ? manualWorkedDays : undefined,
             healthDiscount: deductions.health,
             pensionDiscount: deductions.pension,
             apvDiscount: 0,
@@ -261,9 +285,37 @@ export const PayslipsPage: React.FC = () => {
                             {selectedPerson && (
                                 <div className="pt-6 border-t border-gray-100 dark:border-gray-800 space-y-4 animate-in fade-in zoom-in-95">
                                     <div className="p-4 bg-indigo-50 dark:bg-indigo-950/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/30">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-black text-indigo-600 uppercase">Días Trabajados</span>
+                                                <span className="text-[10px] text-indigo-400 font-bold uppercase italic">Reportados: {workedDaysFromReports}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="number"
+                                                    value={manualWorkedDays !== null ? manualWorkedDays : workedDaysFromReports}
+                                                    onChange={(e) => setManualWorkedDays(parseInt(e.target.value))}
+                                                    className="w-16 h-10 text-center rounded-xl border border-indigo-200 dark:bg-gray-800 text-sm font-black focus:ring-2 focus:ring-indigo-500"
+                                                    min="0"
+                                                    max="31"
+                                                />
+                                                <button 
+                                                    onClick={() => setManualWorkedDays(null)}
+                                                    className="p-2 text-indigo-400 hover:text-indigo-600 transition-colors"
+                                                    title="Resetear a reportado"
+                                                >
+                                                    <History className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="h-px bg-indigo-100 dark:bg-indigo-900/30 mb-4"></div>
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-xs font-black text-indigo-600 uppercase">Sueldo Base</span>
-                                            <span className="text-lg font-black text-gray-900 dark:text-white">{formatCurrency(selectedPerson.baseSalary)}</span>
+                                            <span className="text-sm font-bold text-gray-500">{formatCurrency(selectedPerson.baseSalary)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-xs font-black text-indigo-600 uppercase">Sueldo Proporcional ({finalWorkedDays} d.)</span>
+                                            <span className="text-lg font-black text-gray-900 dark:text-white">{formatCurrency(calculateGrossSalary())}</span>
                                         </div>
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-xs font-bold text-gray-500 uppercase">Adelantos Pendientes</span>

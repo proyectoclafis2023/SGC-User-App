@@ -1,45 +1,63 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { SpecialCondition, SpecialConditionContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const SpecialConditionContext = createContext<SpecialConditionContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'special_conditions_data';
-
-const INITIAL_CONDITIONS: SpecialCondition[] = [
-    { id: '1', name: 'Electrodependiente', description: 'Persona que requiere suministro eléctrico continuo.' },
-    { id: '2', name: 'Oxígeno dependiente', description: 'Persona que requiere apoyo de oxígeno.' },
-    { id: '3', name: 'Residente mayor sin compañía', description: 'Adulto mayor que vive solo.' },
-];
+const API_URL = `${API_BASE_URL}/special_conditions`; // Verify table name
 
 export const SpecialConditionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [conditions, setConditions] = useState<SpecialCondition[]>(() => {
+    const [conditions, setConditions] = useState<SpecialCondition[]>([]);
+
+    const fetchConditions = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            return stored ? JSON.parse(stored) : INITIAL_CONDITIONS;
-        } catch (e) {
-            console.error('Error loading special conditions:', e);
-            return INITIAL_CONDITIONS;
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setConditions(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch conditions:', error);
         }
-    });
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(conditions));
-    }, [conditions]);
-
-    const addCondition = async (condition: Omit<SpecialCondition, 'id'>) => {
-        const newCondition: SpecialCondition = {
-            ...condition,
-            id: Math.random().toString(36).substr(2, 9),
-        };
-        setConditions(prev => [...prev, newCondition]);
     };
 
-    const updateCondition = async (updatedCondition: SpecialCondition) => {
-        setConditions(prev => prev.map(c => c.id === updatedCondition.id ? updatedCondition : c));
+    useEffect(() => {
+        fetchConditions();
+    }, []);
+
+    const addCondition = async (condition: Omit<SpecialCondition, 'id'>) => {
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(condition)
+            });
+            await fetchConditions();
+        } catch (error) {
+            console.error('Error adding condition:', error);
+        }
+    };
+
+    const updateCondition = async (condition: SpecialCondition) => {
+        try {
+            await fetch(`${API_URL}/${condition.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(condition)
+            });
+            await fetchConditions();
+        } catch (error) {
+            console.error('Error updating condition:', error);
+        }
     };
 
     const deleteCondition = async (id: string) => {
-        setConditions(prev => prev.map(c => c.id === id ? { ...c, isArchived: true } : c));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchConditions();
+        } catch (error) {
+            console.error('Error deleting condition:', error);
+        }
     };
 
     return (

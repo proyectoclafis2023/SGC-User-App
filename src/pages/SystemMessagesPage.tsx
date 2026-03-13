@@ -23,8 +23,8 @@ export const SystemMessagesPage: React.FC = () => {
 
     const quickTemplates = [
         { label: 'Hidropack', text: 'Problemas con sistema Hidropack - Técnicos en camino.', type: 'danger' as const },
-        { label: 'Portón', text: 'Portón principal en mantención - Acceso restringido.', type: 'warning' as const },
-        { label: 'Corte Luz', text: 'Corte de luz programado para este [FECHA] de [HORA] a [HORA].', type: 'danger' as const },
+        { label: 'Portoncito', text: 'Portón principal en mantención - Acceso restringido.', type: 'warning' as const },
+        { label: 'Corte de Luz', text: 'Corte de luz programado para este [FECHA] de [HORA] a [HORA].', type: 'danger' as const },
         { label: 'Piscina', text: 'Mantenimiento de piscinas finalizado. Habilitada para uso.', type: 'success' as const },
     ];
 

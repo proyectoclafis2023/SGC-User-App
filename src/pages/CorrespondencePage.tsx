@@ -27,6 +27,8 @@ export const CorrespondencePage: React.FC = () => {
     const [type, setType] = useState<Correspondence['type']>('package');
     const [addressee, setAddressee] = useState('');
     const [courier, setCourier] = useState('');
+    const [manualCourier, setManualCourier] = useState('');
+    const [showManualCourier, setShowManualCourier] = useState(false);
     const [details, setDetails] = useState('');
     const [evidenceImage, setEvidenceImage] = useState<string | undefined>(undefined);
     const [expectedDate, setExpectedDate] = useState('');
@@ -90,6 +92,8 @@ export const CorrespondencePage: React.FC = () => {
         setType('package');
         setAddressee('');
         setCourier('');
+        setManualCourier('');
+        setShowManualCourier(false);
         setDetails('');
         setEvidenceImage(undefined);
         setExpectedDate('');
@@ -99,7 +103,7 @@ export const CorrespondencePage: React.FC = () => {
     const getUnitInfo = (tId?: string, uId?: string) => {
         const tower = towers.find(t => t.id === tId);
         const unit = tower?.departments.find(d => d.id === uId);
-        return unit ? `${tower?.name} - Depto ${unit.number}` : 'Ubicación no definida';
+        return unit ? `${tower?.name} - ${unit.number}` : 'Ubicación no definida';
     };
 
     const filteredItems = items.filter(item => {
@@ -285,7 +289,7 @@ export const CorrespondencePage: React.FC = () => {
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black text-gray-500 ml-1 uppercase">Departamento</label>
+                                    <label className="text-xs font-black text-gray-500 ml-1 uppercase">Unidad</label>
                                     <select
                                         className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 font-bold text-sm outline-none"
                                         value={departmentId}
@@ -296,11 +300,11 @@ export const CorrespondencePage: React.FC = () => {
                                         <option value="">Seleccionar...</option>
                                         {isResident ? (
                                             residentProperties.filter(p => p.towerId === towerId).map(d => (
-                                                <option key={d.id} value={d.id}>Depto {d.number}</option>
+                                                <option key={d.id} value={d.id}>{d.number}</option>
                                             ))
                                         ) : (
                                             towers.find(t => t.id === towerId)?.departments.map(d => (
-                                                <option key={d.id} value={d.id}>Depto {d.number}</option>
+                                                <option key={d.id} value={d.id}>{d.number}</option>
                                             ))
                                         )}
                                     </select>
@@ -330,8 +334,16 @@ export const CorrespondencePage: React.FC = () => {
                                     <label className="text-xs font-black text-gray-500 ml-1 uppercase">Courier / Empresa</label>
                                     <select
                                         className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 font-bold text-sm outline-none"
-                                        value={courier}
-                                        onChange={(e) => setCourier(e.target.value)}
+                                        value={showManualCourier ? 'OTRO' : courier}
+                                        onChange={(e) => {
+                                            if (e.target.value === 'OTRO') {
+                                                setShowManualCourier(true);
+                                                setCourier('');
+                                            } else {
+                                                setShowManualCourier(false);
+                                                setCourier(e.target.value);
+                                            }
+                                        }}
                                         required
                                     >
                                         <option value="">Seleccionar Courier...</option>
@@ -341,10 +353,11 @@ export const CorrespondencePage: React.FC = () => {
                                         <option value="OTRO">OTRO (Manual)</option>
                                     </select>
                                 </div>
-                                {courier === 'OTRO' && (
+                                {showManualCourier && (
                                     <Input
                                         label="Especificar Empresa"
-                                        onChange={(e) => setCourier(e.target.value)}
+                                        value={manualCourier}
+                                        onChange={(e) => setManualCourier(e.target.value)}
                                         placeholder="Ingrese nombre manual"
                                         autoFocus
                                         required

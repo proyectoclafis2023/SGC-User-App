@@ -1,15 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { Resident } from '../types';
+import type { Resident, ResidentContextType } from '../types';
 import { useHistoryLogs } from './HistoryLogContext';
 import { API_BASE_URL } from '../config/api';
-
-export interface ResidentContextType {
-    residents: Resident[];
-    addResident: (resident: Omit<Resident, 'id' | 'createdAt' | 'status'>) => Promise<string>;
-    updateResident: (resident: Resident) => Promise<void>;
-    deleteResident: (id: string) => Promise<void>;
-    uploadResidents: (file: File) => Promise<{ message: string }>;
-}
 
 const ResidentContext = createContext<ResidentContextType | undefined>(undefined);
 
@@ -24,7 +16,7 @@ export const ResidentProvider: React.FC<{ children: ReactNode }> = ({ children }
             const response = await fetch(API_URL);
             if (response.ok) {
                 const data = await response.json();
-                setResidents(data);
+                setResidents(Array.isArray(data) ? data : []);
             }
         } catch (error) {
             console.error('Failed to fetch from backend:', error);

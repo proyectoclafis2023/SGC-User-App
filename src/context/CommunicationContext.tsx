@@ -17,8 +17,10 @@ export const CommunicationProvider: React.FC<{ children: React.ReactNode }> = ({
                 fetch(TPL_API),
                 fetch(HIST_API)
             ]);
-            if (tRes.ok) setTemplates(await tRes.json());
-            if (hRes.ok) setHistory(await hRes.json());
+            const tData = tRes.ok ? await tRes.json() : [];
+            const hData = hRes.ok ? await hRes.json() : [];
+            setTemplates(Array.isArray(tData) ? tData : []);
+            setHistory(Array.isArray(hData) ? hData : []);
         } catch (e) {
             console.error('Error fetching communications:', e);
         }

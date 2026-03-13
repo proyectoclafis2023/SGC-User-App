@@ -1,23 +1,23 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { Ticket, TicketContextType } from '../types';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { API_BASE_URL } from '../config/api';
+import type { Ticket, TicketContextType } from '../types';
 
 const TicketContext = createContext<TicketContextType | undefined>(undefined);
 
-const BACKEND_URL = `${API_BASE_URL}/tickets`;
+const API_URL = `${API_BASE_URL}/tickets`;
 
-export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const TicketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [tickets, setTickets] = useState<Ticket[]>([]);
 
     const fetchTickets = async () => {
         try {
-            const response = await fetch(BACKEND_URL);
+            const response = await fetch(API_URL);
             if (response.ok) {
                 const data = await response.json();
-                setTickets(data);
+                setTickets(Array.isArray(data) ? data : []);
             }
-        } catch (e) {
-            console.error('Error fetching tickets:', e);
+        } catch (error) {
+            console.error('Failed to fetch tickets:', error);
         }
     };
 
@@ -25,80 +25,66 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         fetchTickets();
     }, []);
 
-    const generateFolio = (prefix: string) => {
-        const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        return `${prefix}-${date}-${rand}`;
-    };
-
-    const addTicket = async (ticketData: Omit<Ticket, 'id' | 'folio' | 'status' | 'createdAt' | 'updatedAt'>) => {
-        const id = `TCK-${Date.now()}`;
-        const newTicket: Ticket = {
-            ...ticketData,
-            id,
-            folio: generateFolio('TCK'),
-            status: 'pending',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-        };
-
+    const addTicket = async (ticketData: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'folio'>) => {
         try {
-            const resp = await fetch(BACKEND_URL, {
+            // Generate a folio
+            const folio = `REQ-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
+            const payload = { ...ticketData, folio, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+            
+            const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newTicket)
+                body: JSON.stringify(payload)
             });
-            if (resp.ok) {
-                fetchTickets();
+            
+            if (response.ok) {
+                const newTicket = await response.json();
+                await fetchTickets();
+                return newTicket;
             }
-        } catch (e) {
-            console.error('API Error adding ticket:', e);
+            return null;
+        } catch (error) {
+            console.error('Error adding ticket:', error);
+            return null;
         }
     };
 
-    const updateTicketStatus = async (id: string, status: Ticket['status'], adminNotes?: string) => {
-        const ticket = tickets.find(t => t.id === id);
-        if (!ticket) return;
-
-        const updated = {
-            ...ticket,
-            status,
-            updatedAt: new Date().toISOString(),
-            adminNotes: adminNotes !== undefined ? adminNotes : ticket.adminNotes,
-        };
-
+    const updateTicket = async (id: string, ticketData: Partial<Ticket>) => {
         try {
-            const resp = await fetch(`${BACKEND_URL}/${id}`, {
+            await fetch(`${API_URL}/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updated)
+                body: JSON.stringify({ ...ticketData, updatedAt: new Date().toISOString() })
             });
-            if (resp.ok) {
-                fetchTickets();
-            }
-        } catch (e) {
-            console.error('API Error updating ticket:', e);
+            await fetchTickets();
+        } catch (error) {
+            console.error('Error updating ticket:', error);
         }
     };
 
     const deleteTicket = async (id: string) => {
         try {
-            const resp = await fetch(`${BACKEND_URL}/${id}`, { method: 'DELETE' });
-            if (resp.ok) {
-                fetchTickets();
-            }
-        } catch (e) {
-            console.error('API Error deleting ticket:', e);
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchTickets();
+        } catch (error) {
+            console.error('Error deleting ticket:', error);
+        }
+    };
+
+    const acknowledgeTicket = async (id: string, adminId: string) => {
+        try {
+            await updateTicket(id, {
+                status: 'acknowledged',
+                acknowledgedAt: new Date().toISOString(),
+                acknowledgedBy: adminId
+            });
+        } catch (error) {
+            console.error('Error acknowledging ticket:', error);
         }
     };
 
     return (
-        <TicketContext.Provider value={{
-            tickets,
-            addTicket,
-            updateTicketStatus,
-            deleteTicket
-        }}>
+        <TicketContext.Provider value={{ tickets, addTicket, updateTicket, deleteTicket, acknowledgeTicket, refreshTickets: fetchTickets }}>
             {children}
         </TicketContext.Provider>
     );
@@ -106,8 +92,6 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 export const useTickets = () => {
     const context = useContext(TicketContext);
-    if (context === undefined) {
-        throw new Error('useTickets must be used within a TicketProvider');
-    }
+    if (!context) throw new Error('useTickets must be used within TicketProvider');
     return context;
 };

@@ -1,45 +1,63 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { CommonSpace, CommonSpaceContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const CommonSpaceContext = createContext<CommonSpaceContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'common_spaces_data';
-
-const INITIAL_SPACES: CommonSpace[] = [
-    { id: '1', name: 'Quincho Principal', location: 'Azotea Torre A', rentalValue: 15000, durationHours: 4 },
-    { id: '2', name: 'Sala de Eventos', location: 'Primer Piso', rentalValue: 25000, durationHours: 6 },
-    { id: '3', name: 'Gimnasio', location: 'Subsuelo', rentalValue: 0, durationHours: 1 },
-];
+const API_URL = `${API_BASE_URL}/common_spaces`;
 
 export const CommonSpaceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [spaces, setSpaces] = useState<CommonSpace[]>(() => {
+    const [spaces, setSpaces] = useState<CommonSpace[]>([]);
+
+    const fetchSpaces = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            return stored ? JSON.parse(stored) : INITIAL_SPACES;
-        } catch (e) {
-            console.error('Error loading spaces:', e);
-            return INITIAL_SPACES;
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setSpaces(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch spaces:', error);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(spaces));
-    }, [spaces]);
+        fetchSpaces();
+    }, []);
 
     const addSpace = async (space: Omit<CommonSpace, 'id'>) => {
-        const newSpace: CommonSpace = {
-            ...space,
-            id: Math.random().toString(36).substr(2, 9),
-        };
-        setSpaces(prev => [...prev, newSpace]);
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(space)
+            });
+            await fetchSpaces();
+        } catch (error) {
+            console.error('Error adding space:', error);
+        }
     };
 
     const updateSpace = async (space: CommonSpace) => {
-        setSpaces(prev => prev.map(s => s.id === space.id ? space : s));
+        try {
+            await fetch(`${API_URL}/${space.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(space)
+            });
+            await fetchSpaces();
+        } catch (error) {
+            console.error('Error updating space:', error);
+        }
     };
 
     const deleteSpace = async (id: string) => {
-        setSpaces(prev => prev.map(s => s.id === id ? { ...s, isArchived: true } : s));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchSpaces();
+        } catch (error) {
+            console.error('Error deleting space:', error);
+        }
     };
 
     return (

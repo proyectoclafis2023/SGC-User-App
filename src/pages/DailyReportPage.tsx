@@ -11,8 +11,10 @@ import {
     BarChart3, Calendar, Download, Printer,
     Users, Package, ClipboardList, AlertTriangle,
     CalendarCheck, Wrench, ChevronRight, FileText,
-    CheckCircle2, X, Building2, Smartphone
+    CheckCircle2, X, Building2, Smartphone, HardHat
 } from 'lucide-react';
+import { useContractors } from '../context/ContractorContext';
+import type { ShiftReport, Visitor, Correspondence, Ticket, Reservation, FixedAsset, Contractor, MaintenanceRecord } from '../types';
 
 export const DailyReportPage: React.FC = () => {
     const { reports } = useShiftReport();
@@ -21,6 +23,7 @@ export const DailyReportPage: React.FC = () => {
     const { tickets } = useTickets();
     const { reservations } = useReservations();
     const { assets } = useFixedAssets();
+    const { contractors } = useContractors();
 
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -29,21 +32,23 @@ export const DailyReportPage: React.FC = () => {
 
         return {
             date: dateStr,
-            shifts: reports.filter(r => r.shiftDate === dateStr),
-            visitors: visitors.filter(v => v.visitDate === dateStr),
-            packages: packages.filter(p => p.createdAt?.startsWith(dateStr)),
-            tickets: tickets.filter(t => t.createdAt?.startsWith(dateStr)),
-            reservations: reservations.filter(r => r.date === dateStr),
-            maintenance: assets.flatMap(a => a.maintenanceHistory || [])
-                .filter(m => m.date === dateStr)
+            shifts: reports.filter((r: ShiftReport) => r.shiftDate === dateStr),
+            visitors: visitors.filter((v: Visitor) => v.visitDate === dateStr),
+            packages: packages.filter((p: Correspondence) => p.createdAt?.startsWith(dateStr)),
+            tickets: tickets.filter((t: Ticket) => t.createdAt?.startsWith(dateStr)),
+            reservations: reservations.filter((r: Reservation) => r.date === dateStr),
+            maintenance: assets.flatMap((a: FixedAsset) => a.maintenanceHistory || [])
+                .filter((m: MaintenanceRecord) => m.date === dateStr),
+            contractors: contractors.filter((c: Contractor) => c.createdAt?.startsWith(dateStr) || c.isActive) // simplified for demo
         };
-    }, [selectedDate, reports, visitors, packages, tickets, reservations, assets]);
+    }, [selectedDate, reports, visitors, packages, tickets, reservations, assets, contractors]);
 
     const stats = [
-        { label: 'Visitas', value: data.visitors.length, color: 'indigo', icon: Users, path: '/visitas' },
-        { label: 'Paquetes', value: data.packages.length, color: 'amber', icon: Package, path: '/correspondencia' },
+        { label: 'Control Visitas', value: data.visitors.length, color: 'indigo', icon: Users, path: '/visitas' },
+        { label: 'Control Encomiendas', value: data.packages.length, color: 'amber', icon: Package, path: '/correspondencia' },
+        { label: 'Control Contratistas', value: data.contractors.length, color: 'orange', icon: HardHat, path: '/contratistas' },
         { label: 'Reservas', value: data.reservations.length, color: 'emerald', icon: CalendarCheck, path: '/reservas' },
-        { label: 'Tickets', value: data.tickets.length, color: 'rose', icon: AlertTriangle, path: '/reclamos' },
+        { label: 'Incidencias', value: data.tickets.length, color: 'rose', icon: AlertTriangle, path: '/reclamos' },
     ];
 
     return (
@@ -83,7 +88,7 @@ export const DailyReportPage: React.FC = () => {
             </div>
 
             {/* Stats section */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
                 {stats.map((stat, i) => (
                     <Link
                         key={i}
@@ -93,8 +98,8 @@ export const DailyReportPage: React.FC = () => {
                         <div className={`p-4 rounded-2xl mb-4 bg-${stat.color}-50 text-${stat.color}-600 group-hover:bg-${stat.color}-600 group-hover:text-white transition-colors`}>
                             <stat.icon className="w-6 h-6" />
                         </div>
-                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] mb-1">{stat.label}</p>
-                        <h3 className="text-3xl font-black text-gray-900 dark:text-white">{stat.value}</h3>
+                        <p className="text-[10px] font-black uppercase text-gray-400 tracking-[0.1em] mb-1">{stat.label}</p>
+                        <h3 className="text-2xl font-black text-gray-900 dark:text-white">{stat.value}</h3>
                     </Link>
                 ))}
             </div>
@@ -103,19 +108,19 @@ export const DailyReportPage: React.FC = () => {
                 {/* Left Column: Operations and Shifts */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* Shift Reports */}
-                    <div className="bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+                    <div className="bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden order-first">
                         <div className="p-8 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between bg-indigo-50/30 dark:bg-indigo-900/5">
                             <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
                                 <ClipboardList className="w-6 h-6 text-indigo-600" />
-                                Bitácora de Turnos del Día
+                                Reporte Diario de Operaciones
                             </h3>
                             <span className="px-4 py-1.5 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest">{data.shifts.length} Registros</span>
                         </div>
                         <div className="p-8 pb-0">
                             {/* Consolidado de Jornadas en el reporte */}
                             <div className="grid grid-cols-3 gap-3 mb-8">
-                                {(['Mañana', 'Tarde', 'Noche'] as const).map(type => {
-                                    const reported = data.shifts.find(s => s.shiftType === type && s.status === 'closed');
+                                {(['Mañana', 'Tarde', 'Noche'] as const).map((type) => {
+                                    const reported = data.shifts.find((s: ShiftReport) => s.shiftType === type && s.status === 'closed');
                                     return (
                                         <div key={type} className={`p-4 rounded-2xl border flex items-center justify-between ${reported ? 'bg-emerald-50 border-emerald-100 dark:bg-emerald-900/10' : 'bg-rose-50 border-rose-100 dark:bg-rose-900/10'}`}>
                                             <div>
@@ -131,7 +136,7 @@ export const DailyReportPage: React.FC = () => {
                             </div>
                         </div>
                         <div className="p-8 pt-4 space-y-6">
-                            {data.shifts.length > 0 ? data.shifts.map(shift => (
+                            {data.shifts.length > 0 ? data.shifts.map((shift: ShiftReport) => (
                                 <div key={shift.id} className="p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20">
                                     <div className="flex items-center justify-between mb-4">
                                         <div className="flex items-center gap-4">
@@ -151,7 +156,7 @@ export const DailyReportPage: React.FC = () => {
                                     </div>
                                     <div className="space-y-3">
                                         <div className="p-4 bg-white dark:bg-gray-900 rounded-2xl text-sm italic font-bold text-gray-700 dark:text-gray-300">
-                                            "{shift.noveldades || 'Sin novedades reportadas'}"
+                                            "{shift.novedades || 'Sin novedades reportadas'}"
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             {shift.hasIncidents && (
@@ -204,7 +209,7 @@ export const DailyReportPage: React.FC = () => {
                             </h3>
                         </div>
                         <div className="p-8 space-y-4">
-                            {data.maintenance.length > 0 ? data.maintenance.map((m, i) => (
+                            {data.maintenance.length > 0 ? data.maintenance.map((m: MaintenanceRecord, i: number) => (
                                 <div key={i} className="flex flex-col md:flex-row md:items-center justify-between p-6 bg-amber-50/50 dark:bg-amber-900/10 rounded-[2rem] border border-amber-100/50 dark:border-amber-900/20 gap-4">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 bg-amber-600 text-white rounded-xl flex items-center justify-center">
@@ -233,12 +238,12 @@ export const DailyReportPage: React.FC = () => {
                         <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between bg-emerald-50/30 dark:bg-emerald-900/5">
                             <h4 className="font-black text-gray-900 dark:text-white flex items-center gap-2">
                                 <Users className="w-5 h-5 text-emerald-600" />
-                                Visitas del Día
+                                Control de Visitas
                             </h4>
                             <span className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">{data.visitors.length}</span>
                         </div>
                         <div className="p-4 space-y-2">
-                            {data.visitors.length > 0 ? data.visitors.map(v => (
+                            {data.visitors.length > 0 ? data.visitors.map((v: Visitor) => (
                                 <Link
                                     key={v.id}
                                     to={`/visitas?id=${v.id}`}
@@ -257,17 +262,45 @@ export const DailyReportPage: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Contractors Summary */}
+                    <div className="bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+                        <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between bg-orange-50/30 dark:bg-orange-900/5">
+                            <h4 className="font-black text-gray-900 dark:text-white flex items-center gap-2">
+                                <HardHat className="w-5 h-5 text-orange-600" />
+                                Control de Contratistas
+                            </h4>
+                            <span className="text-[10px] font-black uppercase text-orange-600 tracking-widest">{data.contractors.length}</span>
+                        </div>
+                        <div className="p-4 space-y-2">
+                            {data.contractors.length > 0 ? data.contractors.map((c: Contractor) => (
+                                <Link
+                                    key={c.id}
+                                    to={`/contratistas?id=${c.id}`}
+                                    className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-between group hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                                >
+                                    <div>
+                                        <p className="text-sm font-black text-gray-900 dark:text-white leading-tight">{c.name}</p>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">{c.specialty} • {c.status}</p>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-colors" />
+                                </Link>
+                            )) : (
+                                <p className="text-xs font-bold text-gray-400 italic text-center py-4">Sin contratistas activos.</p>
+                            )}
+                        </div>
+                    </div>
+
                     {/* Packages Summary */}
                     <div className="bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
                         <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between bg-amber-50/30 dark:bg-amber-900/5">
                             <h4 className="font-black text-gray-900 dark:text-white flex items-center gap-2">
                                 <Package className="w-5 h-5 text-amber-600" />
-                                Paquetería
+                                Control de Encomiendas
                             </h4>
                             <span className="text-[10px] font-black uppercase text-amber-600 tracking-widest">{data.packages.length}</span>
                         </div>
                         <div className="p-4 space-y-2">
-                            {data.packages.length > 0 ? data.packages.map(p => (
+                            {data.packages.length > 0 ? data.packages.map((p: Correspondence) => (
                                 <Link
                                     key={p.id}
                                     to={`/correspondencia?id=${p.id}`}
@@ -296,7 +329,7 @@ export const DailyReportPage: React.FC = () => {
                             <span className="text-[10px] font-black uppercase text-rose-600 tracking-widest">{data.tickets.length}</span>
                         </div>
                         <div className="p-4 space-y-2">
-                            {data.tickets.length > 0 ? data.tickets.map(t => (
+                            {data.tickets.length > 0 ? data.tickets.map((t: Ticket) => (
                                 <Link
                                     key={t.id}
                                     to={`/reclamos?id=${t.id}`}

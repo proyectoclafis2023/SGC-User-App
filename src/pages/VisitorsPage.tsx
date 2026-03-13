@@ -3,6 +3,7 @@ import { useVisitors } from '../context/VisitorContext';
 import { useInfrastructure } from '../context/InfrastructureContext';
 import { useResidents } from '../context/ResidentContext';
 import { useAuth } from '../context/AuthContext';
+import { useTickets } from '../context/TicketContext';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import {
@@ -16,6 +17,7 @@ export const VisitorsPage: React.FC = () => {
     const { towers, departments } = useInfrastructure();
     const { residents } = useResidents();
     const { user } = useAuth();
+    const { addTicket } = useTickets();
     const isAdmin = user?.role === 'admin' || user?.role === 'global_admin' || user?.role === 'worker';
 
     const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
@@ -44,7 +46,15 @@ export const VisitorsPage: React.FC = () => {
         }
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    const filteredDepartments = departments.filter(d => d.towerId === towerId);
+    const filteredDepartments = departments
+        .filter(d => d.towerId === towerId)
+        .sort((a, b) => {
+            // Sort by tower name first, then by unit number
+            const towerA = towers.find(t => t.id === a.towerId)?.name || '';
+            const towerB = towers.find(t => t.id === b.towerId)?.name || '';
+            if (towerA !== towerB) return towerA.localeCompare(towerB, undefined, { numeric: true });
+            return a.number.localeCompare(b.number, undefined, { numeric: true });
+        });
 
     // Check if selected department has parking associated
     const selectedResident = residents.find(r => r.unitId === departmentId);
@@ -75,6 +85,16 @@ export const VisitorsPage: React.FC = () => {
             isPreRegistered: !isAdmin,
             status: 'scheduled'
         });
+
+        // Registrar Ticket/KPI en Centro de Gestiones
+        await addTicket({
+            userId: user?.id || 'system',
+            type: 'visit_registration',
+            subject: `Ingreso Visita - ${names} (${dni})`,
+            description: `Destino: Torre ${towers.find(t => t.id === towerId)?.name} - ${filteredDepartments.find(d => d.id === departmentId)?.number}. Jornada: ${visitTime}. ${notes}`,
+            status: 'pending'
+        });
+
         setIsModalOpen(false);
         resetForm();
     };
@@ -170,7 +190,7 @@ export const VisitorsPage: React.FC = () => {
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="font-black text-gray-400 uppercase tracking-widest">Destino</span>
                                     <span className="font-bold text-gray-900 dark:text-white">
-                                        Torre {towers.find(t => t.id === v.towerId)?.name} - Depto {departments.find(d => d.id === v.departmentId)?.number}
+                                        Torre {towers.find(t => t.id === v.towerId)?.name} - {departments.find(d => d.id === v.departmentId)?.number}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between text-xs">
@@ -301,7 +321,7 @@ export const VisitorsPage: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-1.5 font-bold">
-                                    <label className="text-xs font-black text-gray-500 ml-1 uppercase tracking-widest">Departamento / Unidad</label>
+                                    <label className="text-xs font-black text-gray-500 ml-1 uppercase tracking-widest">Unidad</label>
                                     <select
                                         className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-gray-900 dark:text-white"
                                         value={departmentId}

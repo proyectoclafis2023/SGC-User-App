@@ -47,7 +47,7 @@ export const MassiveUploadPage: React.FC = () => {
         { value: 'personnel', label: 'Maestro Personal', icon: Users, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Funcionarios, conserjes, mayordomos y personal de aseo.' },
         { value: 'residents', label: 'Residentes', icon: Users, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Habitantes actuales de las unidades del condominio (arrendatarios o dueños que viven ahí).' },
         { value: 'owners', label: 'Propietarios', icon: ShieldCheck, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Dueños legales de las unidades. Si viven en el condominio, también deben estar en Residentes.' },
-        { value: 'units', label: 'Tipos de Unidad', icon: Building2, requiredHeaders: ['nombre'], description: 'Clasificación de las unidades (Depto, Bodega, Estacionamiento) con su gasto base y m2.' },
+        { value: 'units', label: 'Tipos de Unidad', icon: Building2, requiredHeaders: ['nombre'], description: 'Clasificación de las unidades (Unidad, Bodega, Estacionamiento) con su gasto base y m2.' },
         { value: 'banks', label: 'Bancos', icon: Landmark, requiredHeaders: ['nombre'], description: 'Instituciones bancarias para los pagos de remuneraciones.' },
         { value: 'assets', label: 'Activo Fijo', icon: Database, requiredHeaders: ['descripcion'], description: 'Bienes del condominio sujetos a depreciación y control de inventario valorizado.' },
         { value: 'health', label: 'Previsiones / Salud', icon: LifeBuoy, requiredHeaders: ['nombre'], description: 'Isapres y Fonasa para el cálculo de remuneraciones.' },

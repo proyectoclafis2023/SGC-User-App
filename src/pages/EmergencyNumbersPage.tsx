@@ -31,10 +31,10 @@ export const EmergencyNumbersPage: React.FC<{ isMaster?: boolean }> = ({ isMaste
     );
 
     const categories = [
-        { id: 'SEGURIDAD', label: 'Seguridad', icon: Shield, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { id: 'EMERGENCIA', label: 'Emergencia', icon: Flame, color: 'text-rose-600', bg: 'bg-rose-50' },
+        { id: 'URGENCIA', label: 'Urgencia', icon: Flame, color: 'text-rose-600', bg: 'bg-rose-50' },
+        { id: 'COMUNAL', label: 'Seguridad Municipal', icon: Shield, color: 'text-blue-600', bg: 'bg-blue-50' },
         { id: 'SALUD', label: 'Salud', icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-        { id: 'SERVICIOS_BASICOS', label: 'Servicios Básicos', icon: Wrench, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { id: 'SERVICIOS', label: 'Servicios Básicos', icon: Wrench, color: 'text-amber-600', bg: 'bg-amber-50' },
         { id: 'OTROS', label: 'Otros', icon: Globe, color: 'text-gray-600', bg: 'bg-gray-50' }
     ];
 

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { AuthContextType, AuthState } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -27,7 +28,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [auth]);
 
     const login = async (username: string, pass: string) => {
-        // Hardcoded admin/admin
+        // Hardcoded admin/admin for development
         if (username === 'admin' && pass === 'admin') {
             const adminUser = {
                 isAuthenticated: true,
@@ -43,35 +44,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return true;
         }
 
-        // Try to find in localStorage users
         try {
-            const storedUsers = localStorage.getItem('users');
-            const usersList = storedUsers ? JSON.parse(storedUsers) : [];
-            const userFound = usersList.find((u: any) => (u.email === username || u.id === username) && u.password === pass && !u.isArchived);
-
-            if (userFound) {
-                const userData = {
-                    isAuthenticated: true,
-                    user: {
-                        id: userFound.id,
-                        name: userFound.name,
-                        email: userFound.email,
-                        role: userFound.role,
-                        status: userFound.status,
-                        relatedId: userFound.relatedId,
-                        profileId: userFound.profileId,
-                        mustChangePassword: userFound.mustChangePassword
-                    }
-                };
-                setAuth(userData);
-                return true;
-            }
-        } catch (e) {
-            console.error('Error in local login:', e);
-        }
-
-        try {
-            const response = await fetch('http://localhost:5000/api/login', {
+            const response = await fetch(`${API_BASE_URL}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password: pass }),
@@ -91,21 +65,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const changePassword = async (newPassword: string) => {
         if (!auth.user) return;
-
-        // Update in localStorage users
         try {
-            const storedUsers = localStorage.getItem('users');
-            const usersList = storedUsers ? JSON.parse(storedUsers) : [];
-            const updatedUsers = usersList.map((u: any) =>
-                u.id === auth.user?.id ? { ...u, password: newPassword, mustChangePassword: false } : u
-            );
-            localStorage.setItem('users', JSON.stringify(updatedUsers));
+            const response = await fetch(`${API_BASE_URL}/users/${auth.user.id}/change-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newPassword })
+            });
 
-            // Update current auth state
-            setAuth(prev => ({
-                ...prev,
-                user: prev.user ? { ...prev.user, mustChangePassword: false } : null
-            }));
+            if (response.ok) {
+                setAuth(prev => ({
+                    ...prev,
+                    user: prev.user ? { ...prev.user, mustChangePassword: false } : null
+                }));
+            }
         } catch (e) {
             console.error('Error changing password:', e);
         }
@@ -113,38 +85,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const loginWithGoogle = async (email: string, name: string, photoUrl?: string) => {
         try {
-            // Simulated login: Check if user already exists in users DB
-            const storedUsers = localStorage.getItem('users');
-            const usersList = storedUsers ? JSON.parse(storedUsers) : [];
-            let existingUser = usersList.find((u: any) => u.email === email);
-
-            if (!existingUser) {
-                existingUser = {
-                    id: `G-${Date.now()}`,
-                    name,
-                    email,
-                    role: 'pending',
-                    status: 'setting_up',
-                    createdAt: new Date().toISOString()
-                };
-                usersList.push(existingUser);
-                localStorage.setItem('users', JSON.stringify(usersList));
-            }
-
-            setAuth({
-                isAuthenticated: true,
-                user: {
-                    name: existingUser.name,
-                    role: existingUser.role,
-                    email: existingUser.email,
-                    status: existingUser.status,
-                    id: existingUser.id,
-                    photo: photoUrl,
-                    mustChangePassword: existingUser.mustChangePassword
-                } as any
+            const response = await fetch(`${API_BASE_URL}/auth/google`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, name, photoUrl }),
             });
 
-            return true;
+            if (response.ok) {
+                const data = await response.json();
+                setAuth(data);
+                return true;
+            }
+            return false;
         } catch (error) {
             console.error("Error signing in with Google:", error);
             return false;

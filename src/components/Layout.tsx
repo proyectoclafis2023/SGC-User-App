@@ -32,7 +32,10 @@ import {
     Home,
     Mail,
     Shield,
-    UploadCloud
+    UploadCloud,
+    BarChart3,
+    ClipboardCheck,
+    Bell
 } from 'lucide-react';
 
 interface SubMenuItem {
@@ -254,18 +257,12 @@ export const Layout: React.FC = () => {
                                 </h3>
                                 <div className="h-[2px] w-full bg-gradient-to-r from-indigo-500/30 to-transparent rounded-full opacity-50"></div>
                             </div>
+                            <NavItem to="/reporte-diario" icon={FileText} label="Reporte Diario" isCollapsed={isCollapsed} />
                             <NavItem to="/bitacora-turnos" icon={History} label="Bitácora Turnos" isCollapsed={isCollapsed} />
-                            <NavItem to="/visitas" icon={Users} label="Control Visitas" isCollapsed={isCollapsed} />
-                            <NavItem to="/correspondencia" icon={Package} label="Encomiendas" isCollapsed={isCollapsed} />
-                            <NavItem to="/registro-contratistas" icon={HardHat} label="Contratistas" isCollapsed={isCollapsed} />
-                            <NavItem
-                                icon={FileText}
-                                label="Reportes"
-                                isCollapsed={isCollapsed}
-                                children={[
-                                    { label: 'Reporte Diario', path: '/reporte-diario' },
-                                ]}
-                            />
+                            <NavItem to="/visitas" icon={Users} label="Control de Visitas" isCollapsed={isCollapsed} />
+                            <NavItem to="/correspondencia" icon={Package} label="Control de Encomiendas" isCollapsed={isCollapsed} />
+                            <NavItem to="/registro-contratistas" icon={HardHat} label="Control de Contratistas" isCollapsed={isCollapsed} />
+                            <NavItem to="/solicitud-insumos" icon={Package} label="Solicitud Insumos" isCollapsed={isCollapsed} />
                             <NavItem to="/camaras" icon={Video} label="Cámaras / Grabaciones" isCollapsed={isCollapsed} />
                         </>
                     )}
@@ -282,7 +279,6 @@ export const Layout: React.FC = () => {
                                 </h3>
                                 <div className="h-[2px] w-full bg-gradient-to-r from-emerald-500/30 to-transparent rounded-full opacity-50"></div>
                             </div>
-                            <NavItem to="/reservas" icon={Calendar} label="Mis Reservas" isCollapsed={isCollapsed} />
                             <NavItem to="/gastos-comunes" icon={Wallet} label="Mis Pagos" isCollapsed={isCollapsed} />
                         </>
                     )}
@@ -297,9 +293,10 @@ export const Layout: React.FC = () => {
                         </h3>
                         <div className="h-[2px] w-full bg-gradient-to-r from-amber-500/30 to-transparent rounded-full opacity-50"></div>
                     </div>
-                    <NavItem to="/servicios-residentes" icon={HardHat} label="Directorio de Servicios" isCollapsed={isCollapsed} />
-                    <NavItem to="/reclamos" icon={LifeBuoy} label="Sugerencias & Reclamos" isCollapsed={isCollapsed} />
                     <NavItem to="/emergencias" icon={Phone} label="Números Emergencia" isCollapsed={isCollapsed} />
+                    <NavItem to="/servicios-residentes" icon={HardHat} label="Directorio de Servicios" isCollapsed={isCollapsed} />
+                    <NavItem to="/reservas" icon={Calendar} label="Reserva Espacios Comunes" isCollapsed={isCollapsed} />
+                    <NavItem to="/reclamos" icon={LifeBuoy} label="Atención y Soporte" isCollapsed={isCollapsed} />
 
                     {/* ADMINISTRACIÓN (Admins only) */}
                     {isAdmin && (
@@ -313,6 +310,8 @@ export const Layout: React.FC = () => {
                                 </h3>
                                 <div className="h-[2px] w-full bg-gradient-to-r from-blue-500/30 to-transparent rounded-full opacity-50"></div>
                             </div>
+                             <NavItem to="/dashboard-kpi" icon={BarChart3} label="Gestión Estratégica" isCollapsed={isCollapsed} />
+                             <NavItem to="/tickets" icon={ClipboardCheck} label="Centro de Gestiones" isCollapsed={isCollapsed} />
                             <NavItem
                                 icon={Building2}
                                 label="Comunidad"
@@ -320,8 +319,9 @@ export const Layout: React.FC = () => {
                                 children={[
                                     { label: 'Residentes', path: '/residentes', icon: Users },
                                     { label: 'Propietarios', path: '/propietarios', icon: ShieldCheck },
-                                    { label: 'Mensajes Dirigidos', path: '/comunicaciones', icon: Mail },
-                                    { label: 'Avisos Sistema', path: '/mensajes', icon: Mail },
+                                    { label: 'Directiva', path: '/directiva', icon: Landmark },
+                                    { label: 'Mensajes Dirigidos', path: '/mensajes-dirigidos', icon: Mail },
+                                    { label: 'Avisos del Sistema', path: '/mensajes', icon: Bell },
                                 ]}
                             />
                             <NavItem
@@ -347,77 +347,54 @@ export const Layout: React.FC = () => {
                                     { label: 'Reglas de Cobro', path: '/reglas-gastos-comunes' },
                                     { label: 'Fondos Especiales', path: '/maestro-fondos' },
                                     { label: 'Activo Fijo', path: '/activo-fijo' },
+                                 ]}
+                             />
+
+                            <div className={`mt-6 mb-4 px-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+                                <h3 className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.4em]">Configuración y Maestros</h3>
+                            </div>
+
+                            <NavItem
+                                icon={Settings}
+                                label="Ajustes de Sistema"
+                                isCollapsed={isCollapsed}
+                                children={[
+                                    { label: 'Parámetros Generales', path: '/parametros' },
+                                    { label: 'Configuración Comunidad', path: '/configuracion' },
+                                    { label: 'Configuración Email', path: '/maestro-correos' },
+                                    { label: 'Perfiles de Acceso', path: '/perfiles' },
+                                    { label: 'Carga Masiva de Datos', path: '/carga-masiva' },
+                                ]}
+                            />
+
+                            <NavItem
+                                icon={Database}
+                                label="Maestros Base"
+                                isCollapsed={isCollapsed}
+                                children={[
+                                    { label: 'Infraestructura', isHeader: true },
+                                    { label: 'Edificios y propiedades', path: '/infraestructura' },
+                                    { label: 'Tipos de Unidad', path: '/tipos-unidad' },
+                                    { label: 'Espacios Comunes', path: '/espacios' },
+                                    { label: 'Estacionamientos', path: '/estacionamientos' },
+                                    
+                                    { label: 'Recursos Humanos', isHeader: true },
+                                    { label: 'Previsiones', path: '/previsiones' },
+                                    { label: 'AFPs', path: '/afps' },
+                                    
+                                    { label: 'Finanzas y Operación', isHeader: true },
+                                    { label: 'Bancos', path: '/bancos' },
+                                    { label: 'Maestro IPC', path: '/maestro-ipc' },
+                                    { label: 'Bitácora / Cámaras', path: '/maestros-operativos' },
+                                    { label: 'Mensajes Prefijados', path: '/maestro-mensajes' },
+                                    { label: 'Números Emergencia', path: '/maestro-emergencias' },
+                                    { label: 'Condiciones Especiales', path: '/condiciones-especiales' },
                                 ]}
                             />
 
                         </>
                     )}
-                    {isAdmin && (
-                        <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
-                             <div className={`pt-12 pb-4 px-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                                <h3 className="text-[13px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.4em] flex items-center gap-3 mb-2">
-                                    <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
-                                        <Settings className="w-4 h-4 fill-purple-600/20" /> 
-                                    </div>
-                                    CONFIGURACIÓN
-                                </h3>
-                                <div className="h-[2px] w-full bg-gradient-to-r from-purple-500/30 to-transparent rounded-full opacity-50"></div>
-                            </div>
-                            
-                            <div className="space-y-1">
-                                <NavItem
-                                    icon={Settings}
-                                    label="Ajustes Generales"
-                                    to="/parametros"
-                                    isCollapsed={isCollapsed}
-                                />
-                                <NavItem
-                                    icon={Mail}
-                                    label="Configuración Email"
-                                    to="/maestro-correos"
-                                    isCollapsed={isCollapsed}
-                                />
-                                <NavItem
-                                    icon={Shield}
-                                    label="Perfiles Acceso"
-                                    to="/perfiles"
-                                    isCollapsed={isCollapsed}
-                                />
-                                <NavItem
-                                    icon={UploadCloud}
-                                    label="Carga Masiva"
-                                    to="/carga-masiva"
-                                    isCollapsed={isCollapsed}
-                                />
-                                <NavItem
-                                    icon={Database}
-                                    label="Maestros"
-                                    isCollapsed={isCollapsed}
-                                    children={[
-                                        { label: 'Infraestructura', isHeader: true },
-                                        { label: 'Edificios y Unidades', path: '/infraestructura' },
-                                        { label: 'Tipos de Unidad', path: '/tipos-unidad' },
-                                        { label: 'Espacios Comunes', path: '/espacios' },
-                                        { label: 'Estacionamientos', path: '/estacionamientos' },
-                                        
-                                        { label: 'Recursos Humanos', isHeader: true },
-                                        { label: 'Previsiones', path: '/previsiones' },
-                                        { label: 'AFPs', path: '/afps' },
-                                        
-                                        { label: 'Finanzas', isHeader: true },
-                                        { label: 'Bancos', path: '/bancos' },
-                                        { label: 'Condiciones Especiales', path: '/condiciones-especiales' },
-                                        
-                                        { label: 'Operaciones', isHeader: true },
-                                        { label: 'Bitácora Turnos', path: '/maestros-operativos' },
-                                        { label: 'Cámaras', path: '/maestro-camaras' },
-                                        { label: 'Mensajes Prefijados', path: '/maestro-mensajes' },
-                                        { label: 'Números Emergencia', path: '/maestro-emergencias' },
-                                    ]}
-                                />
-                            </div>
-                        </div>
-                    )}
+
                 </nav>
 
                 <div className={`p-6 border-t border-gray-50 dark:border-gray-800 transition-all ${isCollapsed ? 'px-2' : ''}`}>

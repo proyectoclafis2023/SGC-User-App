@@ -14,7 +14,7 @@ export const ContractorProvider: React.FC<{ children: ReactNode }> = ({ children
             const response = await fetch(BACKEND_URL);
             if (response.ok) {
                 const data = await response.json();
-                setContractors(data);
+                setContractors(Array.isArray(data) ? data : []);
             }
         } catch (e) {
             console.error('Error fetching contractors:', e);

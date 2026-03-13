@@ -14,7 +14,7 @@ export const CorrespondenceProvider: React.FC<{ children: ReactNode }> = ({ chil
             const response = await fetch(BACKEND_URL);
             if (response.ok) {
                 const data = await response.json();
-                setItems(data);
+                setItems(Array.isArray(data) ? data : []);
             }
         } catch (e) {
             console.error('Error fetching correspondence:', e);

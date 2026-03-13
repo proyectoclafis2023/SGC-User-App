@@ -1,16 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { Personnel } from '../types';
+import type { Personnel, PersonnelContextType } from '../types';
 import { useHistoryLogs } from './HistoryLogContext';
 import { useSettings } from './SettingsContext';
 import { API_BASE_URL } from '../config/api';
-
-export interface PersonnelContextType {
-    personnel: Personnel[];
-    addPersonnel: (person: Omit<Personnel, 'id' | 'createdAt' | 'status'>) => Promise<string>;
-    updatePersonnel: (person: Personnel) => Promise<void>;
-    deletePersonnel: (id: string) => Promise<void>;
-    uploadPersonnel: (file: File) => Promise<{ message: string }>;
-}
 
 const PersonnelContext = createContext<PersonnelContextType | undefined>(undefined);
 
@@ -26,7 +18,7 @@ export const PersonnelProvider: React.FC<{ children: ReactNode }> = ({ children 
             const response = await fetch(API_URL);
             if (response.ok) {
                 const data = await response.json();
-                setPersonnel(data);
+                setPersonnel(Array.isArray(data) ? data : []);
             }
         } catch (error) {
             console.error('Failed to fetch personnel from backend:', error);

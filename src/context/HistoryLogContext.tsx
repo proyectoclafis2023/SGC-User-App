@@ -10,31 +10,47 @@ interface HistoryLogContextType {
 
 const HistoryLogContext = createContext<HistoryLogContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'sgc_history_logs';
+import { API_BASE_URL } from '../config/api';
+
+const API_URL = `${API_BASE_URL}/history_logs`;
 
 export const HistoryLogProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [logs, setLogs] = useState<HistoryLog[]>(() => {
+    const [logs, setLogs] = useState<HistoryLog[]>([]);
+
+    const fetchLogs = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            return stored ? JSON.parse(stored) : [];
-        } catch (e) {
-            console.error('Error loading history logs:', e);
-            return [];
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setLogs(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch history logs:', error);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-    }, [logs]);
+        fetchLogs();
+    }, []);
 
     const addLog = async (log: Omit<HistoryLog, 'id' | 'timestamp'>) => {
-        const newLog: HistoryLog = {
-            ...log,
-            id: Math.random().toString(36).substr(2, 9),
-            timestamp: new Date().toISOString()
-        };
-        setLogs(prev => [newLog, ...prev]);
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...log,
+                    timestamp: new Date().toISOString()
+                })
+            });
+            if (response.ok) {
+                await fetchLogs();
+            }
+        } catch (error) {
+            console.error('Error adding history log:', error);
+        }
     };
+
 
     const getLogsByEntity = (entityType: HistoryLog['entityType'], entityId: string) => {
         return logs.filter(l => l.entityType === entityType && l.entityId === entityId);

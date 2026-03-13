@@ -138,7 +138,7 @@ export const CommonSpacesPage: React.FC = () => {
                                     className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 min-h-[100px]"
                                     value={conditions}
                                     onChange={(e) => setConditions(e.target.value)}
-                                    placeholder="Ej: Se entrega limpio, acceso a luz incluído, multa por ruidos molestos..."
+                                    placeholder="Sugerencia: Se entrega limpio, acceso a luz incluído, multa por ruidos molestos... (Editable)"
                                 />
                             </div>
                             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">

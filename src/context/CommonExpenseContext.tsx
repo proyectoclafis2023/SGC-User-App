@@ -13,14 +13,20 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     const fetchPayments = React.useCallback(async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/common_expense_payments`);
-            if (response.ok) setPayments(await response.json());
+            if (response.ok) {
+                const data = await response.json();
+                setPayments(Array.isArray(data) ? data : []);
+            }
         } catch (e) { console.error('Error fetching payments:', e); }
     }, []);
 
     const fetchRules = React.useCallback(async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/common_expense_rules`);
-            if (response.ok) setRules(await response.json());
+            if (response.ok) {
+                const data = await response.json();
+                setRules(Array.isArray(data) ? data : []);
+            }
         } catch (e) { console.error('Error fetching rules:', e); }
     }, []);
 
@@ -29,7 +35,8 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
             const response = await fetch(`${API_BASE_URL}/special_funds`);
             if (response.ok) {
                 const data = await response.json();
-                setFunds(includeArchived ? data : data.filter((f: SpecialFund) => !f.isArchived));
+                const arrayData = Array.isArray(data) ? data : [];
+                setFunds(includeArchived ? arrayData : arrayData.filter((f: SpecialFund) => !f.isArchived));
             }
         } catch (e) { console.error('Error fetching funds:', e); }
     }, []);
@@ -39,7 +46,8 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
             const response = await fetch(`${API_BASE_URL}/community_expenses`);
             if (response.ok) {
                 const data = await response.json();
-                setCommunityExpenses(includeArchived ? data : data.filter((e: CommunityExpense) => !e.isArchived));
+                const arrayData = Array.isArray(data) ? data : [];
+                setCommunityExpenses(includeArchived ? arrayData : arrayData.filter((e: CommunityExpense) => !e.isArchived));
             }
         } catch (e) { console.error('Error fetching community expenses:', e); }
     }, []);
@@ -92,10 +100,41 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     }, [fetchRules]);
 
     const calculateAmount = React.useCallback(async (deptId: string) => {
-        // Logic for calculation can be frontend-based or backend-based
-        // For now, return 0 or dummy
-        return { suggestedAmount: 0, ruleUsed: null };
-    }, []);
+        try {
+            // 1. Get current month community expenses
+            const month = new Date().getMonth() + 1;
+            const year = new Date().getFullYear();
+            
+            // Sum community expenses for this period
+            const totalMonthlyExpenses = communityExpenses
+                .filter(e => {
+                    const eDate = new Date(e.date);
+                    return eDate.getMonth() + 1 === month && eDate.getFullYear() === year && !e.isArchived;
+                })
+                .reduce((acc, curr) => acc + curr.amount, 0);
+
+            if (totalMonthlyExpenses === 0) return { suggestedAmount: 0, ruleUsed: 'No hay gastos mensuales registrados' };
+
+            // 2. Get total m2 and dept m2
+            const deptsRes = await fetch(`${API_BASE_URL}/departments`);
+            const departments = await deptsRes.json();
+            
+            const totalM2 = departments.reduce((acc: number, d: any) => acc + (Number(d.m2) || 0), 0);
+            const dept = departments.find((d: any) => d.id === deptId);
+            
+            if (!dept || totalM2 === 0) return { suggestedAmount: 0, ruleUsed: 'Error en datos de m2' };
+
+            const suggestedAmount = (totalMonthlyExpenses / totalM2) * (Number(dept.m2) || 0);
+
+            return { 
+                suggestedAmount: Math.round(suggestedAmount), 
+                ruleUsed: `Proporcional por m2 (${dept.m2} m2 de ${totalM2} m2 totales)` 
+            };
+        } catch (e) {
+            console.error('Error calculating amount:', e);
+            return { suggestedAmount: 0, ruleUsed: 'Error en cálculo' };
+        }
+    }, [communityExpenses]);
 
     const addFund = React.useCallback(async (fund: Omit<SpecialFund, 'id' | 'createdAt'>) => {
         try {

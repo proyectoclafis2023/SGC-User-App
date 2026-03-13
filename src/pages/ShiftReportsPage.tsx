@@ -4,12 +4,14 @@ import { useAuth } from '../context/AuthContext';
 import { usePersonnel } from '../context/PersonnelContext';
 import { useInfrastructureItems } from '../context/InfrastructureItemContext';
 import { useEquipmentItems } from '../context/EquipmentItemContext';
+import { useTickets } from '../context/TicketContext';
 import { Button } from '../components/Button';
 import {
     ClipboardList, Plus, Search, X, Calendar, Clock,
     User, CheckCircle2, Save, BookOpen,
     Smartphone, Zap, Building2, ShieldAlert, FileText, Image as ImageIcon, Trash2, Upload, AlertTriangle
 } from 'lucide-react';
+import type { ShiftReport, Personnel, InfrastructureItem, EquipmentItem } from '../types';
 
 export const ShiftReportsPage: React.FC = () => {
     const { reports, addReport, updateReport, closeShift, reopenShift, deleteReport } = useShiftReport();
@@ -17,20 +19,23 @@ export const ShiftReportsPage: React.FC = () => {
     const { items: equipItems } = useEquipmentItems();
     const { user } = useAuth();
     const { personnel } = usePersonnel();
+    const { addTicket } = useTickets();
 
     const isAdmin = user?.role === 'admin' || user?.role === 'global_admin';
 
     const [searchTerm, setSearchTerm] = useState('');
+    const [dateFilter, setDateFilter] = useState('');
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isReopenModalOpen, setIsReopenModalOpen] = useState(false);
-    const [reopeningReport, setReopeningReport] = useState<any>(null);
+    const [reopeningReport, setReopeningReport] = useState<ShiftReport | null>(null);
     const [reopenReason, setReopenReason] = useState('');
     const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, folio: string } | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
     // Form fields for report
-    const [shiftType, setShiftType] = useState<'Mañana' | 'Tarde' | 'Noche'>('Mañana');
-    const [noveldades, setNovedades] = useState('');
+    const [shiftType, setShiftType] = useState<'Manana' | 'Tarde' | 'Noche'>('Manana');
+    const [novedades, setNovedades] = useState('');
     const [hasIncidents, setHasIncidents] = useState(false);
     const [incidentDetails, setIncidentDetails] = useState('');
     const [incidentAttachments, setIncidentAttachments] = useState<string[]>([]);
@@ -45,28 +50,28 @@ export const ShiftReportsPage: React.FC = () => {
     const [checkedMandatoryItems, setCheckedMandatoryItems] = useState<string[]>([]);
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const activeReport = reports.find(r => r.workerId === user?.id && r.shiftDate === todayStr && r.status === 'open');
+    const activeReport = reports.find((r: ShiftReport) => r.workerId === user?.id && r.shiftDate === todayStr && r.status === 'open');
 
     useEffect(() => {
         if (user?.relatedId && !activeReport) {
-            const currentPersonnel = personnel.find(p => p.id === user.relatedId);
+            const currentPersonnel = personnel.find((p: Personnel) => p.id === user.relatedId);
             if (currentPersonnel?.assignedShift) {
-                setShiftType(currentPersonnel.assignedShift as 'Mañana' | 'Tarde' | 'Noche');
+                setShiftType(currentPersonnel.assignedShift as 'Manana' | 'Tarde' | 'Noche');
             }
         }
     }, [user, personnel, activeReport]);
 
-    const hasTodayClosed = reports.some(r => r.workerId === user?.id && r.shiftDate === todayStr && r.status === 'closed');
+    const hasTodayClosed = reports.some((r: ShiftReport) => r.workerId === user?.id && r.shiftDate === todayStr && r.status === 'closed');
 
-    const infrastructureOptions = infraItems.filter(i => !i.isArchived).map(i => i.name);
-    const equipmentOptions = equipItems.filter(i => !i.isArchived).map(i => i.name);
+    const infrastructureOptions = infraItems.filter((i: InfrastructureItem) => !i.isArchived).map((i: InfrastructureItem) => i.name);
+    const equipmentOptions = equipItems.filter((i: EquipmentItem) => !i.isArchived).map((i: EquipmentItem) => i.name);
 
-    const mandatoryInfra = infraItems.filter(i => !i.isArchived && i.isMandatory);
-    const mandatoryEquip = equipItems.filter(i => !i.isArchived && i.isMandatory);
+    const mandatoryInfra = infraItems.filter((i: InfrastructureItem) => !i.isArchived && i.isMandatory);
+    const mandatoryEquip = equipItems.filter((i: EquipmentItem) => !i.isArchived && i.isMandatory);
     const totalMandatory = mandatoryInfra.length + mandatoryEquip.length;
 
     const resetForm = () => {
-        setShiftType('Mañana');
+        setShiftType('Manana');
         setNovedades('');
         setHasIncidents(false);
         setIncidentDetails('');
@@ -85,7 +90,7 @@ export const ShiftReportsPage: React.FC = () => {
     useEffect(() => {
         if (activeReport) {
             setShiftType(activeReport.shiftType);
-            setNovedades(activeReport.noveldades || '');
+            setNovedades(activeReport.novedades || '');
             setHasIncidents(activeReport.hasIncidents || false);
             setIncidentDetails(activeReport.incidentDetails || '');
             setHasInfrastructureIssues(activeReport.hasInfrastructureIssues || false);
@@ -101,7 +106,7 @@ export const ShiftReportsPage: React.FC = () => {
     }, [activeReport]);
 
     const handleStartShift = async () => {
-        const existing = reports.find(r => r.workerId === user?.id && r.shiftDate === todayStr);
+        const existing = reports.find((r: ShiftReport) => r.workerId === user?.id && r.shiftDate === todayStr);
 
         if (existing) {
             if (existing.status === 'closed') {
@@ -116,8 +121,8 @@ export const ShiftReportsPage: React.FC = () => {
             workerId: user?.id || 'unknown',
             workerName: user?.name || 'Usuario',
             shiftDate: todayStr,
-            shiftType: 'Mañana',
-            noveldades: ''
+            shiftType: 'Manana',
+            novedades: ''
         });
 
         // Immediately open the reporting modal as requested
@@ -129,7 +134,7 @@ export const ShiftReportsPage: React.FC = () => {
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setter(prev => [...prev, reader.result as string]);
+                setter((prev: string[]) => [...prev, reader.result as string]);
             };
             reader.readAsDataURL(file);
         }
@@ -140,7 +145,7 @@ export const ShiftReportsPage: React.FC = () => {
             setIsSaving(true);
             await updateReport(activeReport.id, {
                 shiftType,
-                noveldades,
+                novedades,
                 hasIncidents,
                 incidentDetails,
                 incidentAttachments,
@@ -172,7 +177,7 @@ export const ShiftReportsPage: React.FC = () => {
         if (activeReport) {
             await closeShift(activeReport.id, {
                 shiftType,
-                noveldades,
+                novedades,
                 hasIncidents,
                 incidentDetails,
                 incidentAttachments,
@@ -185,6 +190,16 @@ export const ShiftReportsPage: React.FC = () => {
                 equipmentIssueDetails: equipmentDetails,
                 equipmentAttachments
             });
+            
+            // Register Ticket / KPI
+            await addTicket({
+                userId: user?.id || 'system',
+                type: 'shift_report',
+                subject: `Cierre Turno ${shiftType} - ${user?.name || 'Funcionario'}`,
+                description: `Folio Turno: ${activeReport.folio}. Novedades: ${novedades || 'Sin novedades'}. Incidencias: ${hasIncidents ? 'Sí' : 'No'}. Instalaciones: ${hasInfrastructureIssues ? 'Revisar' : 'OK'}. Equipamiento: ${hasEquipmentIssues ? 'Revisar' : 'OK'}.`,
+                status: 'pending'
+            });
+
             setIsModalOpen(false);
             resetForm();
         }
@@ -212,16 +227,18 @@ export const ShiftReportsPage: React.FC = () => {
         setDeleteConfirm({ id, folio });
     };
 
-    const filteredReports = reports.filter(r =>
-        r.workerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.folio.toLowerCase().includes(searchTerm.toLowerCase())
-    ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const filteredReports = reports.filter((r: ShiftReport) => {
+        const matchesSearch = r.workerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            r.folio.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesDate = !dateFilter || r.shiftDate === dateFilter;
+        return matchesSearch && matchesDate;
+    }).sort((a: ShiftReport, b: ShiftReport) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    const todayReports = reports.filter(r => r.shiftDate === todayStr);
+    const todayReports = reports.filter((r: ShiftReport) => r.shiftDate === todayStr);
     const shiftStatus = {
-        Mañana: todayReports.some(r => r.shiftType === 'Mañana' && r.status === 'closed'),
-        Tarde: todayReports.some(r => r.shiftType === 'Tarde' && r.status === 'closed'),
-        Noche: todayReports.some(r => r.shiftType === 'Noche' && r.status === 'closed'),
+        Manana: todayReports.some((r: ShiftReport) => r.shiftType === 'Manana' && r.status === 'closed'),
+        Tarde: todayReports.some((r: ShiftReport) => r.shiftType === 'Tarde' && r.status === 'closed'),
+        Noche: todayReports.some((r: ShiftReport) => r.shiftType === 'Noche' && r.status === 'closed'),
     };
 
     const AttachmentSection = ({ title, attachments, setter }: { title: string, attachments: string[], setter: React.Dispatch<React.SetStateAction<string[]>> }) => (
@@ -243,7 +260,7 @@ export const ShiftReportsPage: React.FC = () => {
                             <img src={img} alt="attachment" className="w-full h-full object-cover" />
                             <button
                                 type="button"
-                                onClick={() => setter(prev => prev.filter((_, i) => i !== idx))}
+                                onClick={() => setter((prev: string[]) => prev.filter((_: string, i: number) => i !== idx))}
                                 className="absolute top-1 right-1 p-1 bg-rose-500 text-white rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shadow-lg"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -321,7 +338,7 @@ export const ShiftReportsPage: React.FC = () => {
                     Consolidado de Gestión Diaria ({new Date().toLocaleDateString()})
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {(['Mañana', 'Tarde', 'Noche'] as const).map(type => {
+                    {(['Manana', 'Tarde', 'Noche'] as const).map(type => {
                         const isReported = shiftStatus[type];
                         const report = todayReports.find(r => r.shiftType === type);
 
@@ -369,8 +386,8 @@ export const ShiftReportsPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                <div className="relative">
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                         type="text"
@@ -380,6 +397,20 @@ export const ShiftReportsPage: React.FC = () => {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+                <div className="relative md:w-64">
+                    <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                        type="date"
+                        className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-sm"
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                    />
+                </div>
+                {(searchTerm || dateFilter) && (
+                    <Button variant="secondary" onClick={() => { setSearchTerm(''); setDateFilter(''); }}>
+                        <X className="w-4 h-4 mr-2" /> Limpiar
+                    </Button>
+                )}
             </div>
 
             <div className="space-y-6">
@@ -463,7 +494,7 @@ export const ShiftReportsPage: React.FC = () => {
                                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Novedades Generales</p>
                                                 </div>
                                                 <p className="text-sm font-bold text-gray-700 dark:text-gray-300 leading-relaxed italic">
-                                                    {report.noveldades || 'Sin novedades reportadas'}
+                                                    {report.novedades || 'Sin novedades reportadas'}
                                                 </p>
                                             </div>
 
@@ -488,7 +519,7 @@ export const ShiftReportsPage: React.FC = () => {
                                                 <div className="p-6 bg-amber-50 dark:bg-amber-950/20 rounded-[2rem] border border-amber-200 dark:border-amber-900/30">
                                                     <div className="flex items-center gap-2 text-amber-600 mb-3">
                                                         <AlertTriangle className="w-4 h-4" />
-                                                        <p className="text-[10px] font-black uppercase tracking-[0.2em]">Observación Administrativa (Devolución)</p>
+                                                        <p className="text-[10px] font-black uppercase tracking-[0.2em]">Observación Administrativa (Devolución para Corrección)</p>
                                                     </div>
                                                     <p className="text-sm font-bold text-amber-800 dark:text-amber-400 italic">"{report.adminReopenReason}"</p>
                                                     <p className="text-[8px] font-black text-amber-600 uppercase mt-2">Devuelto por: {report.adminReopenedBy}</p>
@@ -553,9 +584,15 @@ export const ShiftReportsPage: React.FC = () => {
             </div>
 
             {/* Modal de Cierre Estructurado */}
-            {isModalOpen && activeReport && (
+            {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[3.5rem] w-full max-w-3xl max-h-[95vh] flex flex-col shadow-2xl border border-white/20 dark:border-gray-800 overflow-hidden animate-in zoom-in-95 duration-300">
+                    {!activeReport ? (
+                        <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-10 text-center animate-pulse">
+                            <Clock className="w-12 h-12 text-indigo-600 mx-auto mb-4 animate-spin" />
+                            <p className="font-black uppercase tracking-widest text-sm text-gray-500">Iniciando Reporte...</p>
+                        </div>
+                    ) : (
+                        <div className="bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[3.5rem] w-full max-w-3xl max-h-[95vh] flex flex-col shadow-2xl border border-white/20 dark:border-gray-800 overflow-hidden animate-in zoom-in-95 duration-300">
                         <div className="p-6 sm:p-8 border-b dark:border-gray-800 flex items-center justify-between bg-amber-50/40 dark:bg-amber-950/20">
                             <div className="flex items-center gap-3 sm:gap-5">
                                 <div className="w-12 h-12 sm:w-16 sm:h-16 bg-amber-600 rounded-2xl sm:rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-amber-600/30 ring-4 ring-amber-100 dark:ring-amber-900/30">
@@ -581,11 +618,11 @@ export const ShiftReportsPage: React.FC = () => {
                                         <Clock className="w-4 h-4" /> 01. Identificación del Turno (Jornada)
                                     </h3>
                                     <div className="grid grid-cols-3 gap-4">
-                                        {['Mañana', 'Tarde', 'Noche'].map((t) => (
+                                        {['Manana', 'Tarde', 'Noche'].map((t) => (
                                             <button
                                                 key={t}
                                                 type="button"
-                                                onClick={() => setShiftType(t as any)}
+                                                onClick={() => setShiftType(t as 'Manana' | 'Tarde' | 'Noche')}
                                                 className={`p-6 rounded-[2rem] border-2 transition-all font-black text-sm uppercase tracking-widest flex flex-col items-center gap-3 ${shiftType === t ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-600/20 scale-105' : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-400 hover:border-indigo-200'}`}
                                             >
                                                 <Zap className={`w-6 h-6 ${t === 'Tarde' ? 'rotate-45' : t === 'Noche' ? 'rotate-90' : ''}`} />
@@ -598,10 +635,10 @@ export const ShiftReportsPage: React.FC = () => {
                                 {/* Novedades Generales */}
                                 <section className="space-y-6">
                                     <h3 className="text-xs font-black text-indigo-600 uppercase tracking-[0.3em] flex items-center gap-2 mb-4">
-                                        <FileText className="w-4 h-4" /> 02. Novedades Generales
+                                        <FileText className="w-4 h-4" /> 02. Novedades Generales y Observaciones
                                     </h3>
                                     <textarea
-                                        value={noveldades}
+                                        value={novedades}
                                         onChange={e => setNovedades(e.target.value)}
                                         className="w-full rounded-3xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-6 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all min-h-[100px]"
                                         placeholder="Ingrese novedades generales del turno..."
@@ -615,7 +652,7 @@ export const ShiftReportsPage: React.FC = () => {
                                     </h3>
                                     <div className="p-8 bg-gray-50 dark:bg-gray-800/50 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 space-y-6">
                                         <div className="flex items-center justify-between">
-                                            <label className="text-lg font-black text-gray-700 dark:text-gray-300">¿Existieron incidencias?</label>
+                                            <label className="text-lg font-black text-gray-700 dark:text-gray-300">¿Existieron incidencias o emergencias?</label>
                                             <div className="flex gap-2 p-1.5 bg-gray-100 dark:bg-gray-700 rounded-full w-fit border border-gray-200 dark:border-gray-600">
                                                 <button type="button" onClick={() => setHasIncidents(true)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${hasIncidents ? 'bg-rose-600 text-white shadow-lg' : 'text-gray-400'}`}>Sí</button>
                                                 <button type="button" onClick={() => setHasIncidents(false)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${!hasIncidents ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400'}`}>No</button>
@@ -817,8 +854,9 @@ export const ShiftReportsPage: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
+        )}
             {/* Modal de Reapertura (Admin) */}
             {isReopenModalOpen && reopeningReport && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useArticles } from '../context/ArticleContext';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-import { Plus, Trash2, Edit2, X, Shirt, Search, ShieldCheck, Eraser, Briefcase, Filter, AlertTriangle, Download } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Shirt, Search, ShieldCheck, Eraser, Briefcase, Filter, AlertTriangle, Download, Package } from 'lucide-react';
 import type { Article } from '../types';
 
 export const ArticlesPage: React.FC = () => {
@@ -18,6 +18,7 @@ export const ArticlesPage: React.FC = () => {
     const [stock, setStock] = useState(0);
     const [minStock, setMinStock] = useState(0);
     const [isActive, setIsActive] = useState(true);
+    const [allowPersonnelRequest, setAllowPersonnelRequest] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleOpenModal = (art?: Article) => {
@@ -30,6 +31,7 @@ export const ArticlesPage: React.FC = () => {
             setStock(art.stock || 0);
             setMinStock(art.minStock || 0);
             setIsActive(art.isActive !== undefined ? art.isActive : true);
+            setAllowPersonnelRequest(art.allowPersonnelRequest || false);
         } else {
             setEditingArticle(null);
             setName('');
@@ -39,13 +41,14 @@ export const ArticlesPage: React.FC = () => {
             setStock(0);
             setMinStock(0);
             setIsActive(true);
+            setAllowPersonnelRequest(false);
         }
         setIsModalOpen(true);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { name, description, category, price: Number(price), stock: Number(stock), minStock: Number(minStock), isActive };
+        const data = { name, description, category, price: Number(price), stock: Number(stock), minStock: Number(minStock), isActive, allowPersonnelRequest };
         if (editingArticle) {
             await updateArticle({ ...editingArticle, ...data });
         } else {
@@ -55,8 +58,8 @@ export const ArticlesPage: React.FC = () => {
     };
 
     const handleExportCSV = () => {
-        const headers = ['ID', 'Nombre', 'Categoria', 'Stock', 'Stock Minimo', 'Precio', 'Activo', 'Archivado'];
-        const rows = articles.map(a => [
+        const headers = ['ID', 'Nombre', 'Categoría', 'Stock', 'Stock Mínimo', 'Precio', 'Activo', 'Archivado'];
+        const rows = (articles || []).map(a => [
             a.id,
             a.name,
             a.category,
@@ -80,7 +83,7 @@ export const ArticlesPage: React.FC = () => {
         document.body.removeChild(link);
     };
 
-    const filteredArticles = articles.filter(a => {
+    const filteredArticles = (articles || []).filter(a => {
         if (a.isArchived) return false;
         const matchesSearch = a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             a.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -140,28 +143,28 @@ export const ArticlesPage: React.FC = () => {
                 <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-2">Total Unidades</p>
                     <p className="text-2xl font-black text-gray-900 dark:text-white">
-                        {articles.reduce((acc, a) => acc + (a.stock || 0), 0)}
+                        {(articles || []).reduce((acc, a) => acc + (a.stock || 0), 0)}
                     </p>
                 </div>
                 <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-12 h-12 bg-amber-500/10 rounded-bl-3xl flex items-center justify-center">
-                        <AlertTriangle className={`w-5 h-5 ${articles.some(a => a.minStock > 0 && a.stock <= a.minStock) ? 'text-amber-500 animate-pulse' : 'text-gray-300'}`} />
+                        <AlertTriangle className={`w-5 h-5 ${(articles || []).some(a => a.minStock > 0 && a.stock <= a.minStock) ? 'text-amber-500 animate-pulse' : 'text-gray-300'}`} />
                     </div>
                     <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none mb-2">Reposición Necesaria</p>
                     <p className="text-2xl font-black text-gray-900 dark:text-white">
-                        {articles.filter(a => a.minStock > 0 && a.stock <= a.minStock).length} <span className="text-sm font-bold text-gray-400">items</span>
+                        {(articles || []).filter(a => a.minStock > 0 && a.stock <= a.minStock).length} <span className="text-sm font-bold text-gray-400">items</span>
                     </p>
                 </div>
                 <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
                     <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none mb-2">Valor Estimado Cargo</p>
                     <p className="text-2xl font-black text-gray-900 dark:text-white">
-                        ${articles.reduce((acc, a) => acc + (a.stock * a.price), 0).toLocaleString('es-CL')}
+                        ${(articles || []).reduce((acc, a) => acc + ((a.stock || 0) * (a.price || 0)), 0).toLocaleString('es-CL')}
                     </p>
                 </div>
                 <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
                     <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-2">Artículos Activos</p>
                     <p className="text-2xl font-black text-gray-900 dark:text-white">
-                        {articles.filter(a => a.isActive).length}
+                        {(articles || []).filter(a => a.isActive).length}
                     </p>
                 </div>
             </div>
@@ -173,7 +176,8 @@ export const ArticlesPage: React.FC = () => {
                         { id: 'low-stock', label: 'Crítico', icon: AlertTriangle },
                         { id: 'EPP', label: 'E.P.P', icon: ShieldCheck },
                         { id: 'Aseo', label: 'Aseo', icon: Eraser },
-                        { id: 'Oficina', label: 'Oficina', icon: Briefcase }
+                        { id: 'Oficina', label: 'Oficina', icon: Briefcase },
+                        { id: 'Servicio', label: 'Servicio', icon: Package }
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -218,6 +222,11 @@ export const ArticlesPage: React.FC = () => {
                                         <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest ${a.isActive ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
                                             {a.isActive ? 'Activo' : 'Inactivo'}
                                         </span>
+                                        {a.allowPersonnelRequest && (
+                                            <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 rounded-lg text-[8px] font-black uppercase tracking-widest">
+                                                Pedible por Personal
+                                            </span>
+                                        )}
                                         {a.minStock > 0 && a.stock <= a.minStock && (
                                             <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded-lg text-[8px] font-black uppercase tracking-widest animate-pulse">
                                                 <AlertTriangle className="w-2.5 h-2.5" />
@@ -289,6 +298,7 @@ export const ArticlesPage: React.FC = () => {
                                     <option value="EPP">E.P.P / Uniforme</option>
                                     <option value="Aseo">Artículos de Aseo</option>
                                     <option value="Oficina">Material de Oficina</option>
+                                    <option value="Servicio">Insumos de Servicio</option>
                                     <option value="otro">Otros</option>
                                 </select>
                             </div>
@@ -343,6 +353,24 @@ export const ArticlesPage: React.FC = () => {
                                     className={`w-12 h-6 rounded-full transition-all relative ${isActive ? 'bg-indigo-600' : 'bg-gray-300'}`}
                                 >
                                     <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isActive ? 'right-1' : 'left-1'}`} />
+                                </button>
+                            </div>
+                            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg ${allowPersonnelRequest ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                                        <Briefcase className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white">Solicitud por Personal</p>
+                                        <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">{allowPersonnelRequest ? 'Permitido' : 'No permitido'}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setAllowPersonnelRequest(!allowPersonnelRequest)}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${allowPersonnelRequest ? 'bg-indigo-600' : 'bg-gray-300'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${allowPersonnelRequest ? 'right-1' : 'left-1'}`} />
                                 </button>
                             </div>
                             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">

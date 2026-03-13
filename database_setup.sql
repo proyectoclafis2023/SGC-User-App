@@ -147,6 +147,16 @@ CREATE TABLE IF NOT EXISTS departments (
     unitTypeId VARCHAR(50),
     propertyRole VARCHAR(100),
     m2 DECIMAL(10,2),
+    terrainM2 DECIMAL(10,2),
+    value DECIMAL(15,2),
+    dormitorios INT,
+    banos INT,
+    estacionamientos INT,
+    yearBuilt INT,
+    isAvailable BOOLEAN DEFAULT TRUE,
+    publishType ENUM('venta', 'arriendo'),
+    image LONGTEXT, -- Base64
+    locationMapUrl TEXT,
     waterClientId VARCHAR(100),
     electricityClientId VARCHAR(100),
     gasClientId VARCHAR(100),
@@ -158,6 +168,33 @@ CREATE TABLE IF NOT EXISTS departments (
     FOREIGN KEY (unitTypeId) REFERENCES unit_types(id) ON DELETE SET NULL,
     FOREIGN KEY (ownerId) REFERENCES owners(id) ON DELETE SET NULL,
     FOREIGN KEY (residentId) REFERENCES residents(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS unit_features_master (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    isActive BOOLEAN DEFAULT TRUE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS department_features (
+    departmentId VARCHAR(50),
+    featureId VARCHAR(50),
+    PRIMARY KEY (departmentId, featureId),
+    FOREIGN KEY (departmentId) REFERENCES departments(id) ON DELETE CASCADE,
+    FOREIGN KEY (featureId) REFERENCES unit_features_master(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS unit_publications (
+    id VARCHAR(50) PRIMARY KEY,
+    departmentId VARCHAR(50),
+    publishType ENUM('venta', 'arriendo') NOT NULL,
+    status ENUM('activo', 'pausado', 'vendido', 'arrendado') DEFAULT 'activo',
+    price DECIMAL(15,2),
+    publishDate DATE NOT NULL,
+    description TEXT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (departmentId) REFERENCES departments(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS parking (
@@ -214,6 +251,38 @@ CREATE TABLE IF NOT EXISTS system_parameters (
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS banks (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    isArchived BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS health_providers (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type ENUM('fonasa', 'isapre') NOT NULL,
+    discountRate DECIMAL(5,2) DEFAULT 0,
+    isArchived BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pension_funds (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    discountRate DECIMAL(5,2) DEFAULT 0,
+    isArchived BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS special_conditions (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    isArchived BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ==========================================
 -- 3. SECURITY & CONCIERGE
 -- ==========================================
@@ -244,9 +313,9 @@ CREATE TABLE IF NOT EXISTS shift_reports (
     workerId VARCHAR(50),
     workerName VARCHAR(255),
     shiftDate DATE NOT NULL,
-    shiftType ENUM('Mañana', 'Tarde', 'Noche') NOT NULL,
+    shiftType ENUM('Manana', 'Tarde', 'Noche') NOT NULL,
     status ENUM('open', 'closed') DEFAULT 'open',
-    noveldades TEXT,
+    novedades TEXT,
     hasIncidents BOOLEAN DEFAULT FALSE,
     incidentDetails TEXT,
     hasInfrastructureIssues BOOLEAN DEFAULT FALSE,
@@ -499,7 +568,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     userId VARCHAR(50),
     unitId VARCHAR(50),
     towerId VARCHAR(50),
-    type ENUM('complaint', 'suggestion') NOT NULL,
+    type ENUM('complaint', 'suggestion', 'visit_registration', 'reservation', 'provision_request', 'shift_report', 'incident') NOT NULL,
     subject VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     image TEXT,
@@ -544,6 +613,19 @@ CREATE TABLE IF NOT EXISTS system_messages (
     durationSeconds INT,
     expiresAt TIMESTAMP NULL,
     isArchived BOOLEAN DEFAULT FALSE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS condo_board (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    rut VARCHAR(20) NOT NULL,
+    phone VARCHAR(50),
+    email VARCHAR(255),
+    address TEXT,
+    position VARCHAR(255), -- Presidente, Tesorero, etc.
+    signatureImage LONGTEXT, -- Base64
+    isActive BOOLEAN DEFAULT TRUE,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -592,6 +674,12 @@ INSERT IGNORE INTO system_settings (id, systemName) VALUES (1, 'SGC - Sistema de
 
 -- Initial Emergency Numbers
 INSERT IGNORE INTO emergency_numbers (id, category, name, phone, description) VALUES
-('em-1', 'EMERGENCIA', 'SAMU', '131', 'Ambulancia'),
-('em-2', 'EMERGENCIA', 'Bomberos', '132', 'Fuego y rescate'),
-('em-3', 'EMERGENCIA', 'Carabineros', '133', 'Policía');
+('em-1', 'URGENCIA', 'SAMU', '131', 'Atención Médica de Urgencia'),
+('em-2', 'URGENCIA', 'Bomberos', '132', 'Rescate e Incendios'),
+('em-3', 'URGENCIA', 'Carabineros', '133', 'Policía de Emergencia'),
+('em-4', 'URGENCIA', 'PDI', '134', 'Policía de Investigaciones'),
+('em-5', 'COMUNAL', 'Seguridad Municipal', '1401', 'Paz Ciudadana'),
+('em-6', 'COMUNAL', 'Plan Cuadrante', '999999999', 'Carabineros por Zona'),
+('em-7', 'SERVICIOS', 'ESVAL', '600 600 6013', 'Suministro de Agua'),
+('em-8', 'SERVICIOS', 'Empresa Eléctrica', '600 000 0000', 'Chilquinta / Enel'),
+('em-9', 'SERVICIOS', 'Empresa Gas', '600 000 0001', 'Lipigas / Abastible / Gasco');

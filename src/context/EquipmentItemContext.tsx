@@ -1,49 +1,63 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { EquipmentItem, EquipmentItemContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const EquipmentItemContext = createContext<EquipmentItemContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'equipment_items_data';
-
-const INITIAL_ITEMS: EquipmentItem[] = [
-    { id: '1', name: 'Celular', createdAt: new Date().toISOString() },
-    { id: '2', name: 'Llaves', createdAt: new Date().toISOString() },
-    { id: '3', name: 'Linterna', createdAt: new Date().toISOString() },
-    { id: '4', name: 'Televisor', createdAt: new Date().toISOString() },
-    { id: '5', name: 'Cargador', createdAt: new Date().toISOString() },
-    { id: '6', name: 'Panel', createdAt: new Date().toISOString() },
-];
+const API_URL = `${API_BASE_URL}/equipment_items`;
 
 export const EquipmentItemProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [items, setItems] = useState<EquipmentItem[]>(() => {
+    const [items, setItems] = useState<EquipmentItem[]>([]);
+
+    const fetchItems = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            return stored ? JSON.parse(stored) : INITIAL_ITEMS;
-        } catch (e) {
-            console.error('Error loading equipment items:', e);
-            return INITIAL_ITEMS;
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setItems(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch equipment items:', error);
         }
-    });
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    }, [items]);
-
-    const addItem = async (item: Omit<EquipmentItem, 'id' | 'createdAt'>) => {
-        const newItem: EquipmentItem = {
-            ...item,
-            id: Math.random().toString(36).substr(2, 9),
-            createdAt: new Date().toISOString(),
-        };
-        setItems(prev => [...prev, newItem]);
     };
 
-    const updateItem = async (updatedItem: EquipmentItem) => {
-        setItems(prev => prev.map(c => c.id === updatedItem.id ? updatedItem : c));
+    useEffect(() => {
+        fetchItems();
+    }, []);
+
+    const addItem = async (item: Omit<EquipmentItem, 'id' | 'createdAt'>) => {
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...item, createdAt: new Date().toISOString() })
+            });
+            await fetchItems();
+        } catch (error) {
+            console.error('Error adding equipment item:', error);
+        }
+    };
+
+    const updateItem = async (item: EquipmentItem) => {
+        try {
+            await fetch(`${API_URL}/${item.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            });
+            await fetchItems();
+        } catch (error) {
+            console.error('Error updating equipment item:', error);
+        }
     };
 
     const deleteItem = async (id: string) => {
-        setItems(prev => prev.map(c => c.id === id ? { ...c, isArchived: true } : c));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchItems();
+        } catch (error) {
+            console.error('Error deleting equipment item:', error);
+        }
     };
 
     return (

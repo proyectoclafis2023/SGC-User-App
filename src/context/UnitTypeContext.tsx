@@ -1,47 +1,63 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { UnitType, UnitTypeContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const UnitTypeContext = createContext<UnitTypeContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'unit_types_data';
-
-const INITIAL_TYPES: UnitType[] = [
-    { id: 't1', name: 'Departamento Estándar', baseCommonExpense: 55000, defaultM2: 60 },
-    { id: 't2', name: 'Departamento Duplex', baseCommonExpense: 85000, defaultM2: 120 },
-    { id: 't3', name: 'Penthouse', baseCommonExpense: 120000, defaultM2: 250 },
-    { id: 't4', name: 'Estacionamiento', baseCommonExpense: 15000, defaultM2: 12 },
-    { id: 't5', name: 'Bodega', baseCommonExpense: 8000, defaultM2: 4 },
-];
+const API_URL = `${API_BASE_URL}/unit_types`;
 
 export const UnitTypeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [unitTypes, setUnitTypes] = useState<UnitType[]>(() => {
+    const [unitTypes, setUnitTypes] = useState<UnitType[]>([]);
+
+    const fetchUnitTypes = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            return stored ? JSON.parse(stored) : INITIAL_TYPES;
-        } catch (e) {
-            console.error('Error loading unit types:', e);
-            return INITIAL_TYPES;
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setUnitTypes(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch unit types:', error);
         }
-    });
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(unitTypes));
-    }, [unitTypes]);
-
-    const addUnitType = async (unitType: Omit<UnitType, 'id'>) => {
-        const newType: UnitType = {
-            ...unitType,
-            id: Math.random().toString(36).substr(2, 9),
-        };
-        setUnitTypes(prev => [...prev, newType]);
     };
 
-    const updateUnitType = async (updatedType: UnitType) => {
-        setUnitTypes(prev => prev.map(t => t.id === updatedType.id ? updatedType : t));
+    useEffect(() => {
+        fetchUnitTypes();
+    }, []);
+
+    const addUnitType = async (unitType: Omit<UnitType, 'id'>) => {
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(unitType)
+            });
+            await fetchUnitTypes();
+        } catch (error) {
+            console.error('Error adding unit type:', error);
+        }
+    };
+
+    const updateUnitType = async (unitType: UnitType) => {
+        try {
+            await fetch(`${API_URL}/${unitType.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(unitType)
+            });
+            await fetchUnitTypes();
+        } catch (error) {
+            console.error('Error updating unit type:', error);
+        }
     };
 
     const deleteUnitType = async (id: string) => {
-        setUnitTypes(prev => prev.map(t => t.id === id ? { ...t, isArchived: true } : t));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchUnitTypes();
+        } catch (error) {
+            console.error('Error deleting unit type:', error);
+        }
     };
 
     return (

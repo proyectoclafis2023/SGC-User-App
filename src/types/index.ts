@@ -89,6 +89,15 @@ export interface SystemSettings {
     maxArrearsMonths?: number; // Meses de mora máximos antes de alerta crítica
     arrearsFineAmount?: number; // Monto de multa fija por mora
     arrearsFinePercentage?: number; // % de multa por mora (si aplica)
+    censusFrequencyYears?: number; // Frecuencia de censo en años
+}
+
+export interface WeightedIPC {
+    id: string;
+    name: string;
+    value: number; // Porcentaje (ej: 0.05 para 5%)
+    isProjected: boolean;
+    createdAt: string;
 }
 
 export interface SettingsContextType {
@@ -130,12 +139,13 @@ export interface Personnel {
     emergencyContact?: EmergencyContact;
     medicalInfo?: string;
     position?: string;
-    assignedShift?: 'Mañana' | 'Tarde' | 'Noche';
+    assignedShift?: 'Manana' | 'Tarde' | 'Noche';
     vacationLastUpdate?: string;
     assignedArticles?: AssignedArticle[];
     status: 'active' | 'inactive';
     isArchived?: boolean;
     createdAt: string;
+    jornadaGroupId?: string;
 }
 
 export interface Bank {
@@ -155,11 +165,13 @@ export interface Article {
     id: string;
     name: string;
     description?: string;
-    category: 'EPP' | 'Aseo' | 'Oficina' | 'otro';
+    category: 'EPP' | 'Aseo' | 'Oficina' | 'Servicio' | 'otro';
     price: number;
     stock: number;
     minStock: number;
     isActive: boolean;
+    allowPersonnelRequest: boolean;
+    canRequestByStaff?: boolean;
     isArchived?: boolean;
 }
 
@@ -254,11 +266,22 @@ export interface Department {
     unitTypeId?: string;
     propertyRole?: string;
     m2?: number;
+    terrainM2?: number;
+    value?: number;
+    dormitorios?: number;
+    banos?: number;
+    estacionamientos?: number;
+    yearBuilt?: number;
+    isAvailable?: boolean;
+    publishType?: 'venta' | 'arriendo';
+    image?: string;
+    locationMapUrl?: string;
     waterClientId?: string;
     electricityClientId?: string;
     gasClientId?: string;
     ownerId?: string;
     residentId?: string;
+    lastCensusDate?: string; // Fecha del último censo
     isArchived?: boolean;
     history?: HistoryLog[];
 }
@@ -288,9 +311,11 @@ export interface Owner {
 export interface Parking {
     id: string;
     number: string;
-    location?: string; // Ej: Subterráneo -1
+    location?: string;
     isHandicapped?: boolean;
     notes?: string;
+    departmentId?: string; // Unidad asociada
+    relatedUnit?: string; // Nombre/Número de la unidad (para despliegue rápido)
     isArchived?: boolean;
     createdAt: string;
 }
@@ -347,9 +372,10 @@ export interface OwnerContextType {
 
 export interface ResidentContextType {
     residents: Resident[];
-    addResident: (resident: Omit<Resident, 'id' | 'createdAt' | 'status'>) => Promise<string>;
+    addResident: (resident: Omit<Resident, 'id' | 'createdAt' | 'status'>) => Promise<string | undefined>;
     updateResident: (resident: Resident) => Promise<void>;
     deleteResident: (id: string) => Promise<void>;
+    uploadResidents: (file: File) => Promise<{ message: string }>;
 }
 
 export interface CommonSpaceContextType {
@@ -374,30 +400,28 @@ export interface ReservationContextType {
 export interface Ticket {
     id: string;
     folio: string;
-    userId: string;
+    userId?: string;
     unitId?: string;
     towerId?: string;
-    type: 'complaint' | 'suggestion';
+    type: string;
     subject: string;
     description: string;
-    image?: string; // Optional image base64
-    status: 'pending' | 'read' | 'attended' | 'solved';
+    image?: string;
+    status: 'pending' | 'read' | 'attended' | 'solved' | 'acknowledged';
+    adminNotes?: string;
+    acknowledgedAt?: string;
+    acknowledgedBy?: string;
     createdAt: string;
     updatedAt: string;
-    adminNotes?: string;
-    history?: {
-        status: string;
-        notes: string;
-        date: string;
-        user: string;
-    }[];
 }
 
 export interface TicketContextType {
     tickets: Ticket[];
-    addTicket: (ticket: Omit<Ticket, 'id' | 'folio' | 'status' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-    updateTicketStatus: (id: string, status: Ticket['status'], adminNotes?: string) => Promise<void>;
+    addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'folio'>) => Promise<Ticket | null>;
+    updateTicket: (id: string, ticket: Partial<Ticket>) => Promise<void>;
     deleteTicket: (id: string) => Promise<void>;
+    acknowledgeTicket: (id: string, adminId: string) => Promise<void>;
+    refreshTickets: () => Promise<void>;
 }
 
 export interface CameraRequest {
@@ -543,9 +567,10 @@ export interface ProfileContextType {
 
 export interface PersonnelContextType {
     personnel: Personnel[];
-    addPersonnel: (person: Omit<Personnel, 'id' | 'createdAt' | 'status'>) => Promise<string>;
+    addPersonnel: (person: Omit<Personnel, 'id' | 'createdAt' | 'status'>) => Promise<string | undefined>;
     updatePersonnel: (person: Personnel) => Promise<void>;
     deletePersonnel: (id: string) => Promise<void>;
+    uploadPersonnel: (file: File) => Promise<{ message: string }>;
 }
 
 export interface SystemMessage {
@@ -569,6 +594,22 @@ export interface SystemMessageContextType {
     updateMessage: (message: SystemMessage) => Promise<void>;
     deleteMessage: (id: string) => Promise<void>;
     toggleMessageStatus: (id: string) => Promise<void>;
+}
+
+export interface DirectedMessage {
+    id: string;
+    unitId?: string;
+    text: string;
+    type: 'info' | 'warning' | 'danger' | 'success';
+    isActive: boolean;
+    createdAt: string;
+}
+
+export interface DirectedMessageContextType {
+    messages: DirectedMessage[];
+    addMessage: (message: Omit<DirectedMessage, 'id' | 'createdAt'>) => Promise<void>;
+    updateMessage: (message: DirectedMessage) => Promise<void>;
+    deleteMessage: (id: string) => Promise<void>;
 }
 
 export interface ArticleDelivery {
@@ -606,6 +647,17 @@ export interface FundUnitTypeConfig {
     calculationType: 'fixed' | 'percentage';
     value: number; // Fixed amount or % of Base Common Expense
     isExempt: boolean;
+}
+
+export interface JornadaGroup {
+    id: string;
+    name: string;
+    description?: string;
+    workDays: number[]; // 0-6 (Sun-Sat)
+    startTime?: string;
+    endTime?: string;
+    isActive: boolean;
+    isArchived?: boolean;
 }
 
 export interface FundExpense {
@@ -672,6 +724,7 @@ export interface CommunityExpense {
     receiptUrl?: string;
     receiptImages?: string[];
     isArchived?: boolean;
+    isProjected?: boolean;
     createdAt: string;
 }
 
@@ -888,9 +941,9 @@ export interface ShiftReport {
     workerId: string;
     workerName: string;
     shiftDate: string;
-    shiftType: 'Mañana' | 'Tarde' | 'Noche';
+    shiftType: 'Manana' | 'Tarde' | 'Noche';
     status: 'open' | 'closed';
-    noveldades: string;
+    novedades: string;
     hasIncidents: boolean;
     incidentDetails?: string;
     incidentAttachments?: string[]; // Base64 strings
@@ -984,6 +1037,8 @@ export interface Payslip {
     year: number;
     baseSalary: number;
     grossSalary: number;
+    workedDays: number;
+    adjustedWorkedDays?: number;
     healthDiscount: number;
     pensionDiscount: number;
     apvDiscount: number;

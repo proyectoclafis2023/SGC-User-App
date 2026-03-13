@@ -1,49 +1,63 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Parking, ParkingContextType } from '../types';
+import { API_BASE_URL } from '../config/api';
 
 const ParkingContext = createContext<ParkingContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'parkings_data';
+const API_URL = `${API_BASE_URL}/parking`;
 
 export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [parkings, setParkings] = useState<Parking[]>(() => {
+    const [parkings, setParkings] = useState<Parking[]>([]);
+
+    const fetchParkings = async () => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                if (Array.isArray(parsed)) return parsed;
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setParkings(Array.isArray(data) ? data : []);
             }
-            return [
-                { id: 'p1', number: 'E-01', location: 'Piso 1', createdAt: new Date().toISOString() },
-                { id: 'p2', number: 'E-02', location: 'Piso 1', createdAt: new Date().toISOString() },
-                { id: 'p3', number: 'E-03', location: 'Piso -1', createdAt: new Date().toISOString() }
-            ];
-        } catch (e) {
-            console.error('Error loading parkings:', e);
-            return [];
+        } catch (error) {
+            console.error('Failed to fetch parkings:', error);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parkings));
-    }, [parkings]);
+        fetchParkings();
+    }, []);
 
     const addParking = async (parking: Omit<Parking, 'id' | 'createdAt'>) => {
-        const id = Math.random().toString(36).substr(2, 9);
-        const newRecord: Parking = {
-            ...parking,
-            id,
-            createdAt: new Date().toISOString(),
-        };
-        setParkings(prev => [newRecord, ...prev]);
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(parking)
+            });
+            await fetchParkings();
+        } catch (error) {
+            console.error('Error adding parking:', error);
+        }
     };
 
     const updateParking = async (parking: Parking) => {
-        setParkings(prev => prev.map(p => p.id === parking.id ? parking : p));
+        try {
+            await fetch(`${API_URL}/${parking.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(parking)
+            });
+            await fetchParkings();
+        } catch (error) {
+            console.error('Error updating parking:', error);
+        }
     };
 
     const deleteParking = async (id: string) => {
-        setParkings(prev => prev.map(p => p.id === id ? { ...p, isArchived: true } : p));
+        try {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            await fetchParkings();
+        } catch (error) {
+            console.error('Error deleting parking:', error);
+        }
     };
 
     return (

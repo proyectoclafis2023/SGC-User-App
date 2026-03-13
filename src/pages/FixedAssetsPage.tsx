@@ -333,11 +333,25 @@ export const FixedAssetsPage: React.FC = () => {
                             </div>
 
                             {asset.requiresMaintenance && asset.nextMaintenanceDate && (
-                                <div className="mb-6 flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
-                                    <Wrench className="w-5 h-5 text-indigo-500 flex-shrink-0" />
+                                <div className={`mb-6 flex items-center gap-3 p-3 rounded-2xl border ${
+                                    new Date(asset.nextMaintenanceDate) < new Date() 
+                                        ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-800/50' 
+                                        : 'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-800/50'
+                                }`}>
+                                    {new Date(asset.nextMaintenanceDate) < new Date() ? (
+                                        <ShieldAlert className="w-5 h-5 text-red-500 flex-shrink-0" />
+                                    ) : (
+                                        <Wrench className="w-5 h-5 text-indigo-500 flex-shrink-0" />
+                                    )}
                                     <div>
-                                        <p className="text-[10px] uppercase font-black tracking-widest text-indigo-400">Próxima Mantención</p>
-                                        <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300">
+                                        <p className={`text-[10px] uppercase font-black tracking-widest ${
+                                            new Date(asset.nextMaintenanceDate) < new Date() ? 'text-red-400' : 'text-indigo-400'
+                                        }`}>
+                                            {new Date(asset.nextMaintenanceDate) < new Date() ? 'MANTENCIÓN VENCIDA' : 'Próxima Mantención'}
+                                        </p>
+                                        <p className={`text-sm font-bold ${
+                                            new Date(asset.nextMaintenanceDate) < new Date() ? 'text-red-700 dark:text-red-300' : 'text-indigo-700 dark:text-indigo-300'
+                                        }`}>
                                             {new Date(asset.nextMaintenanceDate).toLocaleDateString()}
                                         </p>
                                     </div>

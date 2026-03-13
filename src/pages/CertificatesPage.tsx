@@ -457,9 +457,9 @@ export const CertificatesPage: React.FC = () => {
                                                         disabled={!selectedTower}
                                                         className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm transition-all focus:ring-4 focus:ring-indigo-500/10 disabled:opacity-50"
                                                     >
-                                                        <option value="">-- Elige un departamento --</option>
+                                                        <option value="">-- Elige una unidad --</option>
                                                         {towers.find(t => t.id === selectedTower)?.departments.map(u => (
-                                                            <option key={u.id} value={u.id}>Depto {u.number}</option>
+                                                            <option key={u.id} value={u.id}>{u.number}</option>
                                                         ))}
                                                     </select>
                                                 </div>
