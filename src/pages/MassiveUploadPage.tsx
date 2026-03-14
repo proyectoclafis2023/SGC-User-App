@@ -11,11 +11,28 @@ import { usePensionFunds } from '../context/PensionFundContext';
 import { useSpecialConditions } from '../context/SpecialConditionContext';
 import { useUnitTypes } from '../context/UnitTypeContext';
 import { useCommonExpenses } from '../context/CommonExpenseContext';
-import { Upload, Download, FileSpreadsheet, AlertCircle, Info, CheckCircle2, XCircle, History, Database, FileText, Package, Users, ShieldCheck, Building2, Landmark, LifeBuoy, AlertTriangle, Banknote } from 'lucide-react';
+import { Upload, Download, AlertCircle, Info, CheckCircle2, XCircle, History, Database, FileText, Package, Users, ShieldCheck, Building2, Landmark, LifeBuoy, AlertTriangle, Banknote, Home, Tag, LineChart, Phone, Mail, Smartphone } from 'lucide-react';
+import type { 
+    Article, Personnel, Resident, Owner, Bank, FixedAsset, HealthProvider, 
+    PensionFund, SpecialCondition, UnitType, Tower, Department, 
+    CommonSpace, Parking, SystemParameter, 
+    InfrastructureItem, EquipmentItem, SystemMessage, EmergencyNumber,
+    CommunityExpense, SpecialFund
+} from '../types';
+import type { IPCProjection } from '../context/IPCProjectionContext';
+import { useInfrastructure } from '../context/InfrastructureContext';
+import { useCommonSpaces } from '../context/CommonSpaceContext';
+import { useParkings } from '../context/ParkingContext';
+import { useSystemParameters } from '../context/SystemParameterContext';
+import { useIPCProjections } from '../context/IPCProjectionContext';
+import { useInfrastructureItems } from '../context/InfrastructureItemContext';
+import { useEquipmentItems } from '../context/EquipmentItemContext';
+import { useSystemMessages } from '../context/SystemMessageContext';
+import { useEmergencyNumbers } from '../context/EmergencyNumberContext';
 
 import * as XLSX from 'xlsx';
 
-type EntityType = 'articles' | 'personnel' | 'residents' | 'owners' | 'banks' | 'assets' | 'health' | 'afp' | 'conditions' | 'units' | 'extra_funds' | 'income' | 'community_expenses';
+type EntityType = 'articles' | 'personnel' | 'residents' | 'owners' | 'banks' | 'assets' | 'health' | 'afp' | 'conditions' | 'units' | 'extra_funds' | 'income' | 'community_expenses' | 'towers' | 'departments' | 'common_spaces' | 'parking' | 'article_categories' | 'ipc' | 'infra_items' | 'equip_items' | 'messages' | 'emergency_numbers';
 
 interface ProcessingError {
     row: number;
@@ -41,21 +58,49 @@ export const MassiveUploadPage: React.FC = () => {
     const { conditions, addCondition, updateCondition } = useSpecialConditions();
     const { unitTypes, addUnitType, updateUnitType } = useUnitTypes();
     const { funds: specialFunds, addFund: addSpecialFund, updateFund: updateSpecialFund, addPayment: addIncome, communityExpenses, addCommunityExpense } = useCommonExpenses();
+    const { towers, addTower, updateTower, departments, addDepartment, updateDepartment } = useInfrastructure();
+    const { spaces, addSpace, updateSpace } = useCommonSpaces();
+    const { parkings, addParking, updateParking } = useParkings();
+    const { parameters, addParameter, updateParameter } = useSystemParameters();
+    const { projections, addProjection, updateProjection } = useIPCProjections();
+    const { items: infraItems, addItem: addInfraItem, updateItem: updateInfraItem } = useInfrastructureItems();
+    const { items: equipItems, addItem: addEquipItem, updateItem: updateEquipItem } = useEquipmentItems();
+    const { messages: systemMessages, addMessage: addSystemMessage, updateMessage: updateSystemMessage } = useSystemMessages();
+    const { numbers: emergencyNumbers, addNumber, updateNumber } = useEmergencyNumbers();
 
-    const entities: { value: EntityType; label: string; icon: any; requiredHeaders: string[]; description: string }[] = [
-        { value: 'articles', label: 'Insumos y EPP', icon: Package, requiredHeaders: ['nombre'], description: 'Artículos de bodega, insumos de aseo y elementos de protección personal.' },
-        { value: 'personnel', label: 'Maestro Personal', icon: Users, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Funcionarios, conserjes, mayordomos y personal de aseo.' },
-        { value: 'residents', label: 'Residentes', icon: Users, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Habitantes actuales de las unidades del condominio (arrendatarios o dueños que viven ahí).' },
-        { value: 'owners', label: 'Propietarios', icon: ShieldCheck, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Dueños legales de las unidades. Si viven en el condominio, también deben estar en Residentes.' },
-        { value: 'units', label: 'Tipos de Unidad', icon: Building2, requiredHeaders: ['nombre'], description: 'Clasificación de las unidades (Unidad, Bodega, Estacionamiento) con su gasto base y m2.' },
-        { value: 'banks', label: 'Bancos', icon: Landmark, requiredHeaders: ['nombre'], description: 'Instituciones bancarias para los pagos de remuneraciones.' },
-        { value: 'assets', label: 'Activo Fijo', icon: Database, requiredHeaders: ['descripcion'], description: 'Bienes del condominio sujetos a depreciación y control de inventario valorizado.' },
-        { value: 'health', label: 'Previsiones / Salud', icon: LifeBuoy, requiredHeaders: ['nombre'], description: 'Isapres y Fonasa para el cálculo de remuneraciones.' },
-        { value: 'afp', label: 'AFPs', icon: FileText, requiredHeaders: ['nombre'], description: 'Administradoras de Fondos de Pensiones vigentes.' },
-        { value: 'conditions', label: 'Condiciones Especiales', icon: ShieldCheck, requiredHeaders: ['nombre'], description: 'Condiciones médicas o de movilidad reducida de los residentes.' },
-        { value: 'extra_funds', label: 'Maestro Fondos Especiales', icon: Landmark, requiredHeaders: ['nombre', 'codigo_fondo'], description: 'Fondos de reserva, emergencia u otros fondos especiales del condominio.' },
-        { value: 'income', label: 'Carga Ingresos (Pagos GC)', icon: Banknote, requiredHeaders: ['rut', 'monto', 'mes', 'año'], description: 'Carga masiva de pagos realizados por residentes para saldar deudas de gastos comunes.' },
-        { value: 'community_expenses', label: 'Carga Egresos (Gastos Comunes)', icon: Landmark, requiredHeaders: ['descripcion', 'monto', 'fecha'], description: 'Egresos mensuales que componen el gasto común (Mantenimiento, Servicios, etc).' },
+    const entities: { value: EntityType; label: string; icon: any; requiredHeaders: string[]; description: string; category: string }[] = [
+        // Operaciones y Soporte
+        { value: 'infra_items', label: 'Bitácora (Instalaciones)', icon: Building2, requiredHeaders: ['nombre'], description: 'Puntos de control para la bitácora de instalaciones (Ascensores, Bombas, etc).', category: 'Operaciones y Soporte' },
+        { value: 'equip_items', label: 'Bitácora (Equipamiento)', icon: Smartphone, requiredHeaders: ['nombre'], description: 'Puntos de control para equipamiento crítico (Cámaras, Radios, etc).', category: 'Operaciones y Soporte' },
+        { value: 'emergency_numbers', label: 'Números Emergencia', icon: Phone, requiredHeaders: ['nombre', 'telefono'], description: 'Directorio de servicios de emergencia y soporte técnico.', category: 'Operaciones y Soporte' },
+        { value: 'common_spaces', label: 'Espacios Comunes', icon: Landmark, requiredHeaders: ['nombre', 'ubicacion'], description: 'Áreas de uso común como quinchos, gimnasios o salas multiuso.', category: 'Operaciones y Soporte' },
+        
+        // Comunidad
+        { value: 'residents', label: 'Residentes', icon: Users, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Habitantes actuales de las unidades del condominio.', category: 'Comunidad y Administración' },
+        { value: 'owners', label: 'Propietarios', icon: ShieldCheck, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Dueños legales de las unidades.', category: 'Comunidad y Administración' },
+        { value: 'conditions', label: 'Condiciones Especiales', icon: ShieldCheck, requiredHeaders: ['nombre'], description: 'Condiciones médicas o de movilidad reducida.', category: 'Comunidad y Administración' },
+        { value: 'messages', label: 'Mensajes del Sistema', icon: Mail, requiredHeaders: ['contenido'], description: 'Avisos del sistema para la marquesina o avisos generales.', category: 'Comunidad y Administración' },
+
+        // Recursos Humanos y Maestros
+        { value: 'personnel', label: 'Maestro Personal', icon: Users, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Funcionarios, conserjes y personal operativo.', category: 'Recursos Humanos' },
+        { value: 'articles', label: 'Insumos y EPP', icon: Package, requiredHeaders: ['nombre'], description: 'Artículos de bodega y elementos de protección.', category: 'Recursos Humanos' },
+        { value: 'article_categories', label: 'Categorías de Insumos', icon: Tag, requiredHeaders: ['nombre'], description: 'Clasificación para el maestro de insumos.', category: 'Recursos Humanos' },
+        { value: 'health', label: 'Previsiones / Salud', icon: LifeBuoy, requiredHeaders: ['nombre'], description: 'Isapres y Fonasa.', category: 'Recursos Humanos' },
+        { value: 'afp', label: 'AFPs', icon: FileText, requiredHeaders: ['nombre'], description: 'Administradoras de Fondos de Pensiones.', category: 'Recursos Humanos' },
+        { value: 'banks', label: 'Bancos', icon: Landmark, requiredHeaders: ['nombre'], description: 'Instituciones bancarias.', category: 'Recursos Humanos' },
+
+        // Infraestructura
+        { value: 'towers', label: 'Edificios (Torres)', icon: Building2, requiredHeaders: ['nombre'], description: 'Estructuras principales del condominio.', category: 'Infraestructura' },
+        { value: 'departments', label: 'Departamentos (Unidades)', icon: Home, requiredHeaders: ['numero', 'torre'], description: 'Unidades habitacionales vinculadas a una torre.', category: 'Infraestructura' },
+        { value: 'parking', label: 'Estacionamientos', icon: Smartphone, requiredHeaders: ['numero'], description: 'Plazas de estacionamiento.', category: 'Infraestructura' },
+        { value: 'units', label: 'Tipos de Unidad', icon: Building2, requiredHeaders: ['nombre'], description: 'Clasificación de las unidades (Unidad, Bodega, etc).', category: 'Infraestructura' },
+
+        // Finanzas
+        { value: 'community_expenses', label: 'Carga Egresos GC', icon: Landmark, requiredHeaders: ['descripcion', 'monto', 'fecha'], description: 'Egresos mensuales que componen el Gasto Común.', category: 'Finanzas y Contabilidad' },
+        { value: 'income', label: 'Carga Ingresos Pagos', icon: Banknote, requiredHeaders: ['rut', 'monto', 'mes', 'año'], description: 'Carga de pagos realizados por residentes.', category: 'Finanzas y Contabilidad' },
+        { value: 'extra_funds', label: 'Maestro Fondos Especiales', icon: Landmark, requiredHeaders: ['nombre', 'codigo_fondo'], description: 'Fondos de reserva o emergencia.', category: 'Finanzas y Contabilidad' },
+        { value: 'assets', label: 'Activo Fijo', icon: Database, requiredHeaders: ['descripcion'], description: 'Bienes del condominio sujetos a depreciación.', category: 'Finanzas y Contabilidad' },
+        { value: 'ipc', label: 'Maestro IPC', icon: LineChart, requiredHeaders: ['nombre', 'tasa'], description: 'Índices de corrección monetaria.', category: 'Finanzas y Contabilidad' },
     ];
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,7 +160,7 @@ export const MassiveUploadPage: React.FC = () => {
                         switch (selectedEntity) {
                             case 'articles':
                                 if (!obj.nombre) throw new Error('Nombre del artículo es obligatorio');
-                                const existingArticle = articles.find(a => a.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                const existingArticle = articles.find((a: Article) => a.name.toLowerCase() === String(obj.nombre).toLowerCase());
                                 const articleData = {
                                     name: String(obj.nombre),
                                     description: String(obj.descripcion || ''),
@@ -133,7 +178,7 @@ export const MassiveUploadPage: React.FC = () => {
                                 break;
                             case 'personnel':
                                 if (!obj.nombres || !obj.rut) throw new Error('Nombres y RUT son obligatorios');
-                                const existingPerson = personnel.find(p => p.dni === String(obj.rut));
+                                const existingPerson = personnel.find((p: Personnel) => p.dni === String(obj.rut));
                                 const personData = {
                                     names: String(obj.nombres),
                                     lastNames: String(obj.apellidos || ''),
@@ -154,7 +199,7 @@ export const MassiveUploadPage: React.FC = () => {
                                 break;
                             case 'residents':
                                 if (!obj.nombres || !obj.rut) throw new Error('Nombres y RUT son obligatorios');
-                                const existingResident = residents.find(r => r.dni === String(obj.rut));
+                                const existingResident = residents.find((r: Resident) => r.dni === String(obj.rut));
                                 const residentData = {
                                     names: String(obj.nombres),
                                     lastNames: String(obj.apellidos || ''),
@@ -173,13 +218,14 @@ export const MassiveUploadPage: React.FC = () => {
                                 break;
                             case 'owners':
                                 if (!obj.nombres || !obj.rut) throw new Error('Nombres y RUT son obligatorios');
-                                const existingOwner = owners.find(o => o.dni === String(obj.rut));
+                                const existingOwner = owners.find((o: Owner) => o.dni === String(obj.rut));
                                 const ownerData = {
                                     names: String(obj.nombres),
                                     lastNames: String(obj.apellidos || ''),
                                     dni: String(obj.rut),
                                     email: String(obj.email || ''),
-                                    phone: String(obj.telefono || '')
+                                    phone: String(obj.telefono || ''),
+                                    status: 'active' as any
                                 };
                                 if (existingOwner) {
                                     await updateOwner({ ...existingOwner, ...ownerData });
@@ -189,7 +235,7 @@ export const MassiveUploadPage: React.FC = () => {
                                 break;
                             case 'units':
                                 if (!obj.nombre) throw new Error('Nombre del tipo de unidad es obligatorio');
-                                const existingUnit = unitTypes.find(u => u.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                const existingUnit = unitTypes.find((u: UnitType) => u.name.toLowerCase() === String(obj.nombre).toLowerCase());
                                 const unitData = {
                                     name: String(obj.nombre),
                                     baseCommonExpense: Number(obj.gasto_base || 0),
@@ -203,7 +249,7 @@ export const MassiveUploadPage: React.FC = () => {
                                 break;
                             case 'banks':
                                 if (!obj.nombre) throw new Error('Nombre del banco es obligatorio');
-                                const existingBank = banks.find(b => b.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                const existingBank = banks.find((b: Bank) => b.name.toLowerCase() === String(obj.nombre).toLowerCase());
                                 if (existingBank) {
                                     await updateBank({ ...existingBank, name: String(obj.nombre) });
                                 } else {
@@ -212,7 +258,7 @@ export const MassiveUploadPage: React.FC = () => {
                                 break;
                             case 'assets':
                                 if (!obj.descripcion) throw new Error('Descripción del activo es obligatorio');
-                                const existingAsset = assets.find(a => a.description.toLowerCase() === String(obj.descripcion).toLowerCase());
+                                const existingAsset = assets.find((a: FixedAsset) => a.description.toLowerCase() === String(obj.descripcion).toLowerCase());
                                 const assetData = {
                                     description: String(obj.descripcion),
                                     model: String(obj.modelo || ''),
@@ -231,7 +277,7 @@ export const MassiveUploadPage: React.FC = () => {
                                 break;
                             case 'health':
                                 if (!obj.nombre) throw new Error('Nombre de la previsión es obligatorio');
-                                const existingProvider = providers.find(p => p.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                const existingProvider = providers.find((p: HealthProvider) => p.name.toLowerCase() === String(obj.nombre).toLowerCase());
                                 const providerData = {
                                     name: String(obj.nombre),
                                     type: (obj.tipo || 'isapre') as any,
@@ -245,7 +291,7 @@ export const MassiveUploadPage: React.FC = () => {
                                 break;
                             case 'afp': {
                                 if (!obj.nombre) throw new Error('Nombre de la AFP es obligatorio');
-                                const existingAFPFund = funds.find(f => f.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                const existingAFPFund = funds.find((f: PensionFund) => f.name.toLowerCase() === String(obj.nombre).toLowerCase());
                                 const fundData = {
                                     name: String(obj.nombre),
                                     discountRate: Number(obj.tasa || 0)
@@ -259,7 +305,7 @@ export const MassiveUploadPage: React.FC = () => {
                             }
                             case 'conditions': {
                                 if (!obj.nombre) throw new Error('Nombre de la condición es obligatorio');
-                                const existingCondition = conditions.find(c => c.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                const existingCondition = conditions.find((c: SpecialCondition) => c.name.toLowerCase() === String(obj.nombre).toLowerCase());
                                 const conditionData = {
                                     name: String(obj.nombre),
                                     description: String(obj.descripcion || '')
@@ -273,7 +319,7 @@ export const MassiveUploadPage: React.FC = () => {
                             }
                             case 'extra_funds': {
                                 if (!obj.nombre || obj.codigo_fondo === undefined) throw new Error('Nombre y Código de Fondo son obligatorios');
-                                const existingSpecialFund = specialFunds.find(f => f.fundCode === Number(obj.codigo_fondo));
+                                const existingSpecialFund = specialFunds.find((f: SpecialFund) => f.fundCode === Number(obj.codigo_fondo));
                                 const extraFundData = {
                                     name: String(obj.nombre),
                                     description: String(obj.descripcion || ''),
@@ -281,7 +327,7 @@ export const MassiveUploadPage: React.FC = () => {
                                     type: (obj.tipo || 'reserve') as any,
                                     totalAmountPerUnit: Number(obj.monto_por_unidad || 0),
                                     isActive: true,
-                                    deadline: obj.fecha_limite ? String(obj.deadline) : undefined
+                                    deadline: obj.fecha_limite ? String(obj.fecha_limite) : undefined
                                 };
                                 if (existingSpecialFund) {
                                     await updateSpecialFund({ ...existingSpecialFund, ...extraFundData });
@@ -292,7 +338,7 @@ export const MassiveUploadPage: React.FC = () => {
                             }
                             case 'income':
                                 if (!obj.rut || !obj.monto || !obj.mes || !obj.año) throw new Error('RUT, Monto, Mes y Año son obligatorios');
-                                const resident = residents.find(r => r.dni === String(obj.rut));
+                                const resident = residents.find((r: Resident) => r.dni === String(obj.rut));
                                 if (!resident) throw new Error(`Residente con RUT ${obj.rut} no encontrado`);
                                 await addIncome({
                                     departmentId: resident.unitId || 'unknown',
@@ -312,10 +358,154 @@ export const MassiveUploadPage: React.FC = () => {
                                     description: String(obj.descripcion),
                                     amount: Number(obj.monto),
                                     date: String(obj.fecha),
-                                    category: (obj.categoria || 'Mantenimiento') as any,
-                                    isRecurring: obj.recurrente === 'SI' || obj.recurrente === true,
-                                    status: 'paid'
+                                    category: (obj.categoria || 'Otros') as any
                                 });
+                                break;
+                            case 'towers':
+                                if (!obj.nombre) throw new Error('Nombre de la torre es obligatorio');
+                                const existingTower = towers.find((t: Tower) => t.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                if (existingTower) {
+                                    await updateTower({ ...existingTower, name: String(obj.nombre) });
+                                } else {
+                                    await addTower({ name: String(obj.nombre), departments: [] });
+                                }
+                                break;
+                            case 'departments': {
+                                if (!obj.numero || !obj.torre) throw new Error('Número y Torre son obligatorios');
+                                const tower = towers.find((t: Tower) => t.name.toLowerCase() === String(obj.torre).toLowerCase());
+                                if (!tower) throw new Error(`Torre '${obj.torre}' no encontrada. Créela primero.`);
+                                
+                                const unitType = unitTypes.find((u: UnitType) => u.name.toLowerCase() === String(obj.tipo_unidad || '').toLowerCase());
+                                
+                                const existingDept = departments.find((d: Department) => d.number === String(obj.numero) && d.towerId === tower.id);
+                                const deptData = {
+                                    number: String(obj.numero),
+                                    floor: Number(obj.piso || 1),
+                                    towerId: tower.id,
+                                    unitTypeId: unitType?.id,
+                                    m2: Number(obj.m2 || 60)
+                                };
+                                if (existingDept) {
+                                    await updateDepartment({ ...existingDept, ...deptData });
+                                } else {
+                                    await addDepartment(deptData);
+                                }
+                                break;
+                            }
+                            case 'common_spaces':
+                                if (!obj.nombre || !obj.ubicacion) throw new Error('Nombre y Ubicación son obligatorios');
+                                const existingSpace = spaces.find((s: CommonSpace) => s.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                const spaceData = {
+                                    name: String(obj.nombre),
+                                    location: String(obj.ubicacion),
+                                    rentalValue: Number(obj.valor_arriendo || 0),
+                                    durationHours: Number(obj.duracion || 1),
+                                    conditions: String(obj.condiciones || '')
+                                };
+                                if (existingSpace) {
+                                    await updateSpace({ ...existingSpace, ...spaceData });
+                                } else {
+                                    await addSpace(spaceData);
+                                }
+                                break;
+                            case 'parking': {
+                                if (!obj.numero) throw new Error('Número de estacionamiento es obligatorio');
+                                const existingParking = parkings.find((p: Parking) => p.number === String(obj.numero));
+                                const dept = departments.find((d: Department) => d.number === String(obj.unidad));
+                                const pData = {
+                                    number: String(obj.numero),
+                                    location: String(obj.ubicacion || ''),
+                                    isHandicapped: obj.discapacitado === 'SI' || obj.discapacitado === true,
+                                    departmentId: dept?.id,
+                                    notes: String(obj.notas || '')
+                                };
+                                if (existingParking) {
+                                    await updateParking({ ...existingParking, ...pData });
+                                } else {
+                                    await addParking(pData);
+                                }
+                                break;
+                            }
+                            case 'article_categories':
+                                if (!obj.nombre) throw new Error('Nombre de la categoría es obligatorio');
+                                const existingCat = parameters.find((p: SystemParameter) => p.type === 'article_category' && p.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                if (existingCat) {
+                                    await updateParameter(existingCat.id, { ...existingCat, name: String(obj.nombre), description: String(obj.descripcion || '') });
+                                } else {
+                                    await addParameter({ type: 'article_category', name: String(obj.nombre), description: String(obj.descripcion || ''), isActive: true });
+                                }
+                                break;
+                            case 'ipc':
+                                if (!obj.nombre || obj.tasa === undefined) throw new Error('Nombre y Tasa son obligatorios');
+                                const existingIPC = projections.find((p: IPCProjection) => p.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                const ipcData = {
+                                    name: String(obj.nombre),
+                                    ipcRate: Number(obj.tasa),
+                                    description: String(obj.descripcion || ''),
+                                    isActive: true
+                                };
+                                if (existingIPC) {
+                                    await updateProjection({ ...existingIPC, ...ipcData });
+                                } else {
+                                    await addProjection(ipcData);
+                                }
+                                break;
+                            case 'infra_items':
+                                if (!obj.nombre) throw new Error('Nombre de la instalación es obligatorio');
+                                const existingInfra = infraItems.find((i: InfrastructureItem) => i.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                const infraData = {
+                                    name: String(obj.nombre),
+                                    isMandatory: obj.obligatorio === 'SI' || obj.obligatorio === true,
+                                    isArchived: false
+                                };
+                                if (existingInfra) {
+                                    await updateInfraItem({ ...existingInfra, ...infraData });
+                                } else {
+                                    await addInfraItem(infraData);
+                                }
+                                break;
+                            case 'equip_items':
+                                if (!obj.nombre) throw new Error('Nombre del equipamiento es obligatorio');
+                                const existingEquip = equipItems.find((e: EquipmentItem) => e.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                const equipData = {
+                                    name: String(obj.nombre),
+                                    isMandatory: obj.obligatorio === 'SI' || obj.obligatorio === true,
+                                    isArchived: false
+                                };
+                                if (existingEquip) {
+                                    await updateEquipItem({ ...existingEquip, ...equipData });
+                                } else {
+                                    await addEquipItem(equipData);
+                                }
+                                break;
+                            case 'messages':
+                                if (!obj.contenido) throw new Error('Contenido es obligatorio');
+                                const existingMsg = systemMessages.find((m: SystemMessage) => m.text.toLowerCase() === String(obj.contenido).toLowerCase());
+                                const msgData = {
+                                    text: String(obj.contenido),
+                                    type: (obj.tipo || 'info') as any,
+                                    isActive: true
+                                };
+                                if (existingMsg) {
+                                    await updateSystemMessage({ ...existingMsg, ...msgData });
+                                } else {
+                                    await addSystemMessage(msgData);
+                                }
+                                break;
+                            case 'emergency_numbers':
+                                if (!obj.nombre || !obj.telefono) throw new Error('Nombre y Teléfono son obligatorios');
+                                const existingNum = emergencyNumbers.find((n: EmergencyNumber) => n.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                const numData = {
+                                    category: String(obj.categoria || 'General'),
+                                    name: String(obj.nombre),
+                                    phone: String(obj.telefono),
+                                    description: String(obj.descripcion || '')
+                                };
+                                if (existingNum) {
+                                    await updateNumber(existingNum.id, numData);
+                                } else {
+                                    await addNumber(numData);
+                                }
                                 break;
                         }
                         currentSuccess++;
@@ -369,47 +559,94 @@ export const MassiveUploadPage: React.FC = () => {
             case 'conditions': headers = ['nombre', 'descripcion']; break;
             case 'extra_funds': headers = ['nombre', 'descripcion', 'codigo_fondo', 'tipo', 'monto_por_unidad', 'deadline']; break;
             case 'income': headers = ['rut', 'monto', 'mes', 'año', 'fecha_pago', 'metodo_pago']; break;
-            case 'community_expenses': headers = ['descripcion', 'monto', 'fecha', 'categoria', 'recurrente']; break;
+            case 'community_expenses': headers = ['descripcion', 'monto', 'fecha', 'categoria']; break;
+            case 'towers': headers = ['nombre']; break;
+            case 'departments': headers = ['numero', 'piso', 'torre', 'tipo_unidad', 'm2']; break;
+            case 'common_spaces': headers = ['nombre', 'ubicacion', 'valor_arriendo', 'duracion', 'condiciones']; break;
+            case 'parking': headers = ['numero', 'ubicacion', 'discapacitado', 'unidad', 'notas']; break;
+            case 'article_categories': headers = ['nombre', 'descripcion']; break;
+            case 'ipc': headers = ['nombre', 'tasa', 'descripcion']; break;
+            case 'infra_items': headers = ['nombre', 'obligatorio']; break;
+            case 'equip_items': headers = ['nombre', 'obligatorio']; break;
+            case 'messages': headers = ['contenido', 'tipo']; break;
+            case 'emergency_numbers': headers = ['nombre', 'telefono', 'descripcion', 'categoria']; break;
         }
 
         let data: any[][] = [headers];
 
         switch (selectedEntity) {
             case 'articles':
-                articles.forEach(a => data.push([a.name, a.description, a.category, a.price, a.stock, a.minStock, a.isActive ? 'SI' : 'NO']));
+                articles.forEach((a: Article) => data.push([a.name, a.description, a.category, a.price, a.stock, a.minStock, a.isActive ? 'SI' : 'NO']));
                 break;
             case 'personnel':
-                personnel.forEach(p => data.push([p.names, p.lastNames, p.dni, p.position, p.address, p.isHonorary ? 'SI' : 'NO', p.baseSalary, p.vacationDays, p.phone, p.email]));
+                personnel.forEach((p: Personnel) => data.push([p.names, p.lastNames, p.dni, p.position, p.address, p.isHonorary ? 'SI' : 'NO', p.baseSalary, p.vacationDays, p.phone, p.email]));
                 break;
             case 'residents':
-                residents.forEach(r => data.push([r.names, r.lastNames, r.dni, r.email, r.phone, r.familyCount, r.hasPets ? 'SI' : 'NO', r.isTenant ? 'SI' : 'NO']));
+                residents.forEach((r: Resident) => data.push([r.names, r.lastNames, r.dni, r.email, r.phone, r.familyCount, r.hasPets ? 'SI' : 'NO', r.isTenant ? 'SI' : 'NO']));
                 break;
             case 'owners':
-                owners.forEach(o => data.push([o.names, o.lastNames, o.dni, o.email, o.phone]));
+                owners.forEach((o: Owner) => data.push([o.names, o.lastNames, o.dni, o.email, o.phone]));
                 break;
             case 'units':
-                unitTypes.forEach(u => data.push([u.name, u.baseCommonExpense, u.defaultM2]));
+                unitTypes.forEach((u: UnitType) => data.push([u.name, u.baseCommonExpense, u.defaultM2]));
                 break;
             case 'banks':
-                banks.forEach(b => data.push([b.name]));
+                banks.forEach((b: Bank) => data.push([b.name]));
                 break;
             case 'assets':
-                assets.forEach(a => data.push([a.description, a.model, a.purchasePrice, a.depreciatedValue, a.purchaseDate, a.details, a.quantity]));
+                assets.forEach((a: FixedAsset) => data.push([a.description, a.model, a.purchasePrice, a.depreciatedValue, a.purchaseDate, a.details, a.quantity]));
                 break;
             case 'health':
-                providers.forEach(p => data.push([p.name, p.type, p.discountRate]));
+                providers.forEach((p: HealthProvider) => data.push([p.name, p.type, p.discountRate]));
                 break;
             case 'afp':
-                funds.forEach(f => data.push([f.name, f.discountRate]));
+                funds.forEach((f: PensionFund) => data.push([f.name, f.discountRate]));
                 break;
             case 'conditions':
-                conditions.forEach(c => data.push([c.name, c.description]));
+                conditions.forEach((c: SpecialCondition) => data.push([c.name, c.description]));
                 break;
             case 'extra_funds':
-                specialFunds.forEach(f => data.push([f.name, f.description, f.fundCode, f.type, f.totalAmountPerUnit, f.deadline || '']));
+                specialFunds.forEach((f: SpecialFund) => data.push([f.name, f.description, f.fundCode, f.type, f.totalAmountPerUnit, f.deadline || '']));
                 break;
             case 'community_expenses':
-                communityExpenses.forEach(e => data.push([e.description, e.amount, e.date, e.category, e.isRecurring ? 'SI' : 'NO']));
+                communityExpenses.forEach((e: CommunityExpense) => data.push([e.description, e.amount, e.date, e.category]));
+                break;
+            case 'towers':
+                towers.forEach((t: Tower) => data.push([t.name]));
+                break;
+            case 'departments':
+                departments.forEach((d: Department) => {
+                    const towerName = towers.find((t: Tower) => t.id === d.towerId)?.name || '';
+                    const unitTypeName = unitTypes.find((u: UnitType) => u.id === d.unitTypeId)?.name || '';
+                    data.push([d.number, d.floor, towerName, unitTypeName, d.m2]);
+                });
+                break;
+            case 'common_spaces':
+                spaces.forEach((s: CommonSpace) => data.push([s.name, s.location, s.rentalValue, s.durationHours, s.conditions || '']));
+                break;
+            case 'parking':
+                parkings.forEach((p: Parking) => {
+                    const deptNum = departments.find((d: Department) => d.id === p.departmentId)?.number || '';
+                    data.push([p.number, p.location, p.isHandicapped ? 'SI' : 'NO', deptNum, p.notes || '']);
+                });
+                break;
+            case 'article_categories':
+                parameters.filter((p: SystemParameter) => p.type === 'article_category').forEach((p: SystemParameter) => data.push([p.name, p.description]));
+                break;
+            case 'ipc':
+                projections.forEach((p: IPCProjection) => data.push([p.name, p.ipcRate, p.description]));
+                break;
+            case 'infra_items':
+                infraItems.forEach((i: InfrastructureItem) => data.push([i.name, i.isMandatory ? 'SI' : 'NO']));
+                break;
+            case 'equip_items':
+                equipItems.forEach((e: EquipmentItem) => data.push([e.name, e.isMandatory ? 'SI' : 'NO']));
+                break;
+            case 'messages':
+                systemMessages.forEach((m: SystemMessage) => data.push([m.text, m.type]));
+                break;
+            case 'emergency_numbers':
+                emergencyNumbers.forEach((n: EmergencyNumber) => data.push([n.name, n.phone, n.description, n.category]));
                 break;
         }
 
@@ -504,20 +741,31 @@ export const MassiveUploadPage: React.FC = () => {
                 {/* Selector */}
                 <div className="lg:col-span-1 space-y-4">
                     <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                        <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider mb-4">Paso 1: Seleccionar Maestro</h3>
-                        <div className="space-y-2">
-                            {entities.map((entity) => (
-                                <button
-                                    key={entity.value}
-                                    onClick={() => setSelectedEntity(entity.value)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all ${selectedEntity === entity.value
-                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-gray-950'
-                                        : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                        }`}
-                                >
-                                    <entity.icon className="w-4 h-4" />
-                                    <span className="text-sm font-bold">{entity.label}</span>
-                                </button>
+                        <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider mb-4 px-2">Paso 1: Seleccionar Maestro</h3>
+                        <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                            {Array.from(new Set(entities.map(e => e.category))).map(category => (
+                                <div key={category} className="space-y-2">
+                                    <div className="flex items-center gap-2 px-2 py-1">
+                                        <div className="h-px bg-gray-200 dark:bg-gray-800 flex-grow" />
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{category}</span>
+                                        <div className="h-px bg-gray-200 dark:bg-gray-800 flex-grow" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        {entities.filter(e => e.category === category).map((entity) => (
+                                            <button
+                                                key={entity.value}
+                                                onClick={() => setSelectedEntity(entity.value)}
+                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all ${selectedEntity === entity.value
+                                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-gray-950 scale-[1.02]'
+                                                    : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                                    }`}
+                                            >
+                                                <entity.icon className={`w-4 h-4 ${selectedEntity === entity.value ? 'text-white' : 'text-indigo-500'}`} />
+                                                <span className="text-sm font-bold">{entity.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     </div>
