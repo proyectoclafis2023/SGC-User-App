@@ -97,7 +97,7 @@ export const PersonnelProvider: React.FC<{ children: ReactNode }> = ({ children 
                     action: 'created',
                     details: `Personal ${newPerson.names} registrado.`
                 });
-                return newPerson.id;
+                return newPerson;
             }
         } catch (e) {
             console.error('Error adding personnel:', e);

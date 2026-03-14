@@ -358,7 +358,7 @@ export interface SpecialConditionContextType {
 
 export interface UnitTypeContextType {
     unitTypes: UnitType[];
-    addUnitType: (unitType: Omit<UnitType, 'id'>) => Promise<void>;
+    addUnitType: (unitType: Omit<UnitType, 'id'>) => Promise<UnitType | undefined>;
     updateUnitType: (unitType: UnitType) => Promise<void>;
     deleteUnitType: (id: string) => Promise<void>;
 }
@@ -372,7 +372,7 @@ export interface OwnerContextType {
 
 export interface ResidentContextType {
     residents: Resident[];
-    addResident: (resident: Omit<Resident, 'id' | 'createdAt' | 'status'>) => Promise<string | undefined>;
+    addResident: (resident: Omit<Resident, 'id' | 'createdAt' | 'status'>) => Promise<Resident | undefined>;
     updateResident: (resident: Resident) => Promise<void>;
     deleteResident: (id: string) => Promise<void>;
     uploadResidents: (file: File) => Promise<{ message: string }>;
@@ -450,11 +450,11 @@ export interface CameraRequestContextType {
 export interface InfrastructureContextType {
     towers: Tower[];
     departments: Department[];
-    addTower: (tower: Omit<Tower, 'id'>) => Promise<void>;
+    addTower: (tower: Omit<Tower, 'id'>) => Promise<Tower | undefined>;
     updateTower: (tower: Tower) => Promise<void>;
     deleteTower: (id: string) => Promise<void>;
     duplicateTower: (id: string, newName: string) => Promise<void>;
-    addDepartment: (dept: Omit<Department, 'id'>) => Promise<void>;
+    addDepartment: (dept: Omit<Department, 'id'>) => Promise<Department | undefined>;
     updateDepartment: (dept: Department) => Promise<void>;
     deleteDepartment: (id: string) => Promise<void>;
     fetchAll: () => Promise<void>;
@@ -567,7 +567,7 @@ export interface ProfileContextType {
 
 export interface PersonnelContextType {
     personnel: Personnel[];
-    addPersonnel: (person: Omit<Personnel, 'id' | 'createdAt' | 'status'>) => Promise<string | undefined>;
+    addPersonnel: (person: Omit<Personnel, 'id' | 'createdAt' | 'status'>) => Promise<Personnel | undefined>;
     updatePersonnel: (person: Personnel) => Promise<void>;
     deletePersonnel: (id: string) => Promise<void>;
     uploadPersonnel: (file: File) => Promise<{ message: string }>;
@@ -965,7 +965,7 @@ export interface ShiftReport {
 
 export interface ShiftReportContextType {
     reports: ShiftReport[];
-    addReport: (report: Omit<ShiftReport, 'id' | 'folio' | 'createdAt' | 'status' | 'hasIncidents' | 'hasInfrastructureIssues' | 'hasEquipmentIssues'>) => Promise<void>;
+    addReport: (report: Omit<ShiftReport, 'id' | 'folio' | 'createdAt' | 'status' | 'hasIncidents' | 'hasInfrastructureIssues' | 'hasEquipmentIssues'>) => Promise<boolean>;
     updateReport: (id: string, data: Partial<ShiftReport>) => Promise<void>;
     closeShift: (id: string, data: Partial<ShiftReport>) => Promise<void>;
     reopenShift: (id: string, adminName: string, reason: string) => Promise<void>;

@@ -68,7 +68,7 @@ export const ResidentProvider: React.FC<{ children: ReactNode }> = ({ children }
                     action: 'created',
                     details: `Residente ${newRes.names} ${newRes.lastNames} registrado.`
                 });
-                return newRes.id;
+                return newRes;
             }
         } catch (e) {
             console.error('API Error adding resident:', e);

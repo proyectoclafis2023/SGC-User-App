@@ -37,6 +37,7 @@ type EntityType = 'articles' | 'personnel' | 'residents' | 'owners' | 'banks' | 
 interface ProcessingError {
     row: number;
     message: string;
+    sheet?: string;
 }
 
 export const MassiveUploadPage: React.FC = () => {
@@ -183,6 +184,10 @@ export const MassiveUploadPage: React.FC = () => {
 
                 let totalSuccess = 0;
                 let allErrors: ProcessingError[] = [];
+                // Local caches to handle inter-sheet dependencies in a single upload session
+                const localTowers = [...towers];
+                const localResidents = [...residents];
+                const localUnitTypes = [...unitTypes];
 
                 for (const sheet of sheetsToProcess) {
                     const entityConfig = entities.find(ent => ent.value === sheet.entity);
@@ -196,6 +201,9 @@ export const MassiveUploadPage: React.FC = () => {
                         Object.keys(row).forEach(key => {
                             obj[key.trim().toLowerCase()] = row[key];
                         });
+
+                        // Skip completely empty rows
+                        if (Object.values(obj).every(v => v === null || v === undefined || v === '')) continue;
 
                         try {
                             switch (sheet.entity) {
@@ -238,9 +246,9 @@ export const MassiveUploadPage: React.FC = () => {
                                         await addPersonnel({ ...personData, hasEmergencyContact: false });
                                     }
                                     break;
-                                case 'residents':
+                                case 'residents': {
                                     if (!obj.nombres || !obj.rut) throw new Error('Nombres y RUT son obligatorios');
-                                    const existingResident = residents.find((r: Resident) => r.dni === String(obj.rut));
+                                    const existingResident = localResidents.find((r: Resident) => r.dni === String(obj.rut));
                                     const residentData = {
                                         names: String(obj.nombres),
                                         lastNames: String(obj.apellidos || ''),
@@ -253,10 +261,13 @@ export const MassiveUploadPage: React.FC = () => {
                                     };
                                     if (existingResident) {
                                         await updateResident({ ...existingResident, ...residentData });
+                                        Object.assign(existingResident, residentData);
                                     } else {
-                                        await addResident({ ...residentData, conditionIds: [] });
+                                        const newRes = await addResident({ ...residentData, conditionIds: [] }) as any;
+                                        if (newRes?.id) localResidents.push(newRes);
                                     }
                                     break;
+                                }
                                 case 'owners':
                                     if (!obj.nombres || !obj.rut) throw new Error('Nombres y RUT son obligatorios');
                                     const existingOwner = owners.find((o: Owner) => o.dni === String(obj.rut));
@@ -274,9 +285,9 @@ export const MassiveUploadPage: React.FC = () => {
                                         await addOwner(ownerData);
                                     }
                                     break;
-                                case 'units':
+                                case 'units': {
                                     if (!obj.nombre) throw new Error('Nombre del tipo de unidad es obligatorio');
-                                    const existingUnit = unitTypes.find((u: UnitType) => u.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                    const existingUnit = localUnitTypes.find((u: UnitType) => u.name.toLowerCase() === String(obj.nombre).toLowerCase());
                                     const unitData = {
                                         name: String(obj.nombre),
                                         baseCommonExpense: Number(obj.gasto_base || 0),
@@ -284,10 +295,13 @@ export const MassiveUploadPage: React.FC = () => {
                                     };
                                     if (existingUnit) {
                                         await updateUnitType({ ...existingUnit, ...unitData });
+                                        Object.assign(existingUnit, unitData);
                                     } else {
-                                        await addUnitType(unitData);
+                                        const newUT = await addUnitType(unitData) as any;
+                                        if (newUT?.id) localUnitTypes.push(newUT);
                                     }
                                     break;
+                                }
                                 case 'banks':
                                     if (!obj.nombre) throw new Error('Nombre del banco es obligatorio');
                                     const existingBank = banks.find((b: Bank) => b.name.toLowerCase() === String(obj.nombre).toLowerCase());
@@ -304,7 +318,7 @@ export const MassiveUploadPage: React.FC = () => {
                                         description: String(obj.descripcion),
                                         model: String(obj.modelo || ''),
                                         purchasePrice: Number(obj.precio_compra || 0),
-                                        depreciatedValue: Number(obj.valor_depreciado || 0),
+                                        depreciatedValue: Number(obj.valor_depreciated || 0),
                                         purchaseDate: String(obj.fecha_compra || new Date().toISOString().split('T')[0]),
                                         details: String(obj.detalles || ''),
                                         quantity: Number(obj.cantidad || 1),
@@ -379,7 +393,7 @@ export const MassiveUploadPage: React.FC = () => {
                                 }
                                 case 'income':
                                     if (!obj.rut || !obj.monto || !obj.mes || !obj.año) throw new Error('RUT, Monto, Mes y Año son obligatorios');
-                                    const resident = residents.find((r: Resident) => r.dni === String(obj.rut));
+                                    const resident = localResidents.find((r: Resident) => r.dni === String(obj.rut));
                                     if (!resident) throw new Error(`Residente con RUT ${obj.rut} no encontrado`);
                                     await addIncome({
                                         departmentId: resident.unitId || 'unknown',
@@ -402,27 +416,34 @@ export const MassiveUploadPage: React.FC = () => {
                                         category: (obj.categoria || 'Otros') as any
                                     });
                                     break;
-                                case 'towers':
+                                case 'towers': {
                                     if (!obj.nombre) throw new Error('Nombre de la torre es obligatorio');
-                                    const existingTower = towers.find((t: Tower) => t.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                    const existingTower = localTowers.find((t: Tower) => t.name.toLowerCase() === String(obj.nombre).toLowerCase());
                                     if (existingTower) {
                                         await updateTower({ ...existingTower, name: String(obj.nombre) });
                                     } else {
-                                        await addTower({ name: String(obj.nombre), departments: [] });
+                                        const newTower = await addTower({ name: String(obj.nombre), departments: [] });
+                                        if (newTower) localTowers.push(newTower);
                                     }
                                     break;
+                                }
                                 case 'departments': {
                                     if (!obj.numero || !obj.torre) throw new Error('Número y Torre son obligatorios');
-                                    const tower = towers.find((t: Tower) => t.name.toLowerCase() === String(obj.torre).toLowerCase());
-                                    if (!tower) throw new Error(`Torre '${obj.torre}' no encontrada. Créela primero.`);
+                                    let tower = localTowers.find((t: Tower) => t.name.toLowerCase() === String(obj.torre).toLowerCase());
+                                    if (!tower) {
+                                        // Auto-create tower if missing
+                                        tower = await addTower({ name: String(obj.torre), departments: [] });
+                                        if (tower) localTowers.push(tower);
+                                        else throw new Error(`Fallo al crear automáticamente la torre '${obj.torre}'`);
+                                    }
                                     
-                                    const unitType = unitTypes.find((u: UnitType) => u.name.toLowerCase() === String(obj.tipo_unidad || '').toLowerCase());
+                                    const unitType = localUnitTypes.find((u: UnitType) => u.name.toLowerCase() === String(obj.tipo_unidad || '').toLowerCase());
                                     
-                                    const existingDept = departments.find((d: Department) => d.number === String(obj.numero) && d.towerId === tower.id);
+                                    const existingDept = departments.find((d: Department) => d.number === String(obj.numero) && d.towerId === tower?.id);
                                     const deptData = {
                                         number: String(obj.numero),
                                         floor: Number(obj.piso || 1),
-                                        towerId: tower.id,
+                                        towerId: tower?.id || '',
                                         unitTypeId: unitType?.id,
                                         m2: Number(obj.m2 || 60)
                                     };
@@ -553,7 +574,8 @@ export const MassiveUploadPage: React.FC = () => {
                         } catch (err: any) {
                             allErrors.push({
                                 row: rowNumber,
-                                message: `[${entityConfig?.label}] ${err.message || 'Error desconocido'}`
+                                message: err.message || 'Error desconocido',
+                                sheet: entityConfig?.label || sheet.entity
                             });
                         }
                     }
@@ -567,9 +589,11 @@ export const MassiveUploadPage: React.FC = () => {
                     : `Carga exitosa de ${totalSuccess} registros en total.`);
                 setFile(null);
                 setPendingSheets([]);
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const error = err as Error;
+                console.error('File processing error:', error);
                 setStatus('error');
-                setMessage(err.message || 'Error crítico al procesar el archivo.');
+                setMessage(error.message || 'Error al procesar el archivo.');
             }
         };
 
@@ -697,7 +721,7 @@ export const MassiveUploadPage: React.FC = () => {
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
             XLSX.writeFile(wb, `maestro_${selectedEntity}_${new Date().toISOString().split('T')[0]}.xlsx`);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error downloading template:', err);
             setStatus('error');
             setMessage('Error al generar la plantilla de Excel.');
@@ -721,7 +745,7 @@ export const MassiveUploadPage: React.FC = () => {
             XLSX.writeFile(wb, `TODOS_LOS_MAESTROS_SGC_${new Date().toISOString().split('T')[0]}.xlsx`);
             setStatus('idle');
             setMessage('');
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error downloading all masters:', err);
             setStatus('error');
             setMessage('Error crítico al generar el archivo con todos los maestros.');
@@ -729,9 +753,42 @@ export const MassiveUploadPage: React.FC = () => {
     };
 
     const refreshData = async () => {
-        // Simple trick to force a refresh of all masters used here
-        // In a real app with react-query this would be invalidateQueries
         window.location.reload(); 
+    };
+
+    const downloadErrorReport = () => {
+        if (errors.length === 0 && successCount === 0) return;
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const fileName = `LOG_CARGA_${timestamp}.txt`;
+        
+        const logContent = [
+            `REPORTE DE CARGA MASIVA - SGC`,
+            `FECHA: ${new Date().toLocaleString()}`,
+            `RESULTADO: ${errors.length > 0 ? 'FINALIZADO CON ERRORES' : 'EXITOSO'}`,
+            `REGISTROS EXITOSOS: ${successCount}`,
+            `REGISTROS CON ERROR: ${errors.length}`,
+            `--------------------------------------------------`,
+            '',
+            errors.length > 0 ? 'DETALLE DE ERRORES:' : 'No se detectaron errores.',
+            ...errors.map(err => {
+                const sheetPrefix = err.sheet ? `[${err.sheet}] ` : '';
+                return `Fila ${err.row}: ${sheetPrefix}${err.message}`;
+            }),
+            '',
+            `--------------------------------------------------`,
+            'Fin del reporte.'
+        ].join('\n');
+
+        const blob = new Blob([logContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     return (
@@ -959,15 +1016,25 @@ export const MassiveUploadPage: React.FC = () => {
 
                         {/* Error Report */}
                         {errors.length > 0 && (
-                            <div className="mt-8 w-full max-w-md bg-red-50 dark:bg-red-900/10 rounded-2xl p-4 border border-red-100 dark:border-red-900/20">
-                                <h4 className="text-xs font-black text-red-800 dark:text-red-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                                    <XCircle className="w-4 h-4" /> Errores encontrados ({errors.length})
-                                </h4>
-                                <div className="max-h-40 overflow-y-auto space-y-1 pr-2">
+                            <div className="mt-8 w-full max-w-md bg-red-50 dark:bg-red-900/10 rounded-2xl p-6 border border-red-100 dark:border-red-900/20">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="text-xs font-black text-red-800 dark:text-red-400 uppercase tracking-wider flex items-center gap-2">
+                                        <XCircle className="w-4 h-4" /> Errores encontrados ({errors.length})
+                                    </h4>
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={downloadErrorReport}
+                                        className="h-7 px-3 text-[9px] font-black uppercase tracking-tighter border-red-200 text-red-700 hover:bg-red-100"
+                                    >
+                                        <FileText className="w-3 h-3 mr-1" /> Adjuntar Log
+                                    </Button>
+                                </div>
+                                <div className="max-h-40 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
                                     {errors.map((err, idx) => (
-                                        <div key={idx} className="text-[10px] text-red-700 dark:text-red-500 flex justify-between">
-                                            <span className="font-bold">Fila {err.row}:</span>
-                                            <span>{err.message}</span>
+                                        <div key={idx} className="text-[10px] text-red-700 dark:text-red-500 flex flex-col border-b border-red-100/50 pb-1 mb-1 last:border-0">
+                                            <span className="font-bold">Fila {err.row} {err.sheet && `[${err.sheet}]`}:</span>
+                                            <span className="opacity-90">{err.message}</span>
                                         </div>
                                     ))}
                                 </div>

@@ -52,16 +52,30 @@ export const ShiftReportsPage: React.FC = () => {
     const todayStr = new Date().toISOString().split('T')[0];
     const activeReport = reports.find((r: ShiftReport) => r.workerId === user?.id && r.shiftDate === todayStr && r.status === 'open');
 
+    const getCurrentShift = () => {
+        const hour = new Date().getHours();
+        if (hour >= 7 && hour < 15) return 'Manana';
+        if (hour >= 15 && hour < 23) return 'Tarde';
+        return 'Noche';
+    };
+
     useEffect(() => {
         if (user?.relatedId && !activeReport) {
             const currentPersonnel = personnel.find((p: Personnel) => p.id === user.relatedId);
             if (currentPersonnel?.assignedShift) {
-                setShiftType(currentPersonnel.assignedShift as 'Manana' | 'Tarde' | 'Noche');
+                // Normalize 'Mañana' or any variation to 'Manana'
+                const normalized = currentPersonnel.assignedShift.includes('Ma') ? 'Manana' : currentPersonnel.assignedShift;
+                if (['Manana', 'Tarde', 'Noche'].includes(normalized)) {
+                    setShiftType(normalized as 'Manana' | 'Tarde' | 'Noche');
+                }
+            } else {
+                setShiftType(getCurrentShift());
             }
+        } else if (!activeReport) {
+            setShiftType(getCurrentShift());
         }
     }, [user, personnel, activeReport]);
 
-    const hasTodayClosed = reports.some((r: ShiftReport) => r.workerId === user?.id && r.shiftDate === todayStr && r.status === 'closed');
 
     const infrastructureOptions = infraItems.filter((i: InfrastructureItem) => !i.isArchived).map((i: InfrastructureItem) => i.name);
     const equipmentOptions = equipItems.filter((i: EquipmentItem) => !i.isArchived).map((i: EquipmentItem) => i.name);
@@ -106,14 +120,20 @@ export const ShiftReportsPage: React.FC = () => {
     }, [activeReport]);
 
     const handleStartShift = async () => {
-        const existing = reports.find((r: ShiftReport) => r.workerId === user?.id && r.shiftDate === todayStr);
+        const current = getCurrentShift();
+        const existing = reports.find((r: ShiftReport) => 
+            r.workerId === user?.id && 
+            r.shiftDate === todayStr && 
+            r.shiftType === current
+        );
 
         if (existing) {
             if (existing.status === 'closed') {
-                alert("Ya existe un reporte finalizado para el día de hoy. No se pueden duplicar los reportes diarios.");
+                alert(`Ya existe un reporte finalizado para la jornada de ${current} de hoy. No se pueden duplicar los reportes por jornada.`);
                 return;
             }
-            // Is open, already handled by activeReport
+            // Si está abierto, simplemente abrimos el modal
+            setIsModalOpen(true);
             return;
         }
 
@@ -121,11 +141,12 @@ export const ShiftReportsPage: React.FC = () => {
             workerId: user?.id || 'unknown',
             workerName: user?.name || 'Usuario',
             shiftDate: todayStr,
-            shiftType: 'Manana',
+            shiftType: current as any,
             novedades: ''
         });
 
-        // Immediately open the reporting modal as requested
+        // El modal se abrirá automáticamente vía useEffect cuando activeReport cambie, 
+        // pero lo forzamos aquí también para una respuesta inmediata.
         setIsModalOpen(true);
     };
 
@@ -235,11 +256,8 @@ export const ShiftReportsPage: React.FC = () => {
     }).sort((a: ShiftReport, b: ShiftReport) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     const todayReports = reports.filter((r: ShiftReport) => r.shiftDate === todayStr);
-    const shiftStatus = {
-        Manana: todayReports.some((r: ShiftReport) => r.shiftType === 'Manana' && r.status === 'closed'),
-        Tarde: todayReports.some((r: ShiftReport) => r.shiftType === 'Tarde' && r.status === 'closed'),
-        Noche: todayReports.some((r: ShiftReport) => r.shiftType === 'Noche' && r.status === 'closed'),
-    };
+    const currentShiftType = getCurrentShift();
+    const hasClosedCurrentShift = todayReports.some((r: ShiftReport) => r.shiftType === currentShiftType && r.status === 'closed');
 
     const AttachmentSection = ({ title, attachments, setter }: { title: string, attachments: string[], setter: React.Dispatch<React.SetStateAction<string[]>> }) => (
         <div className="space-y-4 mb-4">
@@ -271,16 +289,22 @@ export const ShiftReportsPage: React.FC = () => {
             )}
         </div>
     );
+      const getShiftInfo = (type: 'Manana' | 'Tarde' | 'Noche') => {
+        const report = todayReports.find(r => r.shiftType === type);
+        if (!report) return { status: 'pending', label: '⚠ NO INFORMADO', color: 'text-rose-700 dark:text-rose-400', bgColor: 'bg-rose-50/50', iconColor: 'bg-rose-500', subLabel: 'Pendiente de inicio' };
+        if (report.status === 'open') return { status: 'open', label: '● EN CURSO', color: 'text-indigo-700 dark:text-indigo-400', bgColor: 'bg-indigo-50/50', iconColor: 'bg-indigo-500', subLabel: `Por: ${report.workerName}`, report };
+        return { status: 'closed', label: '✓ REPORTADO', color: 'text-emerald-700 dark:text-emerald-400', bgColor: 'bg-emerald-50/50', iconColor: 'bg-emerald-500', subLabel: `Por: ${report.workerName}`, report };
+    };
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="p-4 sm:p-8 space-y-8 animate-in fade-in duration-700">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-8 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-sm">
                 <div>
-                    <h1 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
-                        <ClipboardList className="w-8 h-8 text-indigo-600" />
-                        Bitácora de Turnos
+                    <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
+                        <ClipboardList className="w-10 h-10 text-indigo-600" />
+                        Bitácora Turnos
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-bold italic">Registro de novedades y cierre de jornada estructurado.</p>
+                    <p className="text-gray-500 dark:text-gray-400 font-bold mt-1 ml-1 text-sm uppercase tracking-widest">Control Operativo y Novedades de Jornada</p>
                 </div>
                 <div className="flex gap-2">
                     {!activeReport ? (
@@ -295,12 +319,14 @@ export const ShiftReportsPage: React.FC = () => {
                 </div>
             </div>
 
-            {hasTodayClosed && !activeReport && (
-                <div className="bg-amber-50 border border-amber-200 p-6 rounded-[2rem] flex items-center gap-4 text-amber-800 animate-in fade-in slide-in-from-top-2">
-                    <ShieldAlert className="w-6 h-6 shrink-0" />
+            {hasClosedCurrentShift && !activeReport && (
+                <div className="bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/20 p-8 rounded-[3rem] text-rose-700 dark:text-rose-400 flex items-center gap-6 shadow-sm ring-1 ring-rose-100 dark:ring-rose-900/10">
+                    <div className="w-16 h-16 bg-rose-500 rounded-[2rem] flex items-center justify-center text-white shadow-xl shadow-rose-500/30 shrink-0">
+                        <ShieldAlert className="w-8 h-8" />
+                    </div>
                     <div>
                         <p className="text-sm font-black uppercase tracking-widest">Reporte Diario Finalizado</p>
-                        <p className="text-xs font-bold opacity-80">Ya has enviado tu consolidado del día de hoy. No es necesario iniciar un nuevo turno.</p>
+                        <p className="text-xs font-bold opacity-80">Ya has enviado tu consolidado del día de hoy para esta jornada. No es necesario iniciar uno nuevo a menos que sea un turno diferente.</p>
                     </div>
                 </div>
             )}
@@ -339,43 +365,42 @@ export const ShiftReportsPage: React.FC = () => {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {(['Manana', 'Tarde', 'Noche'] as const).map(type => {
-                        const isReported = shiftStatus[type];
-                        const report = todayReports.find(r => r.shiftType === type);
+                        const info = getShiftInfo(type);
+                        const isReported = info.status === 'closed';
 
                         return (
-                            <div key={type} className={`p-6 rounded-[2.5rem] border-2 transition-all ${isReported ? 'bg-emerald-50/50 border-emerald-100 dark:bg-emerald-900/10 dark:border-emerald-900/20' : 'bg-rose-50/50 border-rose-100 border-dashed dark:bg-rose-900/10 dark:border-rose-900/20'} shadow-sm flex items-center justify-between group`}>
+                            <div key={type} className={`p-6 rounded-[2.5rem] border-2 transition-all ${info.bgColor} ${info.status === 'pending' ? 'border-dashed' : 'border-solid'} border-opacity-30 shadow-sm flex items-center justify-between group`}>
                                 <div className="flex items-center gap-4">
-                                    <div className={`p-4 rounded-2xl transition-transform group-hover:scale-110 ${isReported ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-rose-500 text-white shadow-lg shadow-rose-500/20'}`}>
+                                    <div className={`p-4 rounded-2xl transition-transform group-hover:scale-110 ${info.iconColor} text-white shadow-lg`}>
                                         <Zap className={`w-5 h-5 ${type === 'Tarde' ? 'rotate-45' : type === 'Noche' ? 'rotate-90' : ''}`} />
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Jornada {type}</p>
                                         <div className="flex flex-col">
-                                            <p className={`text-sm font-black ${isReported ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
-                                                {isReported ? '✓ REPORTADO' : '⚠ NO INFORMADO'}
+                                            <p className={`text-sm font-black ${info.color}`}>
+                                                {info.label}
                                             </p>
-                                            {isReported && report && (
-                                                <p className="text-[9px] font-bold text-gray-400 uppercase italic">Por: {report.workerName}</p>
-                                            )}
-                                            {!isReported && (
-                                                <p className="text-[9px] font-bold text-rose-400 uppercase animate-pulse">Pendiente de cierre</p>
-                                            )}
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase italic">{info.subLabel}</p>
                                         </div>
                                     </div>
                                 </div>
-                                {isReported ? (
+                                {info.status !== 'pending' ? (
                                     <div className="flex items-center gap-2">
-                                        {isAdmin && report && (
+                                        {isAdmin && info.report && (
                                             <button
                                                 type="button"
-                                                onClick={(e) => confirmDelete(e, report.id, report.folio)}
+                                                onClick={(e) => confirmDelete(e, info.report.id, info.report.folio)}
                                                 className="p-2.5 bg-rose-50 text-rose-500 hover:bg-rose-100 dark:bg-rose-900/20 rounded-xl transition-all border border-rose-100 dark:border-rose-900/30 shadow-sm"
                                                 title="Eliminar Reporte"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         )}
-                                        <CheckCircle2 className="w-6 h-6 text-emerald-500 drop-shadow-md" />
+                                        {isReported ? (
+                                            <CheckCircle2 className="w-6 h-6 text-emerald-500 drop-shadow-md" />
+                                        ) : (
+                                            <div className="w-6 h-6 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin" />
+                                        )}
                                     </div>
                                 ) : (
                                     <X className="w-6 h-6 text-rose-500 opacity-50" />

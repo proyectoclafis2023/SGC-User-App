@@ -27,12 +27,16 @@ export const UnitTypeProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     const addUnitType = async (unitType: Omit<UnitType, 'id'>) => {
         try {
-            await fetch(API_URL, {
+            const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(unitType)
             });
-            await fetchUnitTypes();
+            if (response.ok) {
+                const data = await response.json();
+                await fetchUnitTypes();
+                return data;
+            }
         } catch (error) {
             console.error('Error adding unit type:', error);
         }

@@ -35,7 +35,9 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
                 body: JSON.stringify(tower)
             });
             if (response.ok) {
+                const data = await response.json();
                 await fetchAll();
+                return data;
             }
         } catch (e) {
             console.error('Error adding tower:', e);
@@ -79,7 +81,9 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
                 body: JSON.stringify(dept)
             });
             if (response.ok) {
+                const data = await response.json();
                 await fetchAll();
+                return data;
             }
         } catch (e) { console.error('Error adding department:', e); }
     };

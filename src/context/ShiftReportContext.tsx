@@ -29,7 +29,7 @@ export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ childre
         return `${prefix}-${dateStr}-${rand}`;
     };
 
-    const addReport = async (report: Omit<ShiftReport, 'id' | 'folio' | 'createdAt' | 'status' | 'hasIncidents' | 'hasInfrastructureIssues' | 'hasEquipmentIssues'>) => {
+    const addReport = async (report: Omit<ShiftReport, 'id' | 'folio' | 'createdAt' | 'status' | 'hasIncidents' | 'hasInfrastructureIssues' | 'hasEquipmentIssues'>): Promise<boolean> => {
         const id = Math.random().toString(36).substr(2, 9);
         const newRecord: ShiftReport = {
             ...report,
@@ -50,9 +50,12 @@ export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ childre
             });
             if (response.ok) {
                 await fetchReports();
+                return true;
             }
+            return false;
         } catch (e) {
             console.error('API Error adding shift report:', e);
+            return false;
         }
     };
 
@@ -93,7 +96,7 @@ export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ childre
         });
     };
 
-    const deleteReport = async (id: string) => {
+    const deleteReport = async (id: string): Promise<void> => {
         try {
             const response = await fetch(`${API_BASE_URL}/shift_reports/${id}`, {
                 method: 'DELETE'
