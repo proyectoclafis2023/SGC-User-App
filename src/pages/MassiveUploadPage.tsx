@@ -588,47 +588,47 @@ export const MassiveUploadPage: React.FC = () => {
         switch (entity) {
             case 'articles': 
                 headers = ['nombre', 'descripcion', 'categoria', 'precio', 'stock', 'stock_minimo', 'activo']; 
-                articles.forEach((a: Article) => data.push([a.name, a.description, a.category, a.price, a.stock, a.minStock, a.isActive ? 'SI' : 'NO']));
+                articles?.forEach((a: Article) => data.push([a.name, a.description, a.category, a.price, a.stock, a.minStock, a.isActive ? 'SI' : 'NO']));
                 break;
             case 'personnel': 
                 headers = ['nombres', 'apellidos', 'rut', 'cargo', 'direccion', 'honorario', 'sueldo_base', 'dias_vacaciones', 'telefono', 'email']; 
-                personnel.forEach((p: Personnel) => data.push([p.names, p.lastNames, p.dni, p.position, p.address, p.isHonorary ? 'SI' : 'NO', p.baseSalary, p.vacationDays, p.phone, p.email]));
+                personnel?.forEach((p: Personnel) => data.push([p.names, p.lastNames, p.dni, p.position, p.address, p.isHonorary ? 'SI' : 'NO', p.baseSalary, p.vacationDays, p.phone, p.email]));
                 break;
             case 'residents': 
                 headers = ['nombres', 'apellidos', 'rut', 'email', 'telefono', 'integrantes', 'mascotas', 'arrendatario'];
-                residents.forEach((r: Resident) => data.push([r.names, r.lastNames, r.dni, r.email, r.phone, r.familyCount, r.hasPets ? 'SI' : 'NO', r.isTenant ? 'SI' : 'NO']));
+                residents?.forEach((r: Resident) => data.push([r.names, r.lastNames, r.dni, r.email, r.phone, r.familyCount, r.hasPets ? 'SI' : 'NO', r.isTenant ? 'SI' : 'NO']));
                 break;
             case 'owners': 
                 headers = ['nombres', 'apellidos', 'rut', 'email', 'telefono'];
-                owners.forEach((o: Owner) => data.push([o.names, o.lastNames, o.dni, o.email, o.phone]));
+                owners?.forEach((o: Owner) => data.push([o.names, o.lastNames, o.dni, o.email, o.phone]));
                 break;
             case 'units': 
                 headers = ['nombre', 'gasto_base', 'm2'];
-                unitTypes.forEach((u: UnitType) => data.push([u.name, u.baseCommonExpense, u.defaultM2]));
+                unitTypes?.forEach((u: UnitType) => data.push([u.name, u.baseCommonExpense, u.defaultM2]));
                 break;
             case 'banks': 
                 headers = ['nombre'];
-                banks.forEach((b: Bank) => data.push([b.name]));
+                banks?.forEach((b: Bank) => data.push([b.name]));
                 break;
             case 'assets': 
                 headers = ['descripcion', 'modelo', 'precio_compra', 'valor_depreciado', 'fecha_compra', 'detalles', 'cantidad'];
-                assets.forEach((a: FixedAsset) => data.push([a.description, a.model, a.purchasePrice, a.depreciatedValue, a.purchaseDate, a.details, a.quantity]));
+                assets?.forEach((a: FixedAsset) => data.push([a.description, a.model, a.purchasePrice, a.depreciatedValue, a.purchaseDate, a.details, a.quantity]));
                 break;
             case 'health': 
                 headers = ['nombre', 'tipo', 'tasa'];
-                providers.forEach((p: HealthProvider) => data.push([p.name, p.type, p.discountRate]));
+                providers?.forEach((p: HealthProvider) => data.push([p.name, p.type, p.discountRate]));
                 break;
             case 'afp': 
                 headers = ['nombre', 'tasa'];
-                funds.forEach((f: PensionFund) => data.push([f.name, f.discountRate]));
+                funds?.forEach((f: PensionFund) => data.push([f.name, f.discountRate]));
                 break;
             case 'conditions': 
                 headers = ['nombre', 'descripcion'];
-                conditions.forEach((c: SpecialCondition) => data.push([c.name, c.description]));
+                conditions?.forEach((c: SpecialCondition) => data.push([c.name, c.description]));
                 break;
             case 'extra_funds': 
                 headers = ['nombre', 'descripcion', 'codigo_fondo', 'tipo', 'monto_por_unidad', 'deadline'];
-                specialFunds.forEach((f: SpecialFund) => data.push([f.name, f.description, f.fundCode, f.type, f.totalAmountPerUnit, f.deadline || '']));
+                specialFunds?.forEach((f: SpecialFund) => data.push([f.name, f.description, f.fundCode, f.type, f.totalAmountPerUnit, f.deadline || '']));
                 break;
             case 'income': 
                 headers = ['rut', 'monto', 'mes', 'año', 'fecha_pago', 'metodo_pago'];
@@ -636,54 +636,54 @@ export const MassiveUploadPage: React.FC = () => {
                 break;
             case 'community_expenses': 
                 headers = ['descripcion', 'monto', 'fecha', 'categoria'];
-                communityExpenses.forEach((e: CommunityExpense) => data.push([e.description, e.amount, e.date, e.category]));
+                communityExpenses?.forEach((e: CommunityExpense) => data.push([e.description, e.amount, e.date, e.category]));
                 break;
             case 'towers': 
                 headers = ['nombre'];
-                towers.forEach((t: Tower) => data.push([t.name]));
+                towers?.forEach((t: Tower) => data.push([t.name]));
                 break;
             case 'departments': 
                 headers = ['numero', 'piso', 'torre', 'tipo_unidad', 'm2'];
-                departments.forEach((d: Department) => {
-                    const towerName = towers.find((t: Tower) => t.id === d.towerId)?.name || '';
-                    const unitTypeName = unitTypes.find((u: UnitType) => u.id === d.unitTypeId)?.name || '';
+                departments?.forEach((d: Department) => {
+                    const towerName = towers?.find((t: Tower) => t.id === d.towerId)?.name || '';
+                    const unitTypeName = unitTypes?.find((u: UnitType) => u.id === d.unitTypeId)?.name || '';
                     data.push([d.number, d.floor, towerName, unitTypeName, d.m2]);
                 });
                 break;
             case 'common_spaces': 
                 headers = ['nombre', 'ubicacion', 'valor_arriendo', 'duracion', 'condiciones'];
-                spaces.forEach((s: CommonSpace) => data.push([s.name, s.location, s.rentalValue, s.durationHours, s.conditions || '']));
+                spaces?.forEach((s: CommonSpace) => data.push([s.name, s.location, s.rentalValue, s.durationHours, s.conditions || '']));
                 break;
             case 'parking': 
                 headers = ['numero', 'ubicacion', 'discapacitado', 'unidad', 'notas'];
-                parkings.forEach((p: Parking) => {
-                    const deptNum = departments.find((d: Department) => d.id === p.departmentId)?.number || '';
+                parkings?.forEach((p: Parking) => {
+                    const deptNum = departments?.find((d: Department) => d.id === p.departmentId)?.number || '';
                     data.push([p.number, p.location, p.isHandicapped ? 'SI' : 'NO', deptNum, p.notes || '']);
                 });
                 break;
             case 'article_categories': 
                 headers = ['nombre', 'descripcion'];
-                parameters.filter((p: SystemParameter) => p.type === 'article_category').forEach((p: SystemParameter) => data.push([p.name, p.description]));
+                parameters?.filter((p: SystemParameter) => p.type === 'article_category').forEach((p: SystemParameter) => data.push([p.name, p.description]));
                 break;
             case 'ipc': 
                 headers = ['nombre', 'tasa', 'descripcion'];
-                projections.forEach((p: IPCProjection) => data.push([p.name, p.ipcRate, p.description]));
+                projections?.forEach((p: IPCProjection) => data.push([p.name, p.ipcRate, p.description]));
                 break;
             case 'infra_items': 
                 headers = ['nombre', 'obligatorio'];
-                infraItems.forEach((i: InfrastructureItem) => data.push([i.name, i.isMandatory ? 'SI' : 'NO']));
+                infraItems?.forEach((i: InfrastructureItem) => data.push([i.name, i.isMandatory ? 'SI' : 'NO']));
                 break;
             case 'equip_items': 
                 headers = ['nombre', 'obligatorio'];
-                equipItems.forEach((e: EquipmentItem) => data.push([e.name, e.isMandatory ? 'SI' : 'NO']));
+                equipItems?.forEach((e: EquipmentItem) => data.push([e.name, e.isMandatory ? 'SI' : 'NO']));
                 break;
             case 'messages': 
                 headers = ['contenido', 'tipo'];
-                systemMessages.forEach((m: SystemMessage) => data.push([m.text, m.type]));
+                systemMessages?.forEach((m: SystemMessage) => data.push([m.text, m.type]));
                 break;
             case 'emergency_numbers': 
                 headers = ['nombre', 'telefono', 'descripcion', 'categoria'];
-                emergencyNumbers.forEach((n: EmergencyNumber) => data.push([n.name, n.phone, n.description, n.category]));
+                emergencyNumbers?.forEach((n: EmergencyNumber) => data.push([n.name, n.phone, n.description, n.category]));
                 break;
         }
 
@@ -691,21 +691,41 @@ export const MassiveUploadPage: React.FC = () => {
     };
 
     const downloadExcelTemplate = () => {
-        const fullData = getEntityExportData(selectedEntity);
-        const ws = XLSX.utils.aoa_to_sheet(fullData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
-        XLSX.writeFile(wb, `maestro_${selectedEntity}_${new Date().toISOString().split('T')[0]}.xlsx`);
+        try {
+            const fullData = getEntityExportData(selectedEntity);
+            const ws = XLSX.utils.aoa_to_sheet(fullData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
+            XLSX.writeFile(wb, `maestro_${selectedEntity}_${new Date().toISOString().split('T')[0]}.xlsx`);
+        } catch (err) {
+            console.error('Error downloading template:', err);
+            setStatus('error');
+            setMessage('Error al generar la plantilla de Excel.');
+        }
     };
 
     const downloadAllMasters = () => {
-        const wb = XLSX.utils.book_new();
-        entities.forEach(entity => {
-            const fullData = getEntityExportData(entity.value);
-            const ws = XLSX.utils.aoa_to_sheet(fullData);
-            XLSX.utils.book_append_sheet(wb, ws, entity.label.substring(0, 31)); 
-        });
-        XLSX.writeFile(wb, `TODOS_LOS_MAESTROS_SGC_${new Date().toISOString().split('T')[0]}.xlsx`);
+        try {
+            setStatus('processing');
+            setMessage('Generando archivo consolidado...');
+            const wb = XLSX.utils.book_new();
+            entities.forEach(entity => {
+                try {
+                    const fullData = getEntityExportData(entity.value);
+                    const ws = XLSX.utils.aoa_to_sheet(fullData);
+                    XLSX.utils.book_append_sheet(wb, ws, entity.label.substring(0, 31)); 
+                } catch (e) {
+                    console.warn(`Error exporting entity ${entity.value}:`, e);
+                }
+            });
+            XLSX.writeFile(wb, `TODOS_LOS_MAESTROS_SGC_${new Date().toISOString().split('T')[0]}.xlsx`);
+            setStatus('idle');
+            setMessage('');
+        } catch (err) {
+            console.error('Error downloading all masters:', err);
+            setStatus('error');
+            setMessage('Error crítico al generar el archivo con todos los maestros.');
+        }
     };
 
     const refreshData = async () => {
