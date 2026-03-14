@@ -1,25 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useArticles } from '../context/ArticleContext';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-import { Plus, Trash2, Edit2, X, Shirt, Search, ShieldCheck, Eraser, Briefcase, Filter, AlertTriangle, Download, Package } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Shirt, Search, ShieldCheck, Briefcase, Filter, AlertTriangle, Download, Package, Tag } from 'lucide-react';
+import { useSystemParameters } from '../context/SystemParameterContext';
 import type { Article } from '../types';
 
 export const ArticlesPage: React.FC = () => {
     const { articles, addArticle, updateArticle, deleteArticle, uploadArticles } = useArticles();
+    const { parameters } = useSystemParameters();
+    const articleCategories = parameters.filter(p => p.type === 'article_category');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingArticle, setEditingArticle] = useState<Article | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState<Article['category'] | 'all' | 'low-stock'>('all');
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [category, setCategory] = useState<Article['category']>('EPP');
+    const [category, setCategory] = useState('');
     const [price, setPrice] = useState(0);
     const [stock, setStock] = useState(0);
     const [minStock, setMinStock] = useState(0);
     const [isActive, setIsActive] = useState(true);
     const [allowPersonnelRequest, setAllowPersonnelRequest] = useState(false);
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('all');
 
     const handleOpenModal = (art?: Article) => {
         if (art) {
@@ -36,7 +40,7 @@ export const ArticlesPage: React.FC = () => {
             setEditingArticle(null);
             setName('');
             setDescription('');
-            setCategory('EPP');
+            setCategory(articleCategories[0]?.name || '');
             setPrice(0);
             setStock(0);
             setMinStock(0);
@@ -123,14 +127,18 @@ export const ArticlesPage: React.FC = () => {
                             }
                         }}
                     />
-                    <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Carga Masiva
-                    </Button>
-                    <Button variant="secondary" onClick={handleExportCSV}>
-                        <Download className="w-4 h-4 mr-2" />
-                        Exportar CSV
-                    </Button>
+                    {(categoryFilter === 'all' || categoryFilter === 'low-stock' || categoryFilter === 'EPP' || categoryFilter === 'E.P.P') && (
+                        <>
+                            <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Carga Masiva
+                            </Button>
+                            <Button variant="secondary" onClick={handleExportCSV}>
+                                <Download className="w-4 h-4 mr-2" />
+                                Exportar CSV
+                            </Button>
+                        </>
+                    )}
                     <Button onClick={() => handleOpenModal()}>
                         <Plus className="w-4 h-4 mr-2" />
                         Nuevo Artículo
@@ -171,21 +179,28 @@ export const ArticlesPage: React.FC = () => {
 
             <div className="bg-white dark:bg-gray-900 p-2 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col md:flex-row items-center gap-4">
                 <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl w-full md:w-auto overflow-x-auto no-scrollbar">
-                    {[
-                        { id: 'all', label: 'Todos', icon: Filter },
-                        { id: 'low-stock', label: 'Crítico', icon: AlertTriangle },
-                        { id: 'EPP', label: 'E.P.P', icon: ShieldCheck },
-                        { id: 'Aseo', label: 'Aseo', icon: Eraser },
-                        { id: 'Oficina', label: 'Oficina', icon: Briefcase },
-                        { id: 'Servicio', label: 'Servicio', icon: Package }
-                    ].map((tab) => (
+                    <button
+                        onClick={() => setCategoryFilter('all')}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${categoryFilter === 'all' ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-sm scale-105' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <Filter className="w-3.5 h-3.5" />
+                        Todos
+                    </button>
+                    <button
+                        onClick={() => setCategoryFilter('low-stock')}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${categoryFilter === 'low-stock' ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-sm scale-105' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                        Crítico
+                    </button>
+                    {articleCategories.map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setCategoryFilter(tab.id as any)}
-                            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${categoryFilter === tab.id ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-sm scale-105' : 'text-gray-500 hover:text-gray-700'}`}
+                            onClick={() => setCategoryFilter(tab.name)}
+                            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${categoryFilter === tab.name ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-sm scale-105' : 'text-gray-500 hover:text-gray-700'}`}
                         >
-                            <tab.icon className={`w-3.5 h-3.5 ${tab.id === 'low-stock' ? 'text-amber-500' : ''}`} />
-                            {tab.label}
+                            <Tag className="w-3.5 h-3.5" />
+                            {tab.name}
                         </button>
                     ))}
                 </div>
@@ -206,13 +221,8 @@ export const ArticlesPage: React.FC = () => {
                     <div key={a.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden group hover:shadow-md transition-all">
                         <div className="p-5 flex items-start justify-between">
                             <div className="flex gap-4">
-                                <div className={`p-4 rounded-2xl ${a.category === 'EPP' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600' :
-                                    a.category === 'Aseo' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600' :
-                                        'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600'
-                                    }`}>
-                                    {a.category === 'EPP' ? <ShieldCheck className="w-8 h-8" /> :
-                                        a.category === 'Aseo' ? <Eraser className="w-8 h-8" /> :
-                                            <Briefcase className="w-8 h-8" />}
+                                <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600">
+                                    <Package className="w-8 h-8" />
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-gray-900 dark:text-white">{a.name}</h3>
@@ -292,14 +302,14 @@ export const ArticlesPage: React.FC = () => {
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Categoría</label>
                                 <select
                                     value={category}
-                                    onChange={(e) => setCategory(e.target.value as Article['category'])}
+                                    onChange={(e) => setCategory(e.target.value)}
                                     className="w-full h-[42px] px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none transition-all"
                                 >
-                                    <option value="EPP">E.P.P / Uniforme</option>
-                                    <option value="Aseo">Artículos de Aseo</option>
-                                    <option value="Oficina">Material de Oficina</option>
-                                    <option value="Servicio">Insumos de Servicio</option>
-                                    <option value="otro">Otros</option>
+                                    <option value="" disabled>Seleccione una categoría</option>
+                                    {articleCategories.map(cat => (
+                                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                    ))}
+                                    {articleCategories.length === 0 && <option value="Otro">Otro</option>}
                                 </select>
                             </div>
                             <Input

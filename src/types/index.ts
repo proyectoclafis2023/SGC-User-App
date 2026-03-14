@@ -165,7 +165,7 @@ export interface Article {
     id: string;
     name: string;
     description?: string;
-    category: 'EPP' | 'Aseo' | 'Oficina' | 'Servicio' | 'otro';
+    category: string;
     price: number;
     stock: number;
     minStock: number;

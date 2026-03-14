@@ -95,6 +95,7 @@ import { DirectedMessageProvider } from './context/DirectedMessageContext';
 import { DirectedMessagesPage } from './pages/DirectedMessagesPage';
 import { CondoBoardProvider } from './context/CondoBoardContext';
 import { CondoBoardPage } from './pages/CondoBoardPage';
+import { ArticleCategoriesPage } from './pages/ArticleCategoriesPage';
 import { AvailableUnitsPage } from './pages/AvailableUnitsPage';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -183,7 +184,8 @@ function App() {
                                                                                               <Route path="comunicaciones" element={<CommunicationsPage />} />
                                                                                               <Route path="estacionamientos" element={<ParkingPage />} />
                                                                                               <Route path="bancos" element={<BanksPage />} />
-                                                                                              <Route path="articulos-personal" element={<ArticlesPage />} />
+                                                                                               <Route path="articulos-personal" element={<ArticlesPage />} />
+                                                                                               <Route path="maestro-categorias-articulos" element={<ArticleCategoriesPage />} />
                                                                                               <Route path="solicitud-insumos" element={<StaffArticleRequestsPage />} />
                                                                                               <Route path="entregas-articulos" element={<ArticleDeliveriesPage />} />
                                                                                               <Route path="configuracion" element={<SettingsPage />} />

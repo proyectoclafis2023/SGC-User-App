@@ -35,7 +35,8 @@ import {
     UploadCloud,
     BarChart3,
     ClipboardCheck,
-    Bell
+    Bell,
+    Tag
 } from 'lucide-react';
 
 interface SubMenuItem {
@@ -116,7 +117,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, c
                     className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
                 >
                     <Icon className="w-5 h-5 shrink-0" />
-                    <span className="flex-1 text-left text-[12px] uppercase tracking-[0.2em] font-black">{label}</span>
+                    <span className="flex-1 text-left text-[13px] uppercase tracking-[0.2em] font-black">{label}</span>
                     {isOpen ? <ChevronDown className="w-4 h-4 shrink-0 transition-transform" /> : <ChevronRight className="w-4 h-4 shrink-0 transition-transform text-gray-400" />}
                 </button>
                 {isOpen && (
@@ -133,10 +134,16 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, c
                                         }`}
                                     >
                                         <div className="flex items-center gap-2">
-                                            <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                                                expandedHeaders.includes(section.header.label) ? 'bg-indigo-500 scale-110' : 'bg-gray-300 dark:bg-gray-700'
-                                            }`}></div>
-                                            <span className="text-[10px] font-black uppercase tracking-[0.15em] text-left">
+                                            {section.header.icon ? (
+                                                <section.header.icon className={`w-3 h-3 transition-colors ${
+                                                    expandedHeaders.includes(section.header.label) ? 'text-indigo-500' : 'text-gray-400'
+                                                }`} />
+                                            ) : (
+                                                <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                                                    expandedHeaders.includes(section.header.label) ? 'bg-indigo-500 scale-110' : 'bg-gray-300 dark:bg-gray-700'
+                                                }`}></div>
+                                            )}
+                                            <span className="text-[11px] font-black uppercase tracking-[0.15em] text-left">
                                                 {section.header.label}
                                             </span>
                                         </div>
@@ -153,7 +160,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, c
                                             key={idx}
                                             to={child.path || '#'}
                                             className={({ isActive }) =>
-                                                `flex items-center gap-3 px-4 py-2 rounded-xl text-[9px] font-bold uppercase tracking-[0.1em] transition-all duration-300 ${isActive
+                                                `flex items-center gap-3 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.1em] transition-all duration-300 ${isActive
                                                     ? (settings.theme === 'modern' ? 'bg-white text-indigo-900 shadow-md translate-x-1' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 translate-x-1')
                                                     : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/5 hover:translate-x-1'
                                                 }`
@@ -180,7 +187,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, c
                 title={isCollapsed ? label : ""}
             >
                 <Icon className="w-5 h-5 shrink-0" />
-                {!isCollapsed && <span className="text-[12px] uppercase tracking-[0.2em] font-black">{label}</span>}
+                {!isCollapsed && <span className="text-[13px] uppercase tracking-[0.2em] font-black">{label}</span>}
             </NavLink>
         );
     }
@@ -253,10 +260,11 @@ export const Layout: React.FC = () => {
                             children={[
                                 { label: 'Reporte Diario', path: '/reporte-diario', icon: FileText },
                                 { label: 'Bitácora Turnos', path: '/bitacora-turnos', icon: History },
-                                { label: 'Controles', isHeader: true },
+                                { label: 'Controles', isHeader: true, icon: ShieldCheck },
                                 { label: 'Visitas', path: '/visitas', icon: Users },
                                 { label: 'Encomiendas', path: '/correspondencia', icon: Package },
                                 { label: 'Contratistas', path: '/registro-contratistas', icon: HardHat },
+                                { label: 'Gestión', isHeader: true, icon: ClipboardCheck },
                                 { label: 'Solicitud Insumos', path: '/solicitud-insumos', icon: Package },
                                 { label: 'Cámaras / Grabaciones', path: '/camaras', icon: Video },
                             ]}
@@ -298,22 +306,21 @@ export const Layout: React.FC = () => {
                                 { label: 'Gestión Estratégica', path: '/dashboard-kpi', icon: BarChart3 },
                                 { label: 'Centro de Gestiones', path: '/tickets', icon: ClipboardCheck },
                                 
-                                { label: 'Comunidad', isHeader: true },
+                                { label: 'Comunidad', isHeader: true, icon: Building2 },
                                 { label: 'Residentes', path: '/residentes', icon: Users },
                                 { label: 'Propietarios', path: '/propietarios', icon: ShieldCheck },
                                 { label: 'Directiva', path: '/directiva', icon: Landmark },
                                 { label: 'Mensajes Dirigidos', path: '/mensajes-dirigidos', icon: Mail },
                                 { label: 'Avisos del Sistema', path: '/mensajes', icon: Bell },
 
-                                { label: 'Recursos Humanos', isHeader: true },
+                                { label: 'Recursos Humanos', isHeader: true, icon: Users },
                                 { label: 'Maestro Personal', path: '/personal', icon: Briefcase },
                                 { label: 'Servicios / Contratistas', path: '/contratistas', icon: HardHat },
                                 { label: 'Gestión de Nómina', path: '/liquidaciones', icon: Banknote },
                                 { label: 'Entrega de EPP', path: '/entregas-articulos', icon: Package },
-                                { label: 'Maestro Insumos y EPP', path: '/articulos-personal', icon: ShieldCheck },
                                 { label: 'Certificados', path: '/certificados', icon: FileText },
 
-                                { label: 'Finanzas', isHeader: true },
+                                { label: 'Finanzas', isHeader: true, icon: Landmark },
                                 { label: 'Gastos Comunes Admin', path: '/gastos-comunes', icon: Banknote },
                                 { label: 'Registro de Egresos', path: '/registro-gastos', icon: Wallet },
                                 { label: 'Reglas de Cobro', path: '/reglas-gastos-comunes', icon: Settings },
@@ -332,6 +339,8 @@ export const Layout: React.FC = () => {
                             children={[
                                 { label: 'Configuración Comunidad', path: '/configuracion', icon: Building2 },
                                 { label: 'Configuración Email', path: '/maestro-correos', icon: Mail },
+                                { label: 'Parámetros Generales', path: '/parametros', icon: Settings },
+                                { label: 'Perfiles de Acceso', path: '/perfiles', icon: ShieldCheck },
                             ]}
                         />
                     )}
@@ -343,17 +352,19 @@ export const Layout: React.FC = () => {
                             label="Maestros Base" 
                             isCollapsed={isCollapsed}
                             children={[
-                                { label: 'Infraestructura', isHeader: true },
+                                { label: 'Infraestructura', isHeader: true, icon: Building2 },
                                 { label: 'Edificios y propiedades', path: '/infraestructura', icon: Building2 },
                                 { label: 'Tipos de Unidad', path: '/tipos-unidad', icon: Home },
                                 { label: 'Espacios Comunes', path: '/espacios', icon: Landmark },
                                 { label: 'Estacionamientos', path: '/estacionamientos', icon: Zap },
 
-                                { label: 'Recursos Humanos', isHeader: true },
+                                { label: 'Recursos Humanos', isHeader: true, icon: Briefcase },
                                 { label: 'Previsiones', path: '/previsiones', icon: Briefcase },
                                 { label: 'AFPs', path: '/afps', icon: ShieldCheck },
+                                { label: 'Maestro Insumos y EPP', path: '/articulos-personal', icon: ShieldCheck },
+                                { label: 'Maestro Categorías de Insumos', path: '/maestro-categorias-articulos', icon: Tag },
 
-                                { label: 'Finanzas y Operación', isHeader: true },
+                                { label: 'Finanzas y Operación', isHeader: true, icon: Landmark },
                                 { label: 'Bancos', path: '/bancos', icon: Landmark },
                                 { label: 'Maestro IPC', path: '/maestro-ipc', icon: BarChart3 },
                                 { label: 'Bitácora y Cámaras', path: '/maestros-operativos', icon: History },
@@ -372,8 +383,6 @@ export const Layout: React.FC = () => {
                             isCollapsed={isCollapsed}
                             children={[
                                 { label: 'Carga Masiva de Datos', path: '/carga-masiva', icon: UploadCloud },
-                                { label: 'Parámetros Generales', path: '/parametros', icon: Settings },
-                                { label: 'Perfiles de Acceso', path: '/perfiles', icon: ShieldCheck },
                             ]}
                         />
                     )}
