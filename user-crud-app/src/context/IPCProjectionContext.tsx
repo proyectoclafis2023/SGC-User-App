@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { API_BASE_URL } from '../config/api';
 
 export interface IPCProjection {
     id: string;
     name: string;
     ipcRate: number;
+    ponderadoRate: number;
     description: string;
     isActive: boolean;
     createdAt: string;
@@ -19,12 +20,21 @@ interface IPCProjectionContextType {
 
 const IPCProjectionContext = createContext<IPCProjectionContextType | undefined>(undefined);
 
+const API_URL = `${API_BASE_URL}/ipc_projections`;
+
 export const IPCProjectionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [projections, setProjections] = useState<IPCProjection[]>([]);
 
     const fetchProjections = async () => {
-        const data = await api.get<IPCProjection[]>('/ipc_projections');
-        setProjections(Array.isArray(data) ? data : []);
+        try {
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setProjections(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Error fetching projections:', error);
+        }
     };
 
     useEffect(() => {
@@ -32,17 +42,39 @@ export const IPCProjectionProvider: React.FC<{ children: React.ReactNode }> = ({
     }, []);
 
     const addProjection = async (p: Omit<IPCProjection, 'id' | 'createdAt'>) => {
-        await api.post('/ipc_projections', p);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(p)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar la proyección IPC');
+        }
         await fetchProjections();
     };
 
     const updateProjection = async (p: IPCProjection) => {
-        await api.put(`/ipc_projections/${p.id}`, p);
+        const response = await fetch(`${API_URL}/${p.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(p)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar la proyección IPC');
+        }
         await fetchProjections();
     };
 
     const deleteProjection = async (id: string) => {
-        await api.delete(`/ipc_projections/${id}`);
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar la proyección IPC');
+        }
         await fetchProjections();
     };
 

@@ -575,6 +575,177 @@ app.post('/api/notify', async (req, res) => {
     }
 });
 
+// --- Jornadas y Maestros Operativos ---
+app.get('/api/jornada_groups', async (req, res) => {
+    try {
+        const data = await prisma.jornadaGroup.findMany({ where: { isArchived: false } });
+        res.json(data.map(g => ({ 
+            ...g, 
+            workDays: JSON.parse(g.workDays || '[]'),
+            schedules: JSON.parse(g.schedules || '[]')
+        })));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/jornada_groups', async (req, res) => {
+    try {
+        const { name, description, startTime, endTime, workDays, schedules, isActive, breakMinutes } = req.body;
+        const data = await prisma.jornadaGroup.create({
+            data: { 
+                name,
+                description,
+                startTime: startTime || "00:00",
+                endTime: endTime || "00:00",
+                workDays: JSON.stringify(workDays || []),
+                schedules: JSON.stringify(schedules || []),
+                isActive: isActive !== undefined ? isActive : true,
+                breakMinutes: breakMinutes || 0
+            }
+        });
+        res.status(201).json({ 
+            ...data, 
+            workDays: JSON.parse(data.workDays),
+            schedules: JSON.parse(data.schedules)
+        });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/jornada_groups/:id', async (req, res) => {
+    try {
+        const { name, description, startTime, endTime, workDays, schedules, isActive, breakMinutes } = req.body;
+        const data = await prisma.jornadaGroup.update({
+            where: { id: req.params.id },
+            data: { 
+                name,
+                description,
+                startTime,
+                endTime,
+                workDays: JSON.stringify(workDays || []),
+                schedules: JSON.stringify(schedules || []),
+                isActive,
+                breakMinutes
+            }
+        });
+        res.json({ 
+            ...data, 
+            workDays: JSON.parse(data.workDays),
+            schedules: JSON.parse(data.schedules)
+        });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/jornada_groups/:id', async (req, res) => {
+    try {
+        await prisma.jornadaGroup.update({ where: { id: req.params.id }, data: { isArchived: true } });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// IPC Projections
+app.get('/api/ipc_projections', async (req, res) => {
+    try {
+        res.json(await prisma.iPCProjection.findMany());
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/ipc_projections', async (req, res) => {
+    try {
+        const { name, ipcRate, ponderadoRate, description, isActive } = req.body;
+        const data = await prisma.iPCProjection.create({ 
+            data: { name, ipcRate, ponderadoRate: ponderadoRate || 0, description, isActive } 
+        });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/ipc_projections/:id', async (req, res) => {
+    try {
+        const { name, ipcRate, ponderadoRate, description, isActive } = req.body;
+        const data = await prisma.iPCProjection.update({ 
+            where: { id: req.params.id }, 
+            data: { name, ipcRate, ponderadoRate, description, isActive } 
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/ipc_projections/:id', async (req, res) => {
+    try {
+        await prisma.iPCProjection.delete({ where: { id: req.params.id } });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// Infrastructure Items
+app.get('/api/infrastructure_items', async (req, res) => {
+    try {
+        res.json(await prisma.infrastructureItem.findMany({ where: { isArchived: false } }));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/infrastructure_items', async (req, res) => {
+    try {
+        const { name, description, isMandatory } = req.body;
+        const data = await prisma.infrastructureItem.create({ 
+            data: { name, description, isMandatory } 
+        });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/infrastructure_items/:id', async (req, res) => {
+    try {
+        const { name, description, isMandatory, isActive } = req.body;
+        const data = await prisma.infrastructureItem.update({ 
+            where: { id: req.params.id }, 
+            data: { name, description, isMandatory, isActive } 
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/infrastructure_items/:id', async (req, res) => {
+    try {
+        await prisma.infrastructureItem.update({ where: { id: req.params.id }, data: { isArchived: true } });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// Equipment Items
+app.get('/api/equipment_items', async (req, res) => {
+    try {
+        res.json(await prisma.equipmentItem.findMany({ where: { isArchived: false } }));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/equipment_items', async (req, res) => {
+    try {
+        const { name, description, isMandatory } = req.body;
+        const data = await prisma.equipmentItem.create({ 
+            data: { name, description, isMandatory } 
+        });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/equipment_items/:id', async (req, res) => {
+    try {
+        const { name, description, isMandatory, isActive } = req.body;
+        const data = await prisma.equipmentItem.update({ 
+            where: { id: req.params.id }, 
+            data: { name, description, isMandatory, isActive } 
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/equipment_items/:id', async (req, res) => {
+    try {
+        await prisma.equipmentItem.update({ where: { id: req.params.id }, data: { isArchived: true } });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 SGC Full Backend en http://localhost:${PORT}`);
 });

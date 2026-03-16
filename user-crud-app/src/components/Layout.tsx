@@ -362,7 +362,7 @@ export const Layout: React.FC = () => {
                                 { label: 'Finanzas y Operación', isHeader: true, icon: Landmark },
                                 { label: 'Bancos', path: '/bancos', icon: Landmark },
                                 { label: 'Maestro IPC', path: '/maestro-ipc', icon: BarChart3 },
-                                { label: 'Bitácora y Cámaras', path: '/maestros-operativos', icon: History },
+                                { label: 'Maestros Operativos', path: '/maestros-operativos', icon: History },
                                 { label: 'Mensajes Prefijados', path: '/maestro-mensajes', icon: Mail },
                                 { label: 'Números Emergencia', path: '/maestro-emergencias', icon: Phone },
                                 { label: 'Condiciones Especiales', path: '/condiciones-especiales', icon: Shield },

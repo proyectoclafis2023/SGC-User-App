@@ -127,11 +127,56 @@ model Personnel {
   healthProvider    HealthProvider? @relation(fields: [healthProviderId], references: [id])
   pensionFundId     String?
   pensionFund       PensionFund? @relation(fields: [pensionFundId], references: [id])
+  jornadaGroupId     String?
+  jornadaGroup       JornadaGroup? @relation(fields: [jornadaGroupId], references: [id])
   address           String
   position          String?
   status            String       @default("active")
   isArchived        Boolean      @default(false)
   createdAt         DateTime     @default(now())
+}
+
+model JornadaGroup {
+  id           String      @id @default(cuid())
+  name         String
+  description  String?
+  startTime    String      // "08:00" - Mantener para compatibilidad
+  endTime      String      // "18:00" - Mantener para compatibilidad
+  workDays     String      // JSON string of [0,1,2,3,4]
+  schedules    String?     // Nuevo: JSON string de JornadaSchedule[]
+  breakMinutes Int         @default(0) // Nuevo: Descanso en minutos
+  isActive     Boolean     @default(true)
+  isArchived   Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  personnel    Personnel[]
+}
+
+model IPCProjection {
+  id            String   @id @default(cuid())
+  name          String
+  ipcRate       Float
+  ponderadoRate Float    @default(0)
+  description   String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
+
+model InfrastructureItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isMandatory Boolean  @default(false)
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model EquipmentItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isMandatory Boolean  @default(false)
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }
 
 model Article {

@@ -649,15 +649,23 @@ export interface FundUnitTypeConfig {
     isExempt: boolean;
 }
 
+export interface JornadaSchedule {
+    days: number[]; // 0-6 (Sun-Sat)
+    startTime: string;
+    endTime: string;
+}
+
 export interface JornadaGroup {
     id: string;
     name: string;
     description?: string;
-    workDays: number[]; // 0-6 (Sun-Sat)
+    workDays: number[]; // Mantener para compatibilidad
     startTime?: string;
     endTime?: string;
     isActive: boolean;
     isArchived?: boolean;
+    schedules?: JornadaSchedule[];
+    breakMinutes?: number;
 }
 
 export interface FundExpense {
