@@ -6,7 +6,12 @@ export const EmergencyTicker: React.FC = () => {
     const { numbers } = useEmergencyNumbers();
 
     // Solo mostramos los de Seguridad y Emergencia en el ticker para no saturar
-    const criticalNumbers = numbers.filter(n => n.category === 'SEGURIDAD' || n.category === 'EMERGENCIA');
+    const criticalNumbers = numbers.filter(n =>
+        n.category === 'URGENCIA' ||
+        n.category === 'COMUNAL' ||
+        n.category === 'EMERGENCIA' ||
+        n.category === 'SEGURIDAD'
+    );
 
     if (criticalNumbers.length === 0) return null;
 

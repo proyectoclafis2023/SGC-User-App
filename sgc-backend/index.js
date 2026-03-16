@@ -1,0 +1,580 @@
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const csv = require('csv-parser');
+const fs = require('fs');
+const nodemailer = require('nodemailer');
+const { PrismaClient } = require('@prisma/client');
+require('dotenv').config();
+
+const prisma = new PrismaClient();
+const app = express();
+const upload = multer({ dest: 'uploads/' });
+const PORT = process.env.PORT || 3001;
+
+// Configuración de Email (Ejemplo con Gmail o SMTP genérico)
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: process.env.SMTP_PORT || 587,
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+    }
+});
+
+app.use(cors());
+app.use(express.json());
+
+// --- Root Route for confirmation ---
+app.get('/', (req, res) => {
+    res.send('<h1>🚀 Servidor SGC funcionando correctamente</h1><p>Prueba los endpoints en /api/...</p>');
+});
+
+// --- Helper for CSV Processing ---
+const processCSV = (filePath, callback) => {
+    const results = [];
+    fs.createReadStream(filePath)
+        .pipe(csv({ separator: ';' }))
+        .on('data', (data) => results.push(data))
+        .on('end', () => callback(results));
+};
+
+// --- Health Check ---
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date(), database: 'SQLite' });
+});
+
+/**
+ * @api {get} /api/residents Obtener Residentes
+ * @apiDescription Retorna la lista de residentes activos (no archivados).
+ */
+app.get('/api/residents', async (req, res) => {
+    const data = await prisma.resident.findMany({ where: { isArchived: false } });
+    res.json(data);
+});
+
+app.post('/api/residents', async (req, res) => {
+    try {
+        const data = await prisma.resident.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.post('/api/residents/upload', upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file' });
+    processCSV(req.file.path, async (results) => {
+        try {
+            for (const row of results) {
+                await prisma.resident.upsert({
+                    where: { dni: row.dni || row.rut },
+                    update: {
+                        names: row.names || row.nombres,
+                        lastNames: row.lastNames || row.apellidos,
+                        phone: row.phone || row.telefono,
+                        email: row.email,
+                        familyCount: parseInt(row.familyCount) || 1,
+                        isTenant: row.isTenant === 'true' || row.es_arrendatario === 'true',
+                        rentAmount: parseFloat(row.rentAmount) || 0
+                    },
+                    create: {
+                        names: row.names || row.nombres,
+                        lastNames: row.lastNames || row.apellidos,
+                        dni: row.dni || row.rut,
+                        phone: row.phone || row.telefono,
+                        email: row.email,
+                        familyCount: parseInt(row.familyCount) || 1,
+                        isTenant: row.isTenant === 'true' || row.es_arrendatario === 'true',
+                        rentAmount: parseFloat(row.rentAmount) || 0
+                    }
+                });
+            }
+            fs.unlinkSync(req.file.path);
+            res.json({ message: `Cargados ${results.length} residentes.` });
+        } catch (err) { res.status(500).json({ error: err.message }); }
+    });
+});
+
+// --- Personal ---
+app.get('/api/personnel', async (req, res) => {
+    const data = await prisma.personnel.findMany({ where: { isArchived: false } });
+    res.json(data);
+});
+
+app.post('/api/personnel', async (req, res) => {
+    try {
+        const data = await prisma.personnel.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.post('/api/personnel/upload', upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file' });
+    processCSV(req.file.path, async (results) => {
+        try {
+            for (const row of results) {
+                await prisma.personnel.upsert({
+                    where: { dni: row.dni || row.rut },
+                    update: {
+                        names: row.names || row.nombres,
+                        lastNames: row.lastNames || row.apellidos,
+                        address: row.address || row.direccion || 'Sin dirección',
+                        baseSalary: parseFloat(row.baseSalary || row.sueldo_base) || 0,
+                        position: row.position || row.cargo
+                    },
+                    create: {
+                        names: row.names || row.nombres,
+                        lastNames: row.lastNames || row.apellidos,
+                        dni: row.dni || row.rut,
+                        address: row.address || row.direccion || 'Sin dirección',
+                        baseSalary: parseFloat(row.baseSalary || row.sueldo_base) || 0,
+                        position: row.position || row.cargo
+                    }
+                });
+            }
+            fs.unlinkSync(req.file.path);
+            res.json({ message: `Cargados ${results.length} registros de personal.` });
+        } catch (err) { res.status(500).json({ error: err.message }); }
+    });
+});
+
+/**
+ * @api {get} /api/articles Obtener Inventario
+ * @apiDescription Retorna la lista de artículos en bodega.
+ */
+app.get('/api/articles', async (req, res) => {
+    const data = await prisma.article.findMany({ where: { isArchived: false } });
+    res.json(data);
+});
+
+app.post('/api/articles', async (req, res) => {
+    try {
+        const data = await prisma.article.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.post('/api/articles/upload', upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file' });
+    processCSV(req.file.path, async (results) => {
+        try {
+            for (const row of results) {
+                await prisma.article.create({
+                    data: {
+                        name: row.name || row.nombre,
+                        description: row.description || row.descripcion,
+                        category: row.category || row.categoria || 'otro',
+                        stock: parseInt(row.stock) || 0,
+                        minStock: parseInt(row.minStock || row.stock_minimo) || 0,
+                        price: parseFloat(row.price || row.precio) || 0
+                    }
+                });
+            }
+            fs.unlinkSync(req.file.path);
+            res.json({ message: `Cargado inventario: ${results.length} artículos.` });
+        } catch (err) { res.status(500).json({ error: err.message }); }
+    });
+});
+
+// --- Correspondencia ---
+app.get('/api/correspondence', async (req, res) => {
+    const data = await prisma.correspondence.findMany({ include: { department: true } });
+    res.json(data);
+});
+
+app.post('/api/correspondence', async (req, res) => {
+    try {
+        const data = await prisma.correspondence.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Bancos, AFPs, Salud ---
+app.get('/api/banks', async (req, res) => {
+    res.json(await prisma.bank.findMany({ where: { isArchived: false } }));
+});
+
+app.post('/api/banks', async (req, res) => {
+    try {
+        const data = await prisma.bank.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.get('/api/pension-funds', async (req, res) => {
+    res.json(await prisma.pensionFund.findMany({ where: { isArchived: false } }));
+});
+
+app.post('/api/pension-funds', async (req, res) => {
+    try {
+        const data = await prisma.pensionFund.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.get('/api/health-providers', async (req, res) => {
+    res.json(await prisma.healthProvider.findMany({ where: { isArchived: false } }));
+});
+
+app.post('/api/health-providers', async (req, res) => {
+    try {
+        const data = await prisma.healthProvider.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+/**
+ * @api {get} /api/towers Obtener Infraestructura
+ * @apiDescription Retorna torres con sus respectivos departamentos.
+ */
+app.get('/api/towers', async (req, res) => {
+    res.json(await prisma.tower.findMany({
+        where: { isArchived: false },
+        include: { departments: { where: { isArchived: false } } }
+    }));
+});
+
+app.post('/api/towers', async (req, res) => {
+    try {
+        const { name, departments } = req.body;
+        const data = await prisma.tower.create({
+            data: {
+                name,
+                departments: {
+                    create: departments?.map(d => ({
+                        number: d.number,
+                        unitTypeId: d.unitTypeId
+                    }))
+                }
+            },
+            include: { departments: true }
+        });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/towers/:id', async (req, res) => {
+    try {
+        await prisma.tower.update({ where: { id: req.params.id }, data: { isArchived: true } });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.post('/api/infrastructure/upload', upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file' });
+    processCSV(req.file.path, async (results) => {
+        try {
+            for (const row of results) {
+                // row: torre; depto; tipo_unidad
+                let tower = await prisma.tower.findFirst({ where: { name: row.torre, isArchived: false } });
+                if (!tower) {
+                    tower = await prisma.tower.create({ data: { name: row.torre } });
+                }
+
+                let unitType = await prisma.unitType.findFirst({ where: { name: row.tipo_unidad } });
+                if (!unitType && row.tipo_unidad) {
+                    unitType = await prisma.unitType.create({ data: { name: row.tipo_unidad, baseCommonExpense: 0 } });
+                }
+
+                await prisma.department.create({
+                    data: {
+                        number: row.depto,
+                        towerId: tower.id,
+                        unitTypeId: unitType?.id
+                    }
+                });
+            }
+            fs.unlinkSync(req.file.path);
+            res.json({ message: `Cargada infraestructura: ${results.length} departamentos.` });
+        } catch (err) { res.status(500).json({ error: err.message }); }
+    });
+});
+
+/**
+ * @api {get} /api/common-expenses/payments Obtener Pagos de GGCC
+ * @apiDescription Filtra pagos por año, mes o departamento.
+ */
+app.get('/api/common-expenses/payments', async (req, res) => {
+    const { year, month, deptId } = req.query;
+    const where = {};
+    if (year) where.periodYear = parseInt(year);
+    if (month) where.periodMonth = parseInt(month);
+    if (deptId) where.departmentId = deptId;
+
+    try {
+        const data = await prisma.commonExpensePayment.findMany({
+            where,
+            include: { department: { include: { tower: true } } },
+            orderBy: { createdAt: 'desc' }
+        });
+        const parsedData = data.map(p => ({
+            ...p,
+            fundContributions: p.fundContributionsJson ? JSON.parse(p.fundContributionsJson) : []
+        }));
+        res.json(parsedData);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/common-expenses/payments', async (req, res) => {
+    try {
+        const { departmentId, periodMonth, periodYear, amountPaid, paymentMethod, evidenceImage, notes, isElectronic, fundContributions } = req.body;
+
+        // Generar folio si es electrónico
+        let receiptFolio = req.body.receiptFolio;
+        if (isElectronic && !receiptFolio) {
+            receiptFolio = `GC-${periodYear}${String(periodMonth).padStart(2, '0')}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+        }
+
+        const data = await prisma.commonExpensePayment.create({
+            data: {
+                departmentId,
+                periodMonth,
+                periodYear,
+                amountPaid: parseFloat(amountPaid),
+                paymentMethod,
+                evidenceImage,
+                notes,
+                isElectronic: !!isElectronic,
+                receiptFolio,
+                fundContributionsJson: JSON.stringify(fundContributions || []),
+                status: 'paid'
+            }
+        });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.get('/api/common-expenses/rules', async (req, res) => {
+    const data = await prisma.commonExpenseRule.findMany({
+        where: { isArchived: false },
+        include: { unitType: true },
+        orderBy: { effectiveFrom: 'desc' }
+    });
+    res.json(data);
+});
+
+app.put('/api/towers/:id', async (req, res) => {
+    try {
+        const data = await prisma.tower.update({
+            where: { id: req.params.id },
+            data: req.body,
+            include: { departments: true }
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.post('/api/common-expenses/rules', async (req, res) => {
+    try {
+        const data = await prisma.commonExpenseRule.create({
+            data: {
+                ...req.body,
+                effectiveFrom: new Date(req.body.effectiveFrom),
+                amount: parseFloat(req.body.amount)
+            }
+        });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.get('/api/common-expenses/calculate/:deptId', async (req, res) => {
+    const { deptId } = req.params;
+    try {
+        const dept = await prisma.department.findUnique({
+            where: { id: deptId },
+            include: { unitType: true }
+        });
+
+        if (!dept) return res.status(404).json({ error: 'Department not found' });
+
+        // Buscar la regla vigente hoy
+        const rules = await prisma.commonExpenseRule.findMany({
+            where: {
+                OR: [
+                    { unitTypeId: dept.unitTypeId },
+                    { unitTypeId: null }
+                ],
+                isArchived: false,
+                effectiveFrom: { lte: new Date() }
+            },
+            orderBy: { effectiveFrom: 'desc' },
+            take: 1
+        });
+
+        const currentAmount = rules.length > 0 ? rules[0].amount : (dept.unitType?.baseCommonExpense || 0);
+
+        res.json({
+            departmentId: deptId,
+            suggestedAmount: currentAmount,
+            ruleUsed: rules[0] || 'base_price'
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/**
+ * @api {get} /api/common-expenses/funds Obtener Fondos Especiales
+ * @apiDescription Retorna fondos. Soporta parámetro `includeArchived=true`.
+ */
+app.get('/api/common-expenses/funds', async (req, res) => {
+    try {
+        const { includeArchived } = req.query;
+        const where = includeArchived === 'true' ? {} : { isArchived: false };
+        const data = await prisma.specialFund.findMany({ where });
+        // Parsear JSON strings a objetos
+        const parsedData = data.map(f => ({
+            ...f,
+            unitConfigs: f.unitConfigsJson ? JSON.parse(f.unitConfigsJson) : [],
+            expenses: f.expensesJson ? JSON.parse(f.expensesJson) : []
+        }));
+        res.json(parsedData);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/common-expenses/funds', async (req, res) => {
+    try {
+        const { unitConfigs, expenses, ...rest } = req.body;
+        const data = await prisma.specialFund.create({
+            data: {
+                ...rest,
+                unitConfigsJson: JSON.stringify(unitConfigs || []),
+                expensesJson: JSON.stringify(expenses || [])
+            }
+        });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/common-expenses/funds/:id', async (req, res) => {
+    try {
+        const { unitConfigs, expenses, ...rest } = req.body;
+        const data = await prisma.specialFund.update({
+            where: { id: req.params.id },
+            data: {
+                ...rest,
+                unitConfigsJson: JSON.stringify(unitConfigs || []),
+                expensesJson: JSON.stringify(expenses || [])
+            }
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+/**
+ * @api {delete} /api/common-expenses/funds/:id Eliminar (Archivar) Fondo Especial
+ * @apiDescription Marca un fondo como archivado (soft delete).
+ */
+app.delete('/api/common-expenses/funds/:id', async (req, res) => {
+    try {
+        await prisma.specialFund.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+/**
+ * @api {post} /api/common-expenses/funds/restore/:id Restaurar Fondo Especial
+ * @apiDescription Restaura un fondo previamente archivado.
+ */
+app.post('/api/common-expenses/funds/restore/:id', async (req, res) => {
+    try {
+        await prisma.specialFund.update({
+            where: { id: req.params.id },
+            data: { isArchived: false }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Números de Emergencia ---
+app.get('/api/emergency_numbers', async (req, res) => {
+    try {
+        const data = await prisma.emergencyNumber.findMany({ where: { isArchived: false } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/emergency_numbers', async (req, res) => {
+    try {
+        const data = await prisma.emergencyNumber.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/emergency_numbers/:id', async (req, res) => {
+    try {
+        const data = await prisma.emergencyNumber.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/emergency_numbers/:id', async (req, res) => {
+    try {
+        await prisma.emergencyNumber.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Comunicaciones y Plantillas ---
+app.get('/api/communication_templates', async (req, res) => {
+    try {
+        const data = await prisma.communicationTemplate.findMany({ orderBy: { createdAt: 'desc' } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/communication_templates', async (req, res) => {
+    try {
+        const data = await prisma.communicationTemplate.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/communication_templates/:id', async (req, res) => {
+    try {
+        await prisma.communicationTemplate.delete({ where: { id: req.params.id } });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.get('/api/communication_history', async (req, res) => {
+    try {
+        const data = await prisma.communicationHistory.findMany({ orderBy: { createdAt: 'desc' } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/communication_history', async (req, res) => {
+    try {
+        const data = await prisma.communicationHistory.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.post('/api/notify', async (req, res) => {
+
+
+    const { to, subject, html } = req.body;
+    try {
+        await transporter.sendMail({
+            from: `"SGC - Notificaciones" <${process.env.SMTP_USER}>`,
+            to,
+            subject,
+            html
+        });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Email error:', err);
+        res.status(500).json({ error: 'Error al enviar el correo. Verifique la configuración SMTP.' });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`🚀 SGC Full Backend en http://localhost:${PORT}`);
+});

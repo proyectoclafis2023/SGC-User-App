@@ -91,8 +91,7 @@ import { ManagementKPICenter } from './pages/ManagementKPICenter';
 import { IPCParametersPage } from './pages/IPCParametersPage';
 import { IPCProjectionProvider } from './context/IPCProjectionContext';
 import { StaffArticleRequestsPage } from './pages/StaffArticleRequestsPage';
-import { DirectedMessageProvider } from './context/DirectedMessageContext';
-import { DirectedMessagesPage } from './pages/DirectedMessagesPage';
+
 import { CondoBoardProvider } from './context/CondoBoardContext';
 import { CondoBoardPage } from './pages/CondoBoardPage';
 import { ArticleCategoriesPage } from './pages/ArticleCategoriesPage';
@@ -154,76 +153,75 @@ function App() {
                                                                                 <CommunicationProvider>
                                                                                   <IPCProjectionProvider>
                                                                                     <JornadaGroupProvider>
-                                                                                      <DirectedMessageProvider>
-                                                                                        <CondoBoardProvider>
-                                                                                          <Routes>
-                                                                                            <Route path="/login" element={<LoginPage />} />
-                                                                                            <Route path="/visor-mensajes" element={<PublicCarouselPage />} />
-                                                                                            <Route
-                                                                                              path="/"
-                                                                                              element={
-                                                                                                <PrivateRoute>
-                                                                                                  <Layout />
-                                                                                                </PrivateRoute>
-                                                                                              }
-                                                                                            >
-                                                                                              <Route index element={<Dashboard />} />
-                                                                                              <Route path="mensajes-dirigidos" element={<DirectedMessagesPage />} />
-                                                                                              <Route path="personal" element={<PersonnelPage />} />
-                                                                                              <Route path="residentes" element={<ResidentsPage />} />
-                                                                                              <Route path="propietarios" element={<OwnersPage />} />
-                                                                                              <Route path="previsiones" element={<PrevisionesPage />} />
-                                                                                              <Route path="afps" element={<AFPsPage />} />
-                                                                                              <Route path="perfiles" element={<ProfilesPage />} />
-                                                                                              <Route path="infraestructura" element={<InfrastructurePage />} />
-                                                                                              <Route path="tipos-unidad" element={<UnitTypesPage />} />
-                                                                                              <Route path="condiciones-especiales" element={<SpecialConditionsPage />} />
-                                                                                              <Route path="espacios" element={<CommonSpacesPage />} />
-                                                                                              <Route path="reservas" element={<ReservationsPage />} />
-                                                                                              <Route path="mensajes" element={<SystemMessagesPage />} />
-                                                                                              <Route path="comunicaciones" element={<CommunicationsPage />} />
-                                                                                              <Route path="estacionamientos" element={<ParkingPage />} />
-                                                                                              <Route path="bancos" element={<BanksPage />} />
-                                                                                               <Route path="articulos-personal" element={<ArticlesPage />} />
-                                                                                               <Route path="maestro-categorias-articulos" element={<ArticleCategoriesPage />} />
-                                                                                              <Route path="solicitud-insumos" element={<StaffArticleRequestsPage />} />
-                                                                                              <Route path="entregas-articulos" element={<ArticleDeliveriesPage />} />
-                                                                                              <Route path="configuracion" element={<SettingsPage />} />
-                                                                                              <Route path="gastos-comunes" element={<CommonExpensePaymentsPage />} />
-                                                                                              <Route path="registro-gastos" element={<CommunityExpensesPage />} />
-                                                                                              <Route path="reglas-gastos-comunes" element={<CommonExpenseRulesPage />} />
-                                                                                              <Route path="maestro-fondos" element={<SpecialFundsPage />} />
-                                                                                              <Route path="activo-fijo" element={<FixedAssetsPage />} />
-                                                                                              <Route path="carga-masiva" element={<MassiveUploadPage />} />
-                                                                                              <Route path="reclamos" element={<CommunityRequestsPage />} />
-                                                                                              <Route path="directiva" element={<CondoBoardPage />} />
-                                                                                              <Route path="tickets" element={<TicketsPage />} />
-                                                                                              <Route path="dashboard-kpi" element={<ManagementKPICenter />} />
-                                                                                              <Route path="maestro-ipc" element={<IPCParametersPage />} />
-                                                                                              <Route path="camaras" element={<CameraRequestsPage />} />
-                                                                                              <Route path="correspondencia" element={<CorrespondencePage />} />
-                                                                                              <Route path="contratistas" element={<ContractorMasterPage />} />
-                                                                                              <Route path="registro-contratistas" element={<ContractorsPage />} />
-                                                                                              <Route path="visitas" element={<VisitorsPage />} />
-                                                                                              <Route path="bitacora-turnos" element={<ShiftReportsPage />} />
-                                                                                              <Route path="reporte-diario" element={<DailyReportPage />} />
-                                                                                              <Route path="certificados" element={<CertificatesPage />} />
-                                                                                              <Route path="liquidaciones" element={<PayslipsPage />} />
-                                                                                              <Route path="emergencias" element={<EmergencyNumbersPage />} />
-                                                                                              <Route path="maestro-emergencias" element={<EmergencyNumbersPage isMaster />} />
-                                                                                              <Route path="servicios-residentes" element={<ResidentsServicesPage />} />
-                                                                                              <Route path="cambio-clave" element={<ChangePasswordPage />} />
-                                                                                              <Route path="maestros-operativos" element={<OperationalMastersPage />} />
-                                                                                              <Route path="maestro-camaras" element={<CameraMasterPage />} />
-                                                                                              <Route path="maestro-correos" element={<EmailSettingsMasterPage />} />
-                                                                                              <Route path="maestro-mensajes" element={<MessageMasterPage />} />
-                                                                                              <Route path="parametros" element={<ParametersPage />} />
-                                                                                              <Route path="unidades-disponibles" element={<AvailableUnitsPage />} />
-                                                                                              <Route path="*" element={<Navigate to="/" replace />} />
-                                                                                            </Route>
-                                                                                          </Routes>
-                                                                                        </CondoBoardProvider>
-                                                                                      </DirectedMessageProvider>
+
+                                                                                      <CondoBoardProvider>
+                                                                                        <Routes>
+                                                                                          <Route path="/login" element={<LoginPage />} />
+                                                                                          <Route path="/visor-mensajes" element={<PublicCarouselPage />} />
+                                                                                          <Route
+                                                                                            path="/"
+                                                                                            element={
+                                                                                              <PrivateRoute>
+                                                                                                <Layout />
+                                                                                              </PrivateRoute>
+                                                                                            }
+                                                                                          >
+                                                                                            <Route index element={<Dashboard />} />
+                                                                                            <Route path="mensajes-dirigidos" element={<CommunicationsPage />} />
+                                                                                            <Route path="personal" element={<PersonnelPage />} />
+                                                                                            <Route path="residentes" element={<ResidentsPage />} />
+                                                                                            <Route path="propietarios" element={<OwnersPage />} />
+                                                                                            <Route path="previsiones" element={<PrevisionesPage />} />
+                                                                                            <Route path="afps" element={<AFPsPage />} />
+                                                                                            <Route path="perfiles" element={<ProfilesPage />} />
+                                                                                            <Route path="infraestructura" element={<InfrastructurePage />} />
+                                                                                            <Route path="tipos-unidad" element={<UnitTypesPage />} />
+                                                                                            <Route path="condiciones-especiales" element={<SpecialConditionsPage />} />
+                                                                                            <Route path="espacios" element={<CommonSpacesPage />} />
+                                                                                            <Route path="reservas" element={<ReservationsPage />} />
+                                                                                            <Route path="mensajes" element={<SystemMessagesPage />} />
+                                                                                            <Route path="estacionamientos" element={<ParkingPage />} />
+                                                                                            <Route path="bancos" element={<BanksPage />} />
+                                                                                            <Route path="articulos-personal" element={<ArticlesPage />} />
+                                                                                            <Route path="maestro-categorias-articulos" element={<ArticleCategoriesPage />} />
+                                                                                            <Route path="solicitud-insumos" element={<StaffArticleRequestsPage />} />
+                                                                                            <Route path="entregas-articulos" element={<ArticleDeliveriesPage />} />
+                                                                                            <Route path="configuracion" element={<SettingsPage />} />
+                                                                                            <Route path="gastos-comunes" element={<CommonExpensePaymentsPage />} />
+                                                                                            <Route path="registro-gastos" element={<CommunityExpensesPage />} />
+                                                                                            <Route path="reglas-gastos-comunes" element={<CommonExpenseRulesPage />} />
+                                                                                            <Route path="maestro-fondos" element={<SpecialFundsPage />} />
+                                                                                            <Route path="activo-fijo" element={<FixedAssetsPage />} />
+                                                                                            <Route path="carga-masiva" element={<MassiveUploadPage />} />
+                                                                                            <Route path="reclamos" element={<CommunityRequestsPage />} />
+                                                                                            <Route path="directiva" element={<CondoBoardPage />} />
+                                                                                            <Route path="tickets" element={<TicketsPage />} />
+                                                                                            <Route path="dashboard-kpi" element={<ManagementKPICenter />} />
+                                                                                            <Route path="maestro-ipc" element={<IPCParametersPage />} />
+                                                                                            <Route path="camaras" element={<CameraRequestsPage />} />
+                                                                                            <Route path="correspondencia" element={<CorrespondencePage />} />
+                                                                                            <Route path="contratistas" element={<ContractorMasterPage />} />
+                                                                                            <Route path="registro-contratistas" element={<ContractorsPage />} />
+                                                                                            <Route path="visitas" element={<VisitorsPage />} />
+                                                                                            <Route path="bitacora-turnos" element={<ShiftReportsPage />} />
+                                                                                            <Route path="reporte-diario" element={<DailyReportPage />} />
+                                                                                            <Route path="certificados" element={<CertificatesPage />} />
+                                                                                            <Route path="liquidaciones" element={<PayslipsPage />} />
+                                                                                            <Route path="emergencias" element={<EmergencyNumbersPage />} />
+                                                                                            <Route path="maestro-emergencias" element={<EmergencyNumbersPage isMaster />} />
+                                                                                            <Route path="servicios-residentes" element={<ResidentsServicesPage />} />
+                                                                                            <Route path="cambio-clave" element={<ChangePasswordPage />} />
+                                                                                            <Route path="maestros-operativos" element={<OperationalMastersPage />} />
+                                                                                            <Route path="maestro-camaras" element={<CameraMasterPage />} />
+                                                                                            <Route path="maestro-correos" element={<EmailSettingsMasterPage />} />
+                                                                                            <Route path="maestro-mensajes" element={<MessageMasterPage />} />
+                                                                                            <Route path="parametros" element={<ParametersPage />} />
+                                                                                            <Route path="unidades-disponibles" element={<AvailableUnitsPage />} />
+                                                                                            <Route path="*" element={<Navigate to="/" replace />} />
+                                                                                          </Route>
+                                                                                        </Routes>
+                                                                                      </CondoBoardProvider>
+
                                                                                     </JornadaGroupProvider>
                                                                                   </IPCProjectionProvider>
                                                                                 </CommunicationProvider>

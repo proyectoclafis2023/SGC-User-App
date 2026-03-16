@@ -82,9 +82,9 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, c
     }, [isChildActive, children, location.pathname]);
 
     const toggleHeader = (headerLabel: string) => {
-        setExpandedHeaders(prev => 
-            prev.includes(headerLabel) 
-                ? prev.filter(h => h !== headerLabel) 
+        setExpandedHeaders(prev =>
+            prev.includes(headerLabel)
+                ? prev.filter(h => h !== headerLabel)
                 : [...prev, headerLabel]
         );
     };
@@ -127,34 +127,29 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, c
                                 {section.header && (
                                     <button
                                         onClick={() => toggleHeader(section.header!.label)}
-                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-300 group/header ${
-                                            expandedHeaders.includes(section.header.label)
+                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-300 group/header ${expandedHeaders.includes(section.header.label)
                                             ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                                             : 'hover:bg-gray-50 dark:hover:bg-white/5 text-gray-400 dark:text-gray-500'
-                                        }`}
+                                            }`}
                                     >
                                         <div className="flex items-center gap-2">
                                             {section.header.icon ? (
-                                                <section.header.icon className={`w-3 h-3 transition-colors ${
-                                                    expandedHeaders.includes(section.header.label) ? 'text-indigo-500' : 'text-gray-400'
-                                                }`} />
+                                                <section.header.icon className={`w-3 h-3 transition-colors ${expandedHeaders.includes(section.header.label) ? 'text-indigo-500' : 'text-gray-400'
+                                                    }`} />
                                             ) : (
-                                                <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                                                    expandedHeaders.includes(section.header.label) ? 'bg-indigo-500 scale-110' : 'bg-gray-300 dark:bg-gray-700'
-                                                }`}></div>
+                                                <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${expandedHeaders.includes(section.header.label) ? 'bg-indigo-500 scale-110' : 'bg-gray-300 dark:bg-gray-700'
+                                                    }`}></div>
                                             )}
                                             <span className="text-[11px] font-black uppercase tracking-[0.15em] text-left">
                                                 {section.header.label}
                                             </span>
                                         </div>
-                                        <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${
-                                            expandedHeaders.includes(section.header.label) ? 'rotate-0' : '-rotate-90'
-                                        }`} />
+                                        <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${expandedHeaders.includes(section.header.label) ? 'rotate-0' : '-rotate-90'
+                                            }`} />
                                     </button>
                                 )}
-                                <div className={`space-y-1 overflow-hidden transition-all duration-300 ${
-                                    (!section.header || expandedHeaders.includes(section.header.label)) ? 'max-h-[1200px] opacity-100 py-1' : 'max-h-0 opacity-0'
-                                }`}>
+                                <div className={`space-y-1 overflow-hidden transition-all duration-300 ${(!section.header || expandedHeaders.includes(section.header.label)) ? 'max-h-[1200px] opacity-100 py-1' : 'max-h-0 opacity-0'
+                                    }`}>
                                     {section.items.map((child, idx) => (
                                         <NavLink
                                             key={idx}
@@ -253,9 +248,9 @@ export const Layout: React.FC = () => {
 
                     {/* SECCIÓN OPERACIONES */}
                     {(isAdmin || isWorker) && (
-                        <NavItem 
-                            icon={Zap} 
-                            label="Operaciones" 
+                        <NavItem
+                            icon={Zap}
+                            label="Operaciones"
                             isCollapsed={isCollapsed}
                             children={[
                                 { label: 'Reporte Diario', path: '/reporte-diario', icon: FileText },
@@ -273,10 +268,10 @@ export const Layout: React.FC = () => {
 
                     {/* SECCIÓN MI HOGAR */}
                     {isResidentOrOwner && (
-                        <NavItem 
-                            icon={Home} 
-                            label="Mi Hogar" 
-                            isCollapsed={isCollapsed} 
+                        <NavItem
+                            icon={Home}
+                            label="Mi Hogar"
+                            isCollapsed={isCollapsed}
                             children={[
                                 { label: 'Mis Pagos', path: '/gastos-comunes', icon: Wallet },
                             ]}
@@ -284,9 +279,9 @@ export const Layout: React.FC = () => {
                     )}
 
                     {/* SECCIÓN SOPORTE & SERVICIOS */}
-                    <NavItem 
-                        icon={LifeBuoy} 
-                        label="Soporte y Servicios" 
+                    <NavItem
+                        icon={LifeBuoy}
+                        label="Soporte y Servicios"
                         isCollapsed={isCollapsed}
                         children={[
                             { label: 'Atención y Soporte', path: '/reclamos', icon: LifeBuoy },
@@ -298,20 +293,20 @@ export const Layout: React.FC = () => {
 
                     {/* SECCIÓN ADMINISTRACIÓN */}
                     {isAdmin && (
-                        <NavItem 
-                            icon={Shield} 
-                            label="Administración" 
+                        <NavItem
+                            icon={Shield}
+                            label="Administración"
                             isCollapsed={isCollapsed}
                             children={[
                                 { label: 'Gestión Estratégica', path: '/dashboard-kpi', icon: BarChart3 },
                                 { label: 'Centro de Gestiones', path: '/tickets', icon: ClipboardCheck },
-                                
+
                                 { label: 'Comunidad', isHeader: true, icon: Building2 },
                                 { label: 'Residentes', path: '/residentes', icon: Users },
                                 { label: 'Propietarios', path: '/propietarios', icon: ShieldCheck },
                                 { label: 'Directiva', path: '/directiva', icon: Landmark },
-                                { label: 'Mensajes Dirigidos', path: '/mensajes-dirigidos', icon: Mail },
-                                { label: 'Avisos del Sistema', path: '/mensajes', icon: Bell },
+                                { label: 'Mensajes Dirigidos (Email)', path: '/mensajes-dirigidos', icon: Mail },
+                                { label: 'Avisos del Sistema (Visor)', path: '/mensajes', icon: Bell },
 
                                 { label: 'Recursos Humanos', isHeader: true, icon: Users },
                                 { label: 'Maestro Personal', path: '/personal', icon: Briefcase },
@@ -332,9 +327,9 @@ export const Layout: React.FC = () => {
 
                     {/* SECCIÓN AJUSTES DE SISTEMA */}
                     {isAdmin && (
-                        <NavItem 
-                            icon={Settings} 
-                            label="Ajustes de Sistema" 
+                        <NavItem
+                            icon={Settings}
+                            label="Ajustes de Sistema"
                             isCollapsed={isCollapsed}
                             children={[
                                 { label: 'Configuración Comunidad', path: '/configuracion', icon: Building2 },
@@ -347,9 +342,9 @@ export const Layout: React.FC = () => {
 
                     {/* SECCIÓN MAESTROS BASE */}
                     {isAdmin && (
-                        <NavItem 
-                            icon={Database} 
-                            label="Maestros Base" 
+                        <NavItem
+                            icon={Database}
+                            label="Maestros Base"
                             isCollapsed={isCollapsed}
                             children={[
                                 { label: 'Infraestructura', isHeader: true, icon: Building2 },
@@ -377,9 +372,9 @@ export const Layout: React.FC = () => {
 
                     {/* SECCIÓN SUPER ADMIN */}
                     {isAdmin && (
-                        <NavItem 
-                            icon={ShieldCheck} 
-                            label="Super Admin" 
+                        <NavItem
+                            icon={ShieldCheck}
+                            label="Super Admin"
                             isCollapsed={isCollapsed}
                             children={[
                                 { label: 'Carga Masiva de Datos', path: '/carga-masiva', icon: UploadCloud },
