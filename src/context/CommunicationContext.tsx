@@ -31,43 +31,51 @@ export const CommunicationProvider: React.FC<{ children: React.ReactNode }> = ({
     }, []);
 
     const addTemplate = async (template: Omit<CommunicationTemplate, 'id' | 'createdAt'>) => {
-        try {
-            const response = await fetch(TPL_API, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(template)
-            });
-            if (response.ok) fetchAll();
-        } catch (e) { console.error('Error adding template:', e); }
+        const response = await fetch(TPL_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(template)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar la plantilla de comunicación');
+        }
+        fetchAll();
     };
 
     const updateTemplate = async (template: CommunicationTemplate) => {
-        try {
-            const response = await fetch(`${TPL_API}/${template.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(template)
-            });
-            if (response.ok) fetchAll();
-        } catch (e) { console.error('Error updating template:', e); }
+        const response = await fetch(`${TPL_API}/${template.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(template)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar la plantilla de comunicación');
+        }
+        fetchAll();
     };
 
     const deleteTemplate = async (id: string) => {
-        try {
-            const response = await fetch(`${TPL_API}/${id}`, { method: 'DELETE' });
-            if (response.ok) fetchAll();
-        } catch (e) { console.error('Error deleting template:', e); }
+        const response = await fetch(`${TPL_API}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar la plantilla de comunicación');
+        }
+        fetchAll();
     };
 
     const addHistory = async (item: Omit<CommunicationHistory, 'id' | 'createdAt'>) => {
-        try {
-            const response = await fetch(HIST_API, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(item)
-            });
-            if (response.ok) fetchAll();
-        } catch (e) { console.error('Error adding history:', e); }
+        const response = await fetch(HIST_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar al historial de comunicación');
+        }
+        fetchAll();
     };
 
     return (

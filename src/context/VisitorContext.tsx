@@ -38,18 +38,16 @@ export const VisitorProvider: React.FC<{ children: ReactNode }> = ({ children })
             createdAt: new Date().toISOString()
         };
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/visitors`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newRecord)
-            });
-            if (response.ok) {
-                fetchVisitors();
-            }
-        } catch (e) {
-            console.error('API Error adding visitor:', e);
+        const response = await fetch(`${API_BASE_URL}/visitors`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newRecord)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el visitante');
         }
+        await fetchVisitors();
     };
 
     const updateVisitorStatus = async (id: string, status: Visitor['status'], time?: string) => {
@@ -60,31 +58,27 @@ export const VisitorProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (status === 'entered') updated.entryTime = time || new Date().toLocaleTimeString();
         if (status === 'exited') updated.exitTime = time || new Date().toLocaleTimeString();
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/visitors/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updated)
-            });
-            if (response.ok) {
-                fetchVisitors();
-            }
-        } catch (e) {
-            console.error('API Error updating visitor:', e);
+        const response = await fetch(`${API_BASE_URL}/visitors/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updated)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el estado del visitante');
         }
+        await fetchVisitors();
     };
 
     const deleteVisitor = async (id: string) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/visitors/${id}`, {
-                method: 'DELETE'
-            });
-            if (response.ok) {
-                fetchVisitors();
-            }
-        } catch (e) {
-            console.error('API Error deleting visitor:', e);
+        const response = await fetch(`${API_BASE_URL}/visitors/${id}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el visitante');
         }
+        await fetchVisitors();
     };
 
     return (

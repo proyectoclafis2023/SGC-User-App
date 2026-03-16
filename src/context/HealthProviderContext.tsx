@@ -19,6 +19,13 @@ export const HealthProviderProvider: React.FC<{ children: ReactNode }> = ({ chil
         } catch (error) {
             console.error('Failed to fetch health providers:', error);
         }
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Failed to fetch health providers');
+        }
+        const data = await response.json();
+        setProviders(Array.isArray(data) ? data : []);
     };
 
     useEffect(() => {
@@ -26,38 +33,38 @@ export const HealthProviderProvider: React.FC<{ children: ReactNode }> = ({ chil
     }, []);
 
     const addProvider = async (provider: Omit<HealthProvider, 'id'>) => {
-        try {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(provider)
-            });
-            await fetchProviders();
-        } catch (error) {
-            console.error('Error adding health provider:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(provider)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el sistema de salud');
         }
+        await fetchProviders();
     };
 
     const updateProvider = async (provider: HealthProvider) => {
-        try {
-            await fetch(`${API_URL}/${provider.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(provider)
-            });
-            await fetchProviders();
-        } catch (error) {
-            console.error('Error updating health provider:', error);
+        const response = await fetch(`${API_URL}/${provider.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(provider)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el sistema de salud');
         }
+        await fetchProviders();
     };
 
     const deleteProvider = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchProviders();
-        } catch (error) {
-            console.error('Error deleting health provider:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el sistema de salud');
         }
+        await fetchProviders();
     };
 
     return (

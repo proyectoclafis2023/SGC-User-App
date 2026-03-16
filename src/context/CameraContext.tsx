@@ -26,38 +26,38 @@ export const CameraProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }, []);
 
     const addCamera = async (camera: Omit<Camera, 'id' | 'createdAt'>) => {
-        try {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...camera, createdAt: new Date().toISOString() })
-            });
-            await fetchCameras();
-        } catch (error) {
-            console.error('Error adding camera:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...camera, createdAt: new Date().toISOString() })
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar la cámara');
         }
+        await fetchCameras();
     };
 
     const updateCamera = async (camera: Camera) => {
-        try {
-            await fetch(`${API_URL}/${camera.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(camera)
-            });
-            await fetchCameras();
-        } catch (error) {
-            console.error('Error updating camera:', error);
+        const response = await fetch(`${API_URL}/${camera.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(camera)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar la cámara');
         }
+        await fetchCameras();
     };
 
     const deleteCamera = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchCameras();
-        } catch (error) {
-            console.error('Error deleting camera:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar la cámara');
         }
+        await fetchCameras();
     };
 
     return (

@@ -81,59 +81,54 @@ export const PersonnelProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
 
     const addPersonnel = async (person: Omit<Personnel, 'id' | 'createdAt' | 'status'>) => {
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...person, status: 'active' })
-            });
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...person, status: 'active' })
+        });
 
-            if (response.ok) {
-                const newPerson = await response.json();
-                await fetchPersonnel();
-                await addLog({
-                    entityType: 'personnel',
-                    entityId: newPerson.id,
-                    action: 'created',
-                    details: `Personal ${newPerson.names} registrado.`
-                });
-                return newPerson;
-            }
-        } catch (e) {
-            console.error('Error adding personnel:', e);
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el personal');
         }
+
+        const newPerson = await response.json();
+        await fetchPersonnel();
+        await addLog({
+            entityType: 'personnel',
+            entityId: newPerson.id,
+            action: 'created',
+            details: `Personal ${newPerson.names} registrado.`
+        });
+        return newPerson;
     };
 
     const updatePersonnel = async (person: Personnel) => {
-        try {
-            const response = await fetch(`${API_URL}/${person.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(person)
-            });
-            if (response.ok) {
-                await fetchPersonnel();
-                await addLog({
-                    entityType: 'personnel',
-                    entityId: person.id,
-                    action: 'updated',
-                    details: `Personal ${person.names} actualizado.`
-                });
-            }
-        } catch (e) {
-            console.error('Error updating personnel:', e);
+        const response = await fetch(`${API_URL}/${person.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(person)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el personal');
         }
+        await fetchPersonnel();
+        await addLog({
+            entityType: 'personnel',
+            entityId: person.id,
+            action: 'updated',
+            details: `Personal ${person.names} actualizado.`
+        });
     };
 
     const deletePersonnel = async (id: string) => {
-        try {
-            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            if (response.ok) {
-                await fetchPersonnel();
-            }
-        } catch (e) {
-            console.error('Error deleting personnel:', e);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el personal');
         }
+        await fetchPersonnel();
     };
 
     return (

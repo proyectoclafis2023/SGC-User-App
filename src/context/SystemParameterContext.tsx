@@ -26,38 +26,38 @@ export const SystemParameterProvider: React.FC<{ children: ReactNode }> = ({ chi
     }, []);
 
     const addParameter = async (parameter: Omit<SystemParameter, 'id'>) => {
-        try {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(parameter)
-            });
-            await fetchParameters();
-        } catch (error) {
-            console.error('Error adding system parameter:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parameter)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el parámetro del sistema');
         }
+        await fetchParameters();
     };
 
     const updateParameter = async (parameter: SystemParameter) => {
-        try {
-            await fetch(`${API_URL}/${parameter.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(parameter)
-            });
-            await fetchParameters();
-        } catch (error) {
-            console.error('Error updating system parameter:', error);
+        const response = await fetch(`${API_URL}/${parameter.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parameter)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el parámetro del sistema');
         }
+        await fetchParameters();
     };
 
     const deleteParameter = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchParameters();
-        } catch (error) {
-            console.error('Error deleting system parameter:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el parámetro del sistema');
         }
+        await fetchParameters();
     };
 
     return (

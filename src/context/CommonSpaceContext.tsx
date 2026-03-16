@@ -26,38 +26,38 @@ export const CommonSpaceProvider: React.FC<{ children: ReactNode }> = ({ childre
     }, []);
 
     const addSpace = async (space: Omit<CommonSpace, 'id'>) => {
-        try {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(space)
-            });
-            await fetchSpaces();
-        } catch (error) {
-            console.error('Error adding space:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(space)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el espacio común');
         }
+        await fetchSpaces();
     };
 
     const updateSpace = async (space: CommonSpace) => {
-        try {
-            await fetch(`${API_URL}/${space.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(space)
-            });
-            await fetchSpaces();
-        } catch (error) {
-            console.error('Error updating space:', error);
+        const response = await fetch(`${API_URL}/${space.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(space)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el espacio común');
         }
+        await fetchSpaces();
     };
 
     const deleteSpace = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchSpaces();
-        } catch (error) {
-            console.error('Error deleting space:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el espacio común');
         }
+        await fetchSpaces();
     };
 
     return (

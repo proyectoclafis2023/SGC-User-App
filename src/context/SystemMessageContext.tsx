@@ -26,38 +26,38 @@ export const SystemMessageProvider: React.FC<{ children: ReactNode }> = ({ child
     }, []);
 
     const addMessage = async (message: Omit<SystemMessage, 'id' | 'createdAt'>) => {
-        try {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...message, createdAt: new Date().toISOString() })
-            });
-            await fetchMessages();
-        } catch (error) {
-            console.error('Error adding message:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...message, createdAt: new Date().toISOString() })
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el mensaje');
         }
+        await fetchMessages();
     };
 
     const updateMessage = async (message: SystemMessage) => {
-        try {
-            await fetch(`${API_URL}/${message.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(message)
-            });
-            await fetchMessages();
-        } catch (error) {
-            console.error('Error updating message:', error);
+        const response = await fetch(`${API_URL}/${message.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(message)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el mensaje');
         }
+        await fetchMessages();
     };
 
     const deleteMessage = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchMessages();
-        } catch (error) {
-            console.error('Error deleting message:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el mensaje');
         }
+        await fetchMessages();
     };
 
     const toggleMessageStatus = async (id: string) => {

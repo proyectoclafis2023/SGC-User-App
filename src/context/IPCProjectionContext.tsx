@@ -23,12 +23,8 @@ export const IPCProjectionProvider: React.FC<{ children: React.ReactNode }> = ({
     const [projections, setProjections] = useState<IPCProjection[]>([]);
 
     const fetchProjections = async () => {
-        try {
-            const data = await api.get<IPCProjection[]>('/ipc_projections');
-            setProjections(Array.isArray(data) ? data : []);
-        } catch (error) {
-            console.error('Error fetching IPC projections:', error);
-        }
+        const data = await api.get<IPCProjection[]>('/ipc_projections');
+        setProjections(Array.isArray(data) ? data : []);
     };
 
     useEffect(() => {
@@ -36,30 +32,18 @@ export const IPCProjectionProvider: React.FC<{ children: React.ReactNode }> = ({
     }, []);
 
     const addProjection = async (p: Omit<IPCProjection, 'id' | 'createdAt'>) => {
-        try {
-            await api.post('/ipc_projections', p);
-            await fetchProjections();
-        } catch (error) {
-            console.error('Error adding IPC projection:', error);
-        }
+        await api.post('/ipc_projections', p);
+        await fetchProjections();
     };
 
     const updateProjection = async (p: IPCProjection) => {
-        try {
-            await api.put(`/ipc_projections/${p.id}`, p);
-            await fetchProjections();
-        } catch (error) {
-            console.error('Error updating IPC projection:', error);
-        }
+        await api.put(`/ipc_projections/${p.id}`, p);
+        await fetchProjections();
     };
 
     const deleteProjection = async (id: string) => {
-        try {
-            await api.delete(`/ipc_projections/${id}`);
-            await fetchProjections();
-        } catch (error) {
-            console.error('Error deleting IPC projection:', error);
-        }
+        await api.delete(`/ipc_projections/${id}`);
+        await fetchProjections();
     };
 
     return (

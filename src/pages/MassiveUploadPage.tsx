@@ -184,10 +184,18 @@ export const MassiveUploadPage: React.FC = () => {
 
                 let totalSuccess = 0;
                 let allErrors: ProcessingError[] = [];
+
+                // Helper to normalize DNI/RUT for comparison (removes dots, dashes and trims)
+                const normDNI = (val: any) => {
+                    if (!val) return '';
+                    return String(val).replace(/[^a-zA-Z0-9]/g, '').toUpperCase().trim();
+                };
                 // Local caches to handle inter-sheet dependencies in a single upload session
                 const localTowers = [...towers];
                 const localResidents = [...residents];
                 const localUnitTypes = [...unitTypes];
+                const localPersonnel = [...personnel];
+                const localOwners = [...owners];
 
                 for (const sheet of sheetsToProcess) {
                     const entityConfig = entities.find(ent => ent.value === sheet.entity);
@@ -227,7 +235,7 @@ export const MassiveUploadPage: React.FC = () => {
                                     break;
                                 case 'personnel':
                                     if (!obj.nombres || !obj.rut) throw new Error('Nombres y RUT son obligatorios');
-                                    const existingPerson = personnel.find((p: Personnel) => p.dni === String(obj.rut));
+                                    const existingPerson = localPersonnel.find((p: Personnel) => normDNI(p.dni) === normDNI(obj.rut));
                                     const personData = {
                                         names: String(obj.nombres),
                                         lastNames: String(obj.apellidos || ''),
@@ -242,13 +250,15 @@ export const MassiveUploadPage: React.FC = () => {
                                     };
                                     if (existingPerson) {
                                         await updatePersonnel({ ...existingPerson, ...personData });
+                                        Object.assign(existingPerson, personData);
                                     } else {
-                                        await addPersonnel({ ...personData, hasEmergencyContact: false });
+                                        const newP = await addPersonnel({ ...personData, hasEmergencyContact: false });
+                                        if (newP?.id) localPersonnel.push(newP);
                                     }
                                     break;
                                 case 'residents': {
                                     if (!obj.nombres || !obj.rut) throw new Error('Nombres y RUT son obligatorios');
-                                    const existingResident = localResidents.find((r: Resident) => r.dni === String(obj.rut));
+                                    const existingResident = localResidents.find((r: Resident) => normDNI(r.dni) === normDNI(obj.rut));
                                     const residentData = {
                                         names: String(obj.nombres),
                                         lastNames: String(obj.apellidos || ''),
@@ -270,7 +280,7 @@ export const MassiveUploadPage: React.FC = () => {
                                 }
                                 case 'owners':
                                     if (!obj.nombres || !obj.rut) throw new Error('Nombres y RUT son obligatorios');
-                                    const existingOwner = owners.find((o: Owner) => o.dni === String(obj.rut));
+                                    const existingOwner = localOwners.find((o: Owner) => normDNI(o.dni) === normDNI(obj.rut));
                                     const ownerData = {
                                         names: String(obj.nombres),
                                         lastNames: String(obj.apellidos || ''),
@@ -281,8 +291,10 @@ export const MassiveUploadPage: React.FC = () => {
                                     };
                                     if (existingOwner) {
                                         await updateOwner({ ...existingOwner, ...ownerData });
+                                        Object.assign(existingOwner, ownerData);
                                     } else {
-                                        await addOwner(ownerData);
+                                        const newOId = await addOwner({ ...ownerData, unitIds: [] });
+                                        if (newOId) localOwners.push({ ...ownerData, id: newOId } as any);
                                     }
                                     break;
                                 case 'units': {
@@ -393,7 +405,17 @@ export const MassiveUploadPage: React.FC = () => {
                                 }
                                 case 'income':
                                     if (!obj.rut || !obj.monto || !obj.mes || !obj.año) throw new Error('RUT, Monto, Mes y Año son obligatorios');
-                                    const resident = localResidents.find((r: Resident) => r.dni === String(obj.rut));
+                                    let resident = localResidents.find((r: Resident) => normDNI(r.dni) === normDNI(obj.rut));
+                                    
+                                    // Backup matching: If RUT/DNI match fails, try matching by Tower and Unit if provided
+                                    if (!resident && obj.torre && obj.unidad) {
+                                        const tower = localTowers.find((t: Tower) => t.name.toLowerCase() === String(obj.torre).toLowerCase());
+                                        const dept = departments.find((d: Department) => d.number === String(obj.unidad) && d.towerId === tower?.id);
+                                        if (dept) {
+                                            resident = localResidents.find((r: Resident) => r.unitId === dept.id);
+                                        }
+                                    }
+
                                     if (!resident) throw new Error(`Residente con RUT ${obj.rut} no encontrado`);
                                     await addIncome({
                                         departmentId: resident.unitId || 'unknown',

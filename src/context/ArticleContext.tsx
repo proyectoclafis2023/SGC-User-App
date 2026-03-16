@@ -50,9 +50,11 @@ export const ArticleProvider: React.FC<{ children: ReactNode }> = ({ children })
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(article)
         });
-        if (resp.ok) {
-            await fetchArticles();
+        if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.message || 'Error al agregar el artículo');
         }
+        await fetchArticles();
     };
 
     const updateArticle = async (article: Article) => {
@@ -61,9 +63,11 @@ export const ArticleProvider: React.FC<{ children: ReactNode }> = ({ children })
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(article)
         });
-        if (resp.ok) {
-            await fetchArticles();
+        if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.message || 'Error al actualizar el artículo');
         }
+        await fetchArticles();
     };
 
     const decreaseStock = async (articleId: string, quantity: number) => {
@@ -75,9 +79,11 @@ export const ArticleProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const deleteArticle = async (id: string) => {
         const resp = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-        if (resp.ok) {
-            await fetchArticles();
+        if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.message || 'Error al eliminar el artículo');
         }
+        await fetchArticles();
     };
 
     return (

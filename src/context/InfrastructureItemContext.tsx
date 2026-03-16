@@ -26,38 +26,38 @@ export const InfrastructureItemProvider: React.FC<{ children: ReactNode }> = ({ 
     }, []);
 
     const addItem = async (item: Omit<InfrastructureItem, 'id' | 'createdAt'>) => {
-        try {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...item, createdAt: new Date().toISOString() })
-            });
-            await fetchItems();
-        } catch (error) {
-            console.error('Error adding infrastructure item:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...item, createdAt: new Date().toISOString() })
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el ítem de infraestructura');
         }
+        await fetchItems();
     };
 
     const updateItem = async (item: InfrastructureItem) => {
-        try {
-            await fetch(`${API_URL}/${item.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(item)
-            });
-            await fetchItems();
-        } catch (error) {
-            console.error('Error updating infrastructure item:', error);
+        const response = await fetch(`${API_URL}/${item.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el ítem de infraestructura');
         }
+        await fetchItems();
     };
 
     const deleteItem = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchItems();
-        } catch (error) {
-            console.error('Error deleting infrastructure item:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el ítem de infraestructura');
         }
+        await fetchItems();
     };
 
     return (

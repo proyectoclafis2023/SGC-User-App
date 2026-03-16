@@ -28,42 +28,40 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
     }, []);
 
     const addTower = async (tower: Omit<Tower, 'id'>) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/towers`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(tower)
-            });
-            if (response.ok) {
-                const data = await response.json();
-                await fetchAll();
-                return data;
-            }
-        } catch (e) {
-            console.error('Error adding tower:', e);
+        const response = await fetch(`${API_BASE_URL}/towers`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tower)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar la torre');
         }
+        const data = await response.json();
+        await fetchAll();
+        return data;
     };
 
     const updateTower = async (updatedTower: Tower) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/towers/${updatedTower.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedTower)
-            });
-            if (response.ok) {
-                await fetchAll();
-            }
-        } catch (e) { console.error('Error updating tower:', e); }
+        const response = await fetch(`${API_BASE_URL}/towers/${updatedTower.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedTower)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar la torre');
+        }
+        await fetchAll();
     };
 
     const deleteTower = async (id: string) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/towers/${id}`, { method: 'DELETE' });
-            if (response.ok) {
-                await fetchAll();
-            }
-        } catch (e) { console.error('Error deleting tower:', e); }
+        const response = await fetch(`${API_BASE_URL}/towers/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar la torre');
+        }
+        await fetchAll();
     };
 
     const duplicateTower = async (id: string, newName: string) => {
@@ -74,40 +72,40 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
     };
 
     const addDepartment = async (dept: Omit<Department, 'id'>) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/departments`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dept)
-            });
-            if (response.ok) {
-                const data = await response.json();
-                await fetchAll();
-                return data;
-            }
-        } catch (e) { console.error('Error adding department:', e); }
+        const response = await fetch(`${API_BASE_URL}/departments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dept)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el departamento');
+        }
+        const data = await response.json();
+        await fetchAll();
+        return data;
     };
 
     const updateDepartment = async (dept: Department) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/departments/${dept.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dept)
-            });
-            if (response.ok) {
-                await fetchAll();
-            }
-        } catch (e) { console.error('Error updating department:', e); }
+        const response = await fetch(`${API_BASE_URL}/departments/${dept.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dept)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el departamento');
+        }
+        await fetchAll();
     };
 
     const deleteDepartment = async (id: string) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/departments/${id}`, { method: 'DELETE' });
-            if (response.ok) {
-                await fetchAll();
-            }
-        } catch (e) { console.error('Error deleting department:', e); }
+        const response = await fetch(`${API_BASE_URL}/departments/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el departamento');
+        }
+        await fetchAll();
     };
 
     const enrichedTowers = useMemo(() => {

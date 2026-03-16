@@ -26,43 +26,40 @@ export const BankProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     const addBank = async (bank: Omit<Bank, 'id'>) => {
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bank)
-            });
-            if (response.ok) {
-                const newBank = await response.json();
-                await fetchBanks();
-                return newBank.id;
-            }
-        } catch (error) {
-            console.error('Error adding bank:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bank)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el banco');
         }
-        return '';
+        const newBank = await response.json();
+        await fetchBanks();
+        return newBank.id;
     };
 
     const updateBank = async (bank: Bank) => {
-        try {
-            await fetch(`${API_URL}/${bank.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bank)
-            });
-            await fetchBanks();
-        } catch (error) {
-            console.error('Error updating bank:', error);
+        const response = await fetch(`${API_URL}/${bank.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bank)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el banco');
         }
+        await fetchBanks();
     };
 
     const deleteBank = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchBanks();
-        } catch (error) {
-            console.error('Error deleting bank:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el banco');
         }
+        await fetchBanks();
     };
 
     return (

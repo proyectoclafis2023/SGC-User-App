@@ -26,38 +26,38 @@ export const SpecialConditionProvider: React.FC<{ children: ReactNode }> = ({ ch
     }, []);
 
     const addCondition = async (condition: Omit<SpecialCondition, 'id'>) => {
-        try {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(condition)
-            });
-            await fetchConditions();
-        } catch (error) {
-            console.error('Error adding condition:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(condition)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar la condición especial');
         }
+        await fetchConditions();
     };
 
     const updateCondition = async (condition: SpecialCondition) => {
-        try {
-            await fetch(`${API_URL}/${condition.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(condition)
-            });
-            await fetchConditions();
-        } catch (error) {
-            console.error('Error updating condition:', error);
+        const response = await fetch(`${API_URL}/${condition.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(condition)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar la condición especial');
         }
+        await fetchConditions();
     };
 
     const deleteCondition = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchConditions();
-        } catch (error) {
-            console.error('Error deleting condition:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar la condición especial');
         }
+        await fetchConditions();
     };
 
     return (

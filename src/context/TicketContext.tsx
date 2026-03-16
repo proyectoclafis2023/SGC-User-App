@@ -26,61 +26,54 @@ export const TicketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }, []);
 
     const addTicket = async (ticketData: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'folio'>) => {
-        try {
-            // Generate a folio
-            const folio = `REQ-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
-            const payload = { ...ticketData, folio, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-            
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            
-            if (response.ok) {
-                const newTicket = await response.json();
-                await fetchTickets();
-                return newTicket;
-            }
-            return null;
-        } catch (error) {
-            console.error('Error adding ticket:', error);
-            return null;
+        // Generate a folio
+        const folio = `REQ-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const payload = { ...ticketData, folio, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+        
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el ticket');
         }
+        
+        const newTicket = await response.json();
+        await fetchTickets();
+        return newTicket;
     };
 
     const updateTicket = async (id: string, ticketData: Partial<Ticket>) => {
-        try {
-            await fetch(`${API_URL}/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...ticketData, updatedAt: new Date().toISOString() })
-            });
-            await fetchTickets();
-        } catch (error) {
-            console.error('Error updating ticket:', error);
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...ticketData, updatedAt: new Date().toISOString() })
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el ticket');
         }
+        await fetchTickets();
     };
 
     const deleteTicket = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchTickets();
-        } catch (error) {
-            console.error('Error deleting ticket:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el ticket');
         }
+        await fetchTickets();
     };
 
     const acknowledgeTicket = async (id: string, adminId: string) => {
-        try {
-            await updateTicket(id, {
-                status: 'acknowledged',
-                acknowledgedAt: new Date().toISOString(),
-                acknowledgedBy: adminId
-            });
-        } catch (error) {
-            console.error('Error acknowledging ticket:', error);
-        }
+        await updateTicket(id, {
+            status: 'acknowledged',
+            acknowledgedAt: new Date().toISOString(),
+            acknowledgedBy: adminId
+        });
     };
 
     return (

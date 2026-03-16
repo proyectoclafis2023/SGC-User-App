@@ -26,32 +26,38 @@ export const FixedAssetProvider: React.FC<{ children: ReactNode }> = ({ children
     }, []);
 
     const addAsset = async (asset: Omit<FixedAsset, 'id' | 'createdAt'>) => {
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(asset)
-            });
-            if (response.ok) await fetchAssets();
-        } catch (e) { console.error('Error adding fixed asset:', e); }
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(asset)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el activo fijo');
+        }
+        await fetchAssets();
     };
 
     const updateAsset = async (asset: FixedAsset) => {
-        try {
-            const response = await fetch(`${API_URL}/${asset.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(asset)
-            });
-            if (response.ok) await fetchAssets();
-        } catch (e) { console.error('Error updating fixed asset:', e); }
+        const response = await fetch(`${API_URL}/${asset.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(asset)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el activo fijo');
+        }
+        await fetchAssets();
     };
 
     const deleteAsset = async (id: string) => {
-        try {
-            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            if (response.ok) await fetchAssets();
-        } catch (e) { console.error('Error deleting fixed asset:', e); }
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el activo fijo');
+        }
+        await fetchAssets();
     };
 
     return (

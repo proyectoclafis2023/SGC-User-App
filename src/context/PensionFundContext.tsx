@@ -26,38 +26,38 @@ export const PensionFundProvider: React.FC<{ children: ReactNode }> = ({ childre
     }, []);
 
     const addFund = async (fund: Omit<PensionFund, 'id'>) => {
-        try {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(fund)
-            });
-            await fetchFunds();
-        } catch (error) {
-            console.error('Error adding pension fund:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fund)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar la AFP');
         }
+        await fetchFunds();
     };
 
     const updateFund = async (fund: PensionFund) => {
-        try {
-            await fetch(`${API_URL}/${fund.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(fund)
-            });
-            await fetchFunds();
-        } catch (error) {
-            console.error('Error updating pension fund:', error);
+        const response = await fetch(`${API_URL}/${fund.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fund)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar la AFP');
         }
+        await fetchFunds();
     };
 
     const deleteFund = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchFunds();
-        } catch (error) {
-            console.error('Error deleting pension fund:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar la AFP');
         }
+        await fetchFunds();
     };
 
     return (

@@ -41,22 +41,22 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
     }, []);
 
     const addLog = async (resId: string, userId: string, action: ReservationLog['action'], details: string) => {
-        try {
-            await fetch(LOGS_API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    reservationId: resId,
-                    userId,
-                    action,
-                    details,
-                    timestamp: new Date().toISOString()
-                })
-            });
-            await fetchLogs();
-        } catch (error) {
-            console.error('Error adding reservation log:', error);
+        const response = await fetch(LOGS_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                reservationId: resId,
+                userId,
+                action,
+                details,
+                timestamp: new Date().toISOString()
+            })
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el log de reserva');
         }
+        await fetchLogs();
     };
 
     const generateFolio = (prefix: string) => {
@@ -66,48 +66,46 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     const addReservation = async (reservation: Omit<Reservation, 'id' | 'folio' | 'createdAt' | 'status' | 'paymentStatus'>) => {
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...reservation,
-                    folio: generateFolio('RES'),
-                    status: 'pending',
-                    paymentStatus: 'pending',
-                    createdAt: new Date().toISOString()
-                })
-            });
-            if (response.ok) {
-                const newRes = await response.json();
-                await fetchReservations();
-                await addLog(newRes.id, reservation.userId, 'created', 'Reserva solicitada por el usuario');
-            }
-        } catch (error) {
-            console.error('Error adding reservation:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...reservation,
+                folio: generateFolio('RES'),
+                status: 'pending',
+                paymentStatus: 'pending',
+                createdAt: new Date().toISOString()
+            })
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar la reserva');
         }
+        const newRes = await response.json();
+        await fetchReservations();
+        await addLog(newRes.id, reservation.userId, 'created', 'Reserva solicitada por el usuario');
     };
 
     const updateReservation = async (reservation: Reservation) => {
-        try {
-            await fetch(`${API_URL}/${reservation.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(reservation)
-            });
-            await fetchReservations();
-        } catch (error) {
-            console.error('Error updating reservation:', error);
+        const response = await fetch(`${API_URL}/${reservation.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(reservation)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar la reserva');
         }
+        await fetchReservations();
     };
 
     const deleteReservation = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchReservations();
-        } catch (error) {
-            console.error('Error deleting reservation:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar la reserva');
         }
+        await fetchReservations();
     };
 
     const approveReservation = async (id: string, adminId: string) => {

@@ -33,18 +33,16 @@ export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ chi
             createdAt: new Date().toISOString()
         };
 
-        try {
-            const resp = await fetch(BACKEND_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newRecord)
-            });
-            if (resp.ok) {
-                fetchNumbers();
-            }
-        } catch (e) {
-            console.error('API Error adding emergency number:', e);
+        const resp = await fetch(BACKEND_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newRecord)
+        });
+        if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.message || 'Error al agregar el número de emergencia');
         }
+        fetchNumbers();
     };
 
     const updateNumber = async (id: string, number: Omit<EmergencyNumber, 'id' | 'createdAt'>) => {
@@ -53,29 +51,25 @@ export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ chi
 
         const updated = { ...existing, ...number };
 
-        try {
-            const resp = await fetch(`${BACKEND_URL}/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updated)
-            });
-            if (resp.ok) {
-                fetchNumbers();
-            }
-        } catch (e) {
-            console.error('API Error updating emergency number:', e);
+        const resp = await fetch(`${BACKEND_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updated)
+        });
+        if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.message || 'Error al actualizar el número de emergencia');
         }
+        fetchNumbers();
     };
 
     const deleteNumber = async (id: string) => {
-        try {
-            const resp = await fetch(`${BACKEND_URL}/${id}`, { method: 'DELETE' });
-            if (resp.ok) {
-                fetchNumbers();
-            }
-        } catch (e) {
-            console.error('API Error deleting emergency number:', e);
+        const resp = await fetch(`${BACKEND_URL}/${id}`, { method: 'DELETE' });
+        if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.message || 'Error al eliminar el número de emergencia');
         }
+        fetchNumbers();
     };
 
     return (

@@ -26,59 +26,54 @@ export const OwnerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }, []);
 
     const addOwner = async (owner: Omit<Owner, 'id' | 'createdAt' | 'status'>) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/owners`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...owner, status: 'active' })
-            });
+        const response = await fetch(`${API_BASE_URL}/owners`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...owner, status: 'active' })
+        });
 
-            if (response.ok) {
-                const newOwner = await response.json();
-                fetchOwners();
-                await addLog({
-                    entityType: 'owner',
-                    entityId: newOwner.id,
-                    action: 'created',
-                    details: `Propietario ${newOwner.names} ${newOwner.lastNames} registrado.`
-                });
-                return newOwner.id;
-            }
-        } catch (e) {
-            console.error('Error adding owner:', e);
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el propietario');
         }
+
+        const newOwner = await response.json();
+        await fetchOwners();
+        await addLog({
+            entityType: 'owner',
+            entityId: newOwner.id,
+            action: 'created',
+            details: `Propietario ${newOwner.names} ${newOwner.lastNames} registrado.`
+        });
+        return newOwner.id;
     };
 
     const updateOwner = async (owner: Owner) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/owners/${owner.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(owner)
-            });
-            if (response.ok) {
-                fetchOwners();
-                await addLog({
-                    entityType: 'owner',
-                    entityId: owner.id,
-                    action: 'updated',
-                    details: `Propietario ${owner.names} ${owner.lastNames} actualizado.`
-                });
-            }
-        } catch (e) {
-            console.error('Error updating owner:', e);
+        const response = await fetch(`${API_BASE_URL}/owners/${owner.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(owner)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el propietario');
         }
+        await fetchOwners();
+        await addLog({
+            entityType: 'owner',
+            entityId: owner.id,
+            action: 'updated',
+            details: `Propietario ${owner.names} ${owner.lastNames} actualizado.`
+        });
     };
 
     const deleteOwner = async (id: string) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/owners/${id}`, { method: 'DELETE' });
-            if (response.ok) {
-                fetchOwners();
-            }
-        } catch (e) {
-            console.error('Error deleting owner:', e);
+        const response = await fetch(`${API_BASE_URL}/owners/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el propietario');
         }
+        await fetchOwners();
     };
 
     return (

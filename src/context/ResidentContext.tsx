@@ -47,65 +47,60 @@ export const ResidentProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
 
     const addResident = async (resident: Omit<Resident, 'id' | 'createdAt' | 'status'>) => {
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...resident,
-                    status: 'active'
-                })
-            });
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...resident,
+                status: 'active'
+            })
+        });
 
-            if (response.ok) {
-                const newRes = await response.json();
-                await fetchResidents();
-
-                await addLog({
-                    entityType: 'resident',
-                    entityId: newRes.id,
-                    unitId: newRes.unitId,
-                    action: 'created',
-                    details: `Residente ${newRes.names} ${newRes.lastNames} registrado.`
-                });
-                return newRes;
-            }
-        } catch (e) {
-            console.error('API Error adding resident:', e);
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el residente');
         }
+
+        const newRes = await response.json();
+        await fetchResidents();
+
+        await addLog({
+            entityType: 'resident',
+            entityId: newRes.id,
+            unitId: newRes.unitId,
+            action: 'created',
+            details: `Residente ${newRes.names} ${newRes.lastNames} registrado.`
+        });
+        return newRes;
     };
 
     const updateResident = async (resident: Resident) => {
-        try {
-            const response = await fetch(`${API_URL}/${resident.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(resident)
-            });
-            if (response.ok) {
-                await fetchResidents();
-                await addLog({
-                    entityType: 'resident',
-                    entityId: resident.id,
-                    unitId: resident.unitId,
-                    action: 'updated',
-                    details: `Datos del residente ${resident.names} ${resident.lastNames} actualizados.`
-                });
-            }
-        } catch (e) {
-            console.error('Error updating resident:', e);
+        const response = await fetch(`${API_URL}/${resident.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(resident)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el residente');
         }
+        await fetchResidents();
+        await addLog({
+            entityType: 'resident',
+            entityId: resident.id,
+            unitId: resident.unitId,
+            action: 'updated',
+            details: `Datos del residente ${resident.names} ${resident.lastNames} actualizados.`
+        });
     };
 
     const deleteResident = async (id: string) => {
-        try {
-            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            if (response.ok) {
-                await fetchResidents();
-            }
-        } catch (e) {
-            console.error('Error deleting resident:', e);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el residente');
         }
+        await fetchResidents();
     };
 
     return (

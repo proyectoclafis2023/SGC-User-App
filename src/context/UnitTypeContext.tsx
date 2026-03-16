@@ -26,42 +26,40 @@ export const UnitTypeProvider: React.FC<{ children: ReactNode }> = ({ children }
     }, []);
 
     const addUnitType = async (unitType: Omit<UnitType, 'id'>) => {
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(unitType)
-            });
-            if (response.ok) {
-                const data = await response.json();
-                await fetchUnitTypes();
-                return data;
-            }
-        } catch (error) {
-            console.error('Error adding unit type:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(unitType)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el tipo de unidad');
         }
+        const data = await response.json();
+        await fetchUnitTypes();
+        return data;
     };
 
     const updateUnitType = async (unitType: UnitType) => {
-        try {
-            await fetch(`${API_URL}/${unitType.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(unitType)
-            });
-            await fetchUnitTypes();
-        } catch (error) {
-            console.error('Error updating unit type:', error);
+        const response = await fetch(`${API_URL}/${unitType.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(unitType)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el tipo de unidad');
         }
+        await fetchUnitTypes();
     };
 
     const deleteUnitType = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchUnitTypes();
-        } catch (error) {
-            console.error('Error deleting unit type:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el tipo de unidad');
         }
+        await fetchUnitTypes();
     };
 
     return (

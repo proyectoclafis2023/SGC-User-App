@@ -26,38 +26,38 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
     }, []);
 
     const addParking = async (parking: Omit<Parking, 'id' | 'createdAt'>) => {
-        try {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(parking)
-            });
-            await fetchParkings();
-        } catch (error) {
-            console.error('Error adding parking:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parking)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el estacionamiento');
         }
+        await fetchParkings();
     };
 
     const updateParking = async (parking: Parking) => {
-        try {
-            await fetch(`${API_URL}/${parking.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(parking)
-            });
-            await fetchParkings();
-        } catch (error) {
-            console.error('Error updating parking:', error);
+        const response = await fetch(`${API_URL}/${parking.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parking)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el estacionamiento');
         }
+        await fetchParkings();
     };
 
     const deleteParking = async (id: string) => {
-        try {
-            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            await fetchParkings();
-        } catch (error) {
-            console.error('Error deleting parking:', error);
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el estacionamiento');
         }
+        await fetchParkings();
     };
 
     return (

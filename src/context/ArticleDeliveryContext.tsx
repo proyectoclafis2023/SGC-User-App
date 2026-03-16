@@ -40,36 +40,40 @@ export const ArticleDeliveryProvider: React.FC<{ children: ReactNode }> = ({ chi
             createdAt: new Date().toISOString()
         };
 
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newRecord)
-            });
-            if (response.ok) {
-                await fetchDeliveries();
-                return newRecord.id;
-            }
-        } catch (e) { console.error('Error adding delivery:', e); }
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newRecord)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar la entrega del artículo');
+        }
+        await fetchDeliveries();
+        return newRecord.id;
         return id;
     };
 
     const updateDelivery = async (delivery: ArticleDelivery) => {
-        try {
-            const response = await fetch(`${API_URL}/${delivery.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(delivery)
-            });
-            if (response.ok) await fetchDeliveries();
-        } catch (e) { console.error('Error updating delivery:', e); }
+        const response = await fetch(`${API_URL}/${delivery.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(delivery)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar la entrega del artículo');
+        }
+        await fetchDeliveries();
     };
 
     const deleteDelivery = async (id: string) => {
-        try {
-            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            if (response.ok) await fetchDeliveries();
-        } catch (e) { console.error('Error deleting delivery:', e); }
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar la entrega del artículo');
+        }
+        await fetchDeliveries();
     };
 
     return (
