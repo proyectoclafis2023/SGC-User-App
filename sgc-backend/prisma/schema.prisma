@@ -328,3 +328,12 @@ model Afc {
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
 }
+
+model DirectedMessage {
+  id        String   @id @default(cuid())
+  unitId    String?
+  text      String
+  type      String   @default("info")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}

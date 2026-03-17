@@ -11,7 +11,7 @@ import { usePensionFunds } from '../context/PensionFundContext';
 import { useSpecialConditions } from '../context/SpecialConditionContext';
 import { useUnitTypes } from '../context/UnitTypeContext';
 import { useCommonExpenses } from '../context/CommonExpenseContext';
-import { Upload, Download, AlertCircle, Info, CheckCircle2, XCircle, History, Database, FileText, Package, Users, ShieldCheck, Building2, Landmark, LifeBuoy, AlertTriangle, Banknote, Home, Tag, LineChart, Phone, Mail, Smartphone } from 'lucide-react';
+import { Upload, Download, AlertCircle, Info, CheckCircle2, XCircle, History, Database, FileText, Package, Users, ShieldCheck, Building2, Landmark, LifeBuoy, AlertTriangle, Banknote, Home, Tag, LineChart, Phone, Mail, Smartphone, Calendar } from 'lucide-react';
 import type { 
     Article, Personnel, Resident, Owner, Bank, FixedAsset, HealthProvider, 
     PensionFund, SpecialCondition, UnitType, Tower, Department, 
@@ -29,10 +29,13 @@ import { useInfrastructureItems } from '../context/InfrastructureItemContext';
 import { useEquipmentItems } from '../context/EquipmentItemContext';
 import { useSystemMessages } from '../context/SystemMessageContext';
 import { useEmergencyNumbers } from '../context/EmergencyNumberContext';
+import { useAFC } from '../context/AFCContext';
+import { useHolidays } from '../context/HolidayContext';
+import { useDirectedMessages } from '../context/DirectedMessageContext';
 
 import * as XLSX from 'xlsx';
 
-type EntityType = 'articles' | 'personnel' | 'residents' | 'owners' | 'banks' | 'assets' | 'health' | 'afp' | 'conditions' | 'units' | 'extra_funds' | 'income' | 'community_expenses' | 'towers' | 'departments' | 'common_spaces' | 'parking' | 'article_categories' | 'ipc' | 'infra_items' | 'equip_items' | 'messages' | 'emergency_numbers';
+type EntityType = 'articles' | 'personnel' | 'residents' | 'owners' | 'banks' | 'assets' | 'health' | 'afp' | 'afc' | 'holidays' | 'directed_messages' | 'conditions' | 'units' | 'extra_funds' | 'income' | 'community_expenses' | 'towers' | 'departments' | 'common_spaces' | 'parking' | 'article_categories' | 'ipc' | 'infra_items' | 'equip_items' | 'messages' | 'emergency_numbers';
 
 interface ProcessingError {
     row: number;
@@ -70,6 +73,9 @@ export const MassiveUploadPage: React.FC = () => {
     const { items: equipItems, addItem: addEquipItem, updateItem: updateEquipItem } = useEquipmentItems();
     const { messages: systemMessages, addMessage: addSystemMessage, updateMessage: updateSystemMessage } = useSystemMessages();
     const { numbers: emergencyNumbers, addNumber, updateNumber } = useEmergencyNumbers();
+    const { afcs, addAFC, updateAFC } = useAFC();
+    const { holidays: allHolidays, addHoliday, updateHoliday } = useHolidays();
+    const { messages: directedMessages, addMessage } = useDirectedMessages();
 
     const entities: { value: EntityType; label: string; icon: any; requiredHeaders: string[]; description: string; category: string }[] = [
         // Operaciones y Soporte
@@ -83,6 +89,7 @@ export const MassiveUploadPage: React.FC = () => {
         { value: 'owners', label: 'Propietarios', icon: ShieldCheck, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Dueños legales de las unidades.', category: 'Comunidad y Administración' },
         { value: 'conditions', label: 'Condiciones Especiales', icon: ShieldCheck, requiredHeaders: ['nombre'], description: 'Condiciones médicas o de movilidad reducida.', category: 'Comunidad y Administración' },
         { value: 'messages', label: 'Mensajes del Sistema', icon: Mail, requiredHeaders: ['contenido'], description: 'Avisos del sistema para la marquesina o avisos generales.', category: 'Comunidad y Administración' },
+        { value: 'directed_messages', label: 'Mensajes Dirigidos', icon: Mail, requiredHeaders: ['texto'], description: 'Mensajes específicos para unidades o residentes.', category: 'Comunidad y Administración' },
 
         // Recursos Humanos y Maestros
         { value: 'personnel', label: 'Maestro Personal', icon: Users, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Funcionarios, conserjes y personal operativo.', category: 'Recursos Humanos' },
@@ -90,6 +97,8 @@ export const MassiveUploadPage: React.FC = () => {
         { value: 'article_categories', label: 'Categorías de Insumos', icon: Tag, requiredHeaders: ['nombre'], description: 'Clasificación para el maestro de insumos.', category: 'Recursos Humanos' },
         { value: 'health', label: 'Previsiones / Salud', icon: LifeBuoy, requiredHeaders: ['nombre'], description: 'Isapres y Fonasa.', category: 'Recursos Humanos' },
         { value: 'afp', label: 'AFPs', icon: FileText, requiredHeaders: ['nombre'], description: 'Administradoras de Fondos de Pensiones.', category: 'Recursos Humanos' },
+        { value: 'afc', label: 'Maestro AFC', icon: ShieldCheck, requiredHeaders: ['tasa_plazo_fijo', 'tasa_indefinido'], description: 'Tasas de cotización de Seguro de Cesantía.', category: 'Recursos Humanos' },
+        { value: 'holidays', label: 'Maestro Feriados', icon: Calendar, requiredHeaders: ['nombre', 'fecha'], description: 'Calendario de días feriados legales e irrenunciables.', category: 'Recursos Humanos' },
         { value: 'banks', label: 'Bancos', icon: Landmark, requiredHeaders: ['nombre'], description: 'Instituciones bancarias.', category: 'Recursos Humanos' },
 
         // Infraestructura
@@ -225,7 +234,9 @@ export const MassiveUploadPage: React.FC = () => {
                                         price: Number(obj.precio || 0),
                                         stock: Number(obj.stock || 0),
                                         minStock: Number(obj.stock_minimo || 0),
-                                        isActive: obj.activo === 'SI' || obj.activo === true
+                                        isActive: obj.activo === 'SI' || obj.activo === true,
+                                        unit: String(obj.unidad || 'unidades'),
+                                        allowPersonnelRequest: obj.permite_solicitud === 'SI' || obj.permite_solicitud === true
                                     };
                                     if (existingArticle) {
                                         await updateArticle({ ...existingArticle, ...articleData });
@@ -591,6 +602,46 @@ export const MassiveUploadPage: React.FC = () => {
                                         await addNumber(numData);
                                     }
                                     break;
+                                case 'afc': {
+                                    const existingAFC = afcs.find(a => a.name.toLowerCase() === String(obj.nombre || 'AFC').toLowerCase());
+                                    const afcData = {
+                                        name: String(obj.nombre || 'AFC'),
+                                        fixedTermRate: Number(obj.tasa_plazo_fijo || 0),
+                                        indefiniteTermRate: Number(obj.tasa_indefinido || 0),
+                                        isActive: obj.activo === 'SI' || obj.activo === true
+                                    };
+                                    if (existingAFC) {
+                                        await updateAFC({ ...existingAFC, ...afcData });
+                                    } else {
+                                        await addAFC(afcData);
+                                    }
+                                    break;
+                                }
+                                case 'holidays': {
+                                    if (!obj.nombre || !obj.fecha) throw new Error('Nombre y Fecha son obligatorios');
+                                    const existingHoliday = allHolidays.find(h => h.description.toLowerCase() === String(obj.nombre).toLowerCase());
+                                    const holidayData = {
+                                        description: String(obj.nombre),
+                                        date: String(obj.fecha)
+                                    };
+                                    if (existingHoliday) {
+                                        await updateHoliday({ ...existingHoliday, ...holidayData });
+                                    } else {
+                                        await addHoliday(holidayData);
+                                    }
+                                    break;
+                                }
+                                case 'directed_messages': {
+                                    if (!obj.texto) throw new Error('Texto del mensaje es obligatorio');
+                                    const msgData = {
+                                        unitId: obj.id_unidad ? String(obj.id_unidad) : undefined,
+                                        text: String(obj.texto),
+                                        type: (obj.tipo || 'info') as any,
+                                        isActive: obj.activo === 'SI' || obj.activo === true
+                                    };
+                                    await addMessage(msgData);
+                                    break;
+                                }
                             }
                             totalSuccess++;
                         } catch (err: any) {
@@ -651,6 +702,18 @@ export const MassiveUploadPage: React.FC = () => {
             case 'units': 
                 headers = ['nombre', 'gasto_base', 'm2'];
                 unitTypes?.forEach((u: UnitType) => data.push([u.name, u.baseCommonExpense, u.defaultM2]));
+                break;
+            case 'afc':
+                headers = ['nombre', 'tasa_plazo_fijo', 'tasa_indefinido', 'activo'];
+                afcs?.forEach(a => data.push([a.name, a.fixedTermRate, a.indefiniteTermRate, a.isActive ? 'SI' : 'NO']));
+                break;
+            case 'holidays':
+                headers = ['nombre', 'fecha'];
+                allHolidays?.forEach(h => data.push([h.description, h.date]));
+                break;
+            case 'directed_messages':
+                headers = ['id_unidad', 'texto', 'tipo', 'activo'];
+                directedMessages?.forEach(m => data.push([m.unitId || '', m.text, m.type, m.isActive ? 'SI' : 'NO']));
                 break;
             case 'banks': 
                 headers = ['nombre'];

@@ -60,8 +60,22 @@ export const AFCProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         await fetchAfcs();
     };
 
+    const uploadAFCs = async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await fetch(`${API_URL}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Error al cargar el archivo');
+        }
+        await fetchAfcs();
+    };
+
     return (
-        <AFCContext.Provider value={{ afcs, addAFC, updateAFC, deleteAFC }}>
+        <AFCContext.Provider value={{ afcs, addAFC, updateAFC, deleteAFC, uploadAFCs }}>
             {children}
         </AFCContext.Provider>
     );

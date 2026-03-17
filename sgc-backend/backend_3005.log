@@ -1,0 +1,22 @@
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+Prisma keys: [
+  '$extends',             'bank',
+  'pensionFund',          'healthProvider',
+  'unitType',             'tower',
+  'department',           'owner',
+  'resident',             'personnel',
+  'jornadaGroup',         'iPCProjection',
+  'infrastructureItem',   'equipmentItem',
+  'article',              'correspondence',
+  'parking',              'commonExpenseRule',
+  'commonExpensePayment', 'specialFund',
+  'emergencyNumber',      'communicationTemplate',
+  'communicationHistory', 'systemParameter',
+  'holiday',              'afc',
+  '$parent'
+]
+afc type: object
+holiday type: object
+🚀 SGC Full Backend en http://localhost:3005
+--- TEST-AFC ROUTE HIT ---
+Global prisma status: true

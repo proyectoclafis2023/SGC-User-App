@@ -916,6 +916,100 @@ app.delete('/api/holidays/:id', async (req, res) => {
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
+// Directed Messages
+app.get('/api/directed_messages', async (req, res) => {
+    try {
+        const data = await prisma.directedMessage.findMany({ orderBy: { createdAt: 'desc' } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/directed_messages', async (req, res) => {
+    try {
+        const data = await prisma.directedMessage.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/directed_messages/:id', async (req, res) => {
+    try {
+        const { id, createdAt, ...updateData } = req.body;
+        const data = await prisma.directedMessage.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/directed_messages/:id', async (req, res) => {
+    try {
+        await prisma.directedMessage.delete({ where: { id: req.params.id } });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// Mass Uploads
+app.post('/api/afcs/upload', upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file' });
+    processCSV(req.file.path, async (results) => {
+        try {
+            for (const row of results) {
+                await prisma.afc.create({
+                    data: {
+                        name: row.name || row.nombre || 'AFC',
+                        fixedTermRate: parseFloat(row.fixedTermRate || row.tasa_plazo_fijo) || 0,
+                        indefiniteTermRate: parseFloat(row.indefiniteTermRate || row.tasa_indefinido) || 0,
+                        isActive: row.isActive === 'false' ? false : true
+                    }
+                });
+            }
+            fs.unlinkSync(req.file.path);
+            res.json({ message: `Cargados ${results.length} registros de AFC.` });
+        } catch (err) { res.status(500).json({ error: err.message }); }
+    });
+});
+
+app.post('/api/holidays/upload', upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file' });
+    processCSV(req.file.path, async (results) => {
+        try {
+            for (const row of results) {
+                await prisma.holiday.create({
+                    data: {
+                        name: row.name || row.nombre,
+                        date: new Date(row.date || row.fecha),
+                        isMandatory: row.isMandatory === 'true' || row.irrenunciable === 'SI',
+                        type: row.type || row.tipo || 'nacional'
+                    }
+                });
+            }
+            fs.unlinkSync(req.file.path);
+            res.json({ message: `Cargados ${results.length} feriados.` });
+        } catch (err) { res.status(500).json({ error: err.message }); }
+    });
+});
+
+app.post('/api/directed_messages/upload', upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file' });
+    processCSV(req.file.path, async (results) => {
+        try {
+            for (const row of results) {
+                await prisma.directedMessage.create({
+                    data: {
+                        unitId: row.unitId || row.id_unidad,
+                        text: row.text || row.texto,
+                        type: row.type || row.tipo || 'info',
+                        isActive: row.isActive === 'false' ? false : true
+                    }
+                });
+            }
+            fs.unlinkSync(req.file.path);
+            res.json({ message: `Cargados ${results.length} mensajes dirigidos.` });
+        } catch (err) { res.status(500).json({ error: err.message }); }
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 SGC Full Backend en http://localhost:${PORT}`);
 });

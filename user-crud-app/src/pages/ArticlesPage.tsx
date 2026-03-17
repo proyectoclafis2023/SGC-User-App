@@ -25,6 +25,7 @@ export const ArticlesPage: React.FC = () => {
     const [unit, setUnit] = useState('unidades');
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('all');
+    const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
 
     const handleOpenModal = (art?: Article) => {
         if (art) {
@@ -100,6 +101,38 @@ export const ArticlesPage: React.FC = () => {
         return matchesSearch && matchesCategory;
     });
 
+    const stats = {
+        total: articles.length,
+        lowStock: articles.filter(a => a.minStock > 0 && a.stock <= a.minStock).length,
+        totalValue: articles.reduce((acc, a) => acc + (a.price * a.stock), 0),
+        categories: Array.from(new Set(articles.map(a => a.category))).length
+    };
+
+    const categoryDistribution = articles.reduce((acc: Record<string, number>, a) => {
+        acc[a.category] = (acc[a.category] || 0) + 1;
+        return acc;
+    }, {});
+
+    const maxCategoryCount = Math.max(...Object.values(categoryDistribution), 1);
+
+    const handleLoadBaseArticles = async () => {
+        const base = [
+            { name: 'Guantes de Nitrilo (Caja 100)', description: 'Talla M/L para aseo y manipulación.', category: 'EPP', price: 12500, stock: 10, minStock: 5, unit: 'cajas', allowPersonnelRequest: true },
+            { name: 'Jabón Líquido Neutro 5L', description: 'Bidón para recambio en baños comunes.', category: 'Aseo', price: 8900, stock: 4, minStock: 2, unit: 'bidones', allowPersonnelRequest: true },
+            { name: 'Papel Higiénico Jumbo Roll', description: 'Pack 4 rollos de alto metraje.', category: 'Aseo', price: 15600, stock: 20, minStock: 8, unit: 'packs', allowPersonnelRequest: true },
+            { name: 'Escoba Uso Rudo', description: 'Cerdas plásticas reforzadas.', category: 'Aseo', price: 4500, stock: 6, minStock: 2, unit: 'unidades', allowPersonnelRequest: true },
+            { name: 'Ampolleta LED 9W E27', description: 'Luz fría para pasillos y escalas.', category: 'Ferretería', price: 1990, stock: 50, minStock: 15, unit: 'unidades', allowPersonnelRequest: true },
+            { name: 'Cinta Embalaje Transparente', description: 'Uso oficina y conserjería.', category: 'Oficina', price: 1200, stock: 12, minStock: 4, unit: 'rollos', allowPersonnelRequest: true }
+        ];
+
+        for (const art of base) {
+            if (!articles.find(a => a.name.toLowerCase() === art.name.toLowerCase())) {
+                const { id, ...artData } = art as any;
+                await addArticle(artData);
+            }
+        }
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -130,18 +163,14 @@ export const ArticlesPage: React.FC = () => {
                             }
                         }}
                     />
-                    {(categoryFilter === 'all' || categoryFilter === 'low-stock' || categoryFilter === 'EPP' || categoryFilter === 'E.P.P') && (
-                        <>
-                            <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Carga Masiva
-                            </Button>
-                            <Button variant="secondary" onClick={handleExportCSV}>
-                                <Download className="w-4 h-4 mr-2" />
-                                Exportar CSV
-                            </Button>
-                        </>
-                    )}
+                    <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Carga Masiva
+                    </Button>
+                    <Button variant="secondary" onClick={handleExportCSV}>
+                        <Download className="w-4 h-4 mr-2" />
+                        Exportar CSV
+                    </Button>
                     <Button onClick={() => handleOpenModal()}>
                         <Plus className="w-4 h-4 mr-2" />
                         Nuevo Artículo
@@ -149,143 +178,229 @@ export const ArticlesPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Dash resumido de Stock */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-2">Total Unidades</p>
-                    <p className="text-2xl font-black text-gray-900 dark:text-white">
-                        {(articles || []).reduce((acc, a) => acc + (a.stock || 0), 0)}
-                    </p>
-                </div>
-                <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-12 h-12 bg-amber-500/10 rounded-bl-3xl flex items-center justify-center">
-                        <AlertTriangle className={`w-5 h-5 ${(articles || []).some(a => a.minStock > 0 && a.stock <= a.minStock) ? 'text-amber-500 animate-pulse' : 'text-gray-300'}`} />
+            {/* Volumetry & Chart */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Insumos</p>
+                        <p className="text-3xl font-black text-indigo-600">{stats.total}</p>
+                        <div className="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full mt-4">
+                            <div className="bg-indigo-500 h-full rounded-full" style={{ width: '100%' }}></div>
+                        </div>
                     </div>
-                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none mb-2">Reposición Necesaria</p>
-                    <p className="text-2xl font-black text-gray-900 dark:text-white">
-                        {(articles || []).filter(a => a.minStock > 0 && a.stock <= a.minStock).length} <span className="text-sm font-bold text-gray-400">items</span>
-                    </p>
+                    <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Stock Crítico</p>
+                        <p className={`text-3xl font-black ${stats.lowStock > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>{stats.lowStock}</p>
+                        <div className="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full mt-4">
+                            <div className={`${stats.lowStock > 0 ? 'bg-rose-500' : 'bg-emerald-500'} h-full rounded-full`} style={{ width: `${(stats.lowStock / (stats.total || 1)) * 100}%` }}></div>
+                        </div>
+                    </div>
+                    <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Valor Inventario</p>
+                        <p className="text-2xl font-black text-gray-900 dark:text-white">${stats.totalValue.toLocaleString()}</p>
+                        <p className="text-[9px] text-gray-400 font-bold mt-2">Valorización estimada</p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Categorías</p>
+                        <p className="text-3xl font-black text-amber-500">{stats.categories}</p>
+                        <div className="flex gap-1 mt-4">
+                            {Object.keys(categoryDistribution).slice(0, 5).map(cat => (
+                                <div key={cat} className="h-1.5 bg-amber-200 rounded-full flex-1" title={cat}></div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
-                <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none mb-2">Valor Estimado Cargo</p>
-                    <p className="text-2xl font-black text-gray-900 dark:text-white">
-                        ${(articles || []).reduce((acc, a) => acc + ((a.stock || 0) * (a.price || 0)), 0).toLocaleString('es-CL')}
-                    </p>
-                </div>
-                <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-2">Artículos Activos</p>
-                    <p className="text-2xl font-black text-gray-900 dark:text-white">
-                        {(articles || []).filter(a => a.isActive).length}
-                    </p>
+
+                <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 transform translate-x-4 -translate-y-4 transition-transform group-hover:scale-110">
+                        <Tag className="w-24 h-24 text-indigo-600" />
+                    </div>
+                    <h3 className="text-[11px] font-black uppercase tracking-widest mb-4 text-indigo-600">Distribución</h3>
+                    <div className="space-y-3">
+                        {Object.entries(categoryDistribution).slice(0, 4).map(([cat, count]) => (
+                            <div key={cat} className="space-y-1">
+                                <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter text-gray-600 dark:text-gray-400">
+                                    <span>{cat}</span>
+                                    <span>{count}</span>
+                                </div>
+                                <div className="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                                    <div className="bg-indigo-500 h-full transition-all duration-500" style={{ width: `${(count / maxCategoryCount) * 100}%` }}></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 p-2 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col md:flex-row items-center gap-4">
-                <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl w-full md:w-auto overflow-x-auto no-scrollbar">
-                    <button
-                        onClick={() => setCategoryFilter('all')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${categoryFilter === 'all' ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-sm scale-105' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                        <Filter className="w-3.5 h-3.5" />
-                        Todos
-                    </button>
-                    <button
-                        onClick={() => setCategoryFilter('low-stock')}
-                        className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${categoryFilter === 'low-stock' ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-sm scale-105' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                        Crítico
-                    </button>
-                    {articleCategories.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setCategoryFilter(tab.name)}
-                            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${categoryFilter === tab.name ? 'bg-white dark:bg-gray-900 text-indigo-600 shadow-sm scale-105' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                            <Tag className="w-3.5 h-3.5" />
-                            {tab.name}
-                        </button>
-                    ))}
-                </div>
-                <div className="relative flex-1 w-full px-2">
-                    <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-xl flex flex-col md:flex-row items-center gap-4">
+                <div className="relative flex-1 group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
                     <input
                         type="text"
                         placeholder="Buscar por nombre o descripción..."
-                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-transparent text-gray-900 dark:text-white focus:outline-none transition-all text-sm font-medium"
+                        className="w-full h-12 pl-12 pr-4 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all dark:text-white"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+                
+                <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl gap-1">
+                    <button 
+                        onClick={() => setViewMode('table')}
+                        className={`p-2 rounded-xl transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-600' : 'text-gray-400'}`}
+                        title="Vista Tabla"
+                    >
+                        <Filter className="w-5 h-5" />
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('grid')}
+                        className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-600' : 'text-gray-400'}`}
+                        title="Vista Grilla"
+                    >
+                        <Package className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 custom-scrollbar">
+                    <button
+                        onClick={() => setCategoryFilter('all')}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${categoryFilter === 'all' ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-400 hover:border-indigo-300'}`}
+                    >
+                        Todos
+                    </button>
+                    <button
+                        onClick={() => setCategoryFilter('low-stock')}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${categoryFilter === 'low-stock' ? 'bg-rose-500 border-rose-500 text-white shadow-lg' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-rose-400 hover:border-rose-300'}`}
+                    >
+                        <AlertTriangle className="w-3.5 h-3.5 inline mr-1" /> Stock Bajo
+                    </button>
+                    {articleCategories.map(cat => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setCategoryFilter(cat.name)}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${categoryFilter === cat.name ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-400 hover:border-indigo-300'}`}
+                        >
+                            {cat.name}
+                        </button>
+                    ))}
+                    {articles.length === 0 && (
+                        <Button variant="ghost" size="sm" onClick={handleLoadBaseArticles} className="text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:bg-indigo-50">
+                            <Plus className="w-3 h-3 mr-1" /> Cargar Base
+                        </Button>
+                    )}
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredArticles.map((a) => (
-                    <div key={a.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden group hover:shadow-md transition-all">
-                        <div className="p-5 flex items-start justify-between">
-                            <div className="flex gap-4">
-                                <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600">
-                                    <Package className="w-8 h-8" />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-gray-900 dark:text-white">{a.name}</h3>
-                                    <p className="text-xs text-indigo-600 dark:text-indigo-400 font-black mt-0.5">${(a.price || 0).toLocaleString('es-CL')}</p>
-                                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{a.category}</p>
-                                        <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest ${a.isActive ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
-                                            {a.isActive ? 'Activo' : 'Inactivo'}
-                                        </span>
-                                        {a.allowPersonnelRequest && (
-                                            <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 rounded-lg text-[8px] font-black uppercase tracking-widest">
-                                                Pedible por Personal
+            {viewMode === 'table' ? (
+                <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-xl animate-in fade-in duration-500">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                                    <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Artículo</th>
+                                    <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Categoría</th>
+                                    <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Stock</th>
+                                    <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Precio</th>
+                                    <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                                {filteredArticles.map((art) => (
+                                    <tr key={art.id} className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-gray-900 dark:text-white text-sm">{art.name}</span>
+                                                <span className="text-[10px] text-gray-400 font-medium truncate max-w-[200px]">{art.description || 'Sin descripción'}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-gray-200/50 dark:border-gray-700">
+                                                {art.category}
                                             </span>
-                                        )}
-                                        {a.minStock > 0 && a.stock <= a.minStock && (
-                                            <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded-lg text-[8px] font-black uppercase tracking-widest animate-pulse">
-                                                <AlertTriangle className="w-2.5 h-2.5" />
-                                                Reposición Necesaria
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="mt-3 flex items-center gap-4">
-                                        <div className="flex flex-col">
-                                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Stock Actual</span>
-                                            <span className={`text-sm font-black ${a.minStock > 0 && a.stock <= a.minStock ? 'text-amber-600' : 'text-gray-900 dark:text-white'}`}>{a.stock} un.</span>
-                                        </div>
-                                        <div className="flex flex-col border-l border-gray-100 dark:border-gray-800 pl-4">
-                                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Stock Mínimo</span>
-                                            <span className="text-sm font-black text-gray-500 dark:text-gray-400">{a.minStock} un.</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => handleOpenModal(a)} className="p-2 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-                                    <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button onClick={() => deleteArticle(a.id)} className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                        {a.description && (
-                            <div className="px-5">
-                                <p className="text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-2.5 rounded-xl italic line-clamp-2">
-                                    {a.description}
-                                </p>
-                            </div>
-                        )}
-                        <div className="p-5 pt-2">
-                            <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                <div
-                                    className={`h-full transition-all duration-1000 ${a.minStock > 0 && a.stock <= a.minStock ? 'bg-amber-500' : 'bg-indigo-500'}`}
-                                    style={{ width: `${Math.min(100, (a.stock / (a.minStock > 0 ? a.minStock * 3 : 100)) * 100)}%` }}
-                                />
-                            </div>
-                        </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col gap-1">
+                                                <span className={`text-sm font-black ${art.stock <= art.minStock ? 'text-rose-500 animate-pulse' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                    {art.stock} {art.unit}
+                                                </span>
+                                                {art.stock <= art.minStock && (
+                                                    <span className="text-[8px] font-black uppercase text-rose-400 tracking-tighter">Bajo Stock (Mín: {art.minStock})</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">${art.price.toLocaleString()}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button onClick={() => handleOpenModal(art)} className="p-2 text-gray-400 hover:text-indigo-600 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all">
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={() => deleteArticle(art.id)} className="p-2 text-gray-400 hover:text-rose-500 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {filteredArticles.length === 0 && (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-12 text-center">
+                                            <div className="flex flex-col items-center">
+                                                <Package className="w-12 h-12 text-gray-200 mb-3" />
+                                                <p className="text-gray-400 font-medium">No se encontraron artículos.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
-                ))}
-            </div>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in zoom-in-95 duration-500">
+                    {filteredArticles.map((art) => (
+                        <div key={art.id} className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-6 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+                            <div className="flex justify-between items-start mb-4">
+                                <span className="text-[10px] font-black px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 uppercase tracking-widest border border-indigo-100 dark:border-indigo-900/30">
+                                    {art.category}
+                                </span>
+                                {art.stock <= art.minStock && <AlertTriangle className="w-5 h-5 text-rose-500 animate-pulse" />}
+                            </div>
+                            <h3 className="text-lg font-black text-gray-900 dark:text-white truncate mb-1">{art.name}</h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-6 min-h-[32px]">{art.description || 'Sin descripción adicional.'}</p>
+                            
+                            <div className="grid grid-cols-2 gap-3 mb-6">
+                                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Stock</p>
+                                    <p className={`text-lg font-black ${art.stock <= art.minStock ? 'text-rose-500' : 'text-gray-900 dark:text-white'}`}>
+                                        {art.stock} <span className="text-[9px] font-bold opacity-50">{art.unit}</span>
+                                    </p>
+                                </div>
+                                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Precio</p>
+                                    <p className="text-sm font-black text-indigo-600 dark:text-indigo-400">${art.price.toLocaleString()}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                                <button
+                                    onClick={() => handleOpenModal(art)}
+                                    className="flex-1 py-3 rounded-2xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+                                >
+                                    <Edit2 className="w-3.5 h-3.5" /> Editar
+                                </button>
+                                <button
+                                    onClick={() => deleteArticle(art.id)}
+                                    className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:bg-rose-100 transition-colors"
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">

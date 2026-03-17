@@ -514,6 +514,7 @@ export interface AFCContextType {
     addAFC: (afc: Omit<AFC, 'id' | 'createdAt'>) => Promise<void>;
     updateAFC: (afc: AFC) => Promise<void>;
     deleteAFC: (id: string) => Promise<void>;
+    uploadAFCs: (file: File) => Promise<void>;
 }
 
 export interface HolidayContextType {
@@ -521,6 +522,7 @@ export interface HolidayContextType {
     addHoliday: (holiday: Omit<Holiday, 'id' | 'createdAt'>) => Promise<void>;
     updateHoliday: (holiday: Holiday) => Promise<void>;
     deleteHoliday: (id: string) => Promise<void>;
+    uploadHolidays: (file: File) => Promise<void>;
 }
 
 export interface ProfilePermissions {
@@ -644,6 +646,7 @@ export interface DirectedMessageContextType {
     addMessage: (message: Omit<DirectedMessage, 'id' | 'createdAt'>) => Promise<void>;
     updateMessage: (message: DirectedMessage) => Promise<void>;
     deleteMessage: (id: string) => Promise<void>;
+    uploadMessages: (file: File) => Promise<void>;
 }
 
 export interface ArticleDelivery {

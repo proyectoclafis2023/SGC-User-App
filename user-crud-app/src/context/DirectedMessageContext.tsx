@@ -60,8 +60,22 @@ export const DirectedMessageProvider: React.FC<{ children: ReactNode }> = ({ chi
         }
     };
 
+    const uploadMessages = async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await fetch(`${API_URL}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Error al cargar el archivo');
+        }
+        await fetchMessages();
+    };
+
     return (
-        <DirectedMessageContext.Provider value={{ messages, addMessage, updateMessage, deleteMessage }}>
+        <DirectedMessageContext.Provider value={{ messages, addMessage, updateMessage, deleteMessage, uploadMessages }}>
             {children}
         </DirectedMessageContext.Provider>
     );

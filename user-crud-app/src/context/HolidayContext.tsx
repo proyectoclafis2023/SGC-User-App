@@ -60,8 +60,22 @@ export const HolidayProvider: React.FC<{ children: ReactNode }> = ({ children })
         await fetchHolidays();
     };
 
+    const uploadHolidays = async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await fetch(`${API_URL}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Error al cargar el archivo');
+        }
+        await fetchHolidays();
+    };
+
     return (
-        <HolidayContext.Provider value={{ holidays, addHoliday, updateHoliday, deleteHoliday }}>
+        <HolidayContext.Provider value={{ holidays, addHoliday, updateHoliday, deleteHoliday, uploadHolidays }}>
             {children}
         </HolidayContext.Provider>
     );
