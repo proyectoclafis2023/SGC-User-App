@@ -916,6 +916,32 @@ app.delete('/api/holidays/:id', async (req, res) => {
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
+// System Settings
+app.get('/api/system_settings', async (req, res) => {
+    try {
+        const data = await prisma.systemSettings.findMany();
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/system_settings', async (req, res) => {
+    try {
+        const data = await prisma.systemSettings.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/system_settings/:id', async (req, res) => {
+    try {
+        const { id, createdAt, updatedAt, ...updateData } = req.body;
+        const data = await prisma.systemSettings.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 SGC Full Backend en http://localhost:${PORT}`);
 });

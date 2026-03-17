@@ -328,3 +328,26 @@ model Afc {
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
 }
+
+model SystemSettings {
+  id                  String   @id @default(cuid())
+  systemName          String   @default("Administración GAG")
+  systemIcon          String   @default("G")
+  systemLogo          String?
+  systemFavicon       String?
+  cameraBackupDays    Int      @default(7)
+  darkMode            Boolean  @default(false)
+  theme               String   @default("light")
+  adminName           String   @default("")
+  adminRut            String   @default("")
+  condoRut            String   @default("")
+  condoAddress        String   @default("")
+  adminPhone          String   @default("")
+  adminSignature      String?
+  deletionPassword    String   @default("")
+  vacationAccrualRate Float    @default(1.25)
+  paymentDeadlineDay  Int      @default(5)
+  maxArrearsMonths    Int      @default(3)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}

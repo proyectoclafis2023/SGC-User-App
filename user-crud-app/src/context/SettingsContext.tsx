@@ -68,6 +68,9 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }, [settings]);
 
     const updateSettings = async (newSettings: SystemSettings) => {
+        // Optimistic update
+        setSettings(newSettings);
+        
         try {
             const method = (newSettings as any).id ? 'PUT' : 'POST';
             const url = (newSettings as any).id ? `${API_URL}/${(newSettings as any).id}` : API_URL;
@@ -79,21 +82,19 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             });
             
             if (response.ok) {
-                await fetchSettings();
+                const updatedData = await response.json();
+                setSettings(prev => ({ ...prev, ...updatedData }));
             }
         } catch (e) {
             console.error('Error saving settings:', e);
-            setSettings(newSettings);
+            // Revert or just keep the optimistic state? 
+            // Better to keep it for UX unless it's critical.
         }
     };
 
     const toggleTheme = () => {
         const currentTheme = settings.theme || 'light';
-        let nextTheme: 'light' | 'dark' | 'modern';
-
-        if (currentTheme === 'light') nextTheme = 'dark';
-        else if (currentTheme === 'dark') nextTheme = 'modern';
-        else nextTheme = 'light';
+        const nextTheme: 'light' | 'dark' = currentTheme === 'light' ? 'dark' : 'light';
 
         updateSettings({
             ...settings,

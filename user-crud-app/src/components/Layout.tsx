@@ -207,7 +207,7 @@ export const Layout: React.FC = () => {
     const isResidentOrOwner = user?.role === 'resident' || user?.role === 'owner';
 
     return (
-        <div className={`min-h-screen font-sans selection:bg-indigo-500/30 flex transition-colors duration-300 ${settings.theme === 'modern' ? 'bg-[#f0f2ff]' : 'bg-[#f4f6f8] dark:bg-black'}`}>
+        <div className={`min-h-screen font-sans selection:bg-indigo-500/30 flex transition-colors duration-300 bg-[var(--app-bg)] text-[var(--text-primary)]`}>
             {/* Sidebar Overlay for Mobile */}
             {isMobileMenuOpen && (
                 <div
@@ -220,7 +220,7 @@ export const Layout: React.FC = () => {
             <aside className={`
                 ${isCollapsed ? 'w-20' : 'w-72'} 
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-                ${settings.theme === 'modern' ? 'bg-[#1e1b4b] border-indigo-900/40 text-indigo-100' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'}
+                bg-[var(--sidebar-bg)] border-[var(--border-color)] text-[var(--text-primary)]
                 border-r flex flex-col fixed md:sticky top-0 h-screen transition-all duration-500 z-50 
                 shadow-2xl shadow-gray-200/20 dark:shadow-none
             `}>
@@ -416,7 +416,7 @@ export const Layout: React.FC = () => {
 
             {/* Main Content */}
             <main className="flex-1 overflow-auto flex flex-col">
-                <header className={`h-20 backdrop-blur-xl border-b flex items-center justify-between px-8 sticky top-0 z-20 ${settings.theme === 'modern' ? 'bg-[#1e1b4b]/80 border-indigo-900/40 shadow-sm' : 'bg-white/80 dark:bg-[#020617]/80 border-gray-100 dark:border-gray-800'}`}>
+                <header className={`h-20 backdrop-blur-xl border-b flex items-center justify-between px-8 sticky top-0 z-20 bg-[var(--header-bg)] border-[var(--border-color)] shadow-sm`}>
                     <div className="flex items-center gap-4">
                         <button
                             className="md:hidden p-2 -ml-2 text-gray-400 hover:text-indigo-600 transition-colors"
@@ -426,21 +426,20 @@ export const Layout: React.FC = () => {
                         </button>
                         <button
                             onClick={() => setIsCollapsed(!isCollapsed)}
-                            className="hidden md:flex p-2 text-gray-400 hover:text-indigo-600 transition-colors bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700"
+                            className="hidden md:flex p-2 text-gray-400 hover:text-indigo-600 transition-colors bg-[var(--app-bg)] rounded-xl border border-[var(--border-color)]"
                         >
                             <Menu className="w-5 h-5" />
                         </button>
-                        <span className={`hidden lg:block font-black text-[10px] uppercase tracking-[0.2em] ${settings.theme === 'modern' ? 'text-indigo-200' : 'text-gray-400'}`}>Plataforma de Gestion Comunitaria</span>
+                        <span className={`hidden lg:block font-black text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]`}>Plataforma de Gestion Comunitaria</span>
                     </div>
 
                     <div className="flex items-center gap-4">
 
                         <button
                             onClick={toggleTheme}
-                            className="p-3 rounded-2xl text-gray-400 border border-gray-100 dark:border-gray-800 hover:text-indigo-600 hover:bg-white dark:hover:bg-gray-800 hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                            className="p-3 rounded-2xl text-gray-400 border border-[var(--border-color)] hover:text-indigo-600 hover:bg-[var(--card-bg)] hover:shadow-lg transition-all duration-300 flex items-center gap-2"
                         >
-                            {settings.theme === 'dark' ? <Sun className="w-5 h-5 text-amber-500" /> : settings.theme === 'modern' ? <Moon className="w-5 h-5 text-indigo-400" /> : <Zap className="w-5 h-5 text-indigo-600" />}
-                            {settings.theme === 'modern' && <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Modern</span>}
+                            {settings.theme === 'dark' ? <Sun className="w-5 h-5 text-amber-500" /> : <Moon className="w-5 h-5 text-indigo-600" />}
                         </button>
                         <div className="lg:hidden w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black">
                             {user?.name?.charAt(0)}
