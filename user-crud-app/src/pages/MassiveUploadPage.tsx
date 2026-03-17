@@ -11,7 +11,7 @@ import { usePensionFunds } from '../context/PensionFundContext';
 import { useSpecialConditions } from '../context/SpecialConditionContext';
 import { useUnitTypes } from '../context/UnitTypeContext';
 import { useCommonExpenses } from '../context/CommonExpenseContext';
-import { Upload, Download, AlertCircle, Info, CheckCircle2, XCircle, History, Database, FileText, Package, Users, ShieldCheck, Building2, Landmark, LifeBuoy, AlertTriangle, Banknote, Home, Tag, LineChart, Phone, Mail, Smartphone } from 'lucide-react';
+import { Upload, Download, AlertCircle, Info, CheckCircle2, XCircle, History, Database, FileText, Package, Users, ShieldCheck, Building2, Landmark, LifeBuoy, AlertTriangle, Banknote, Home, Tag, LineChart, Phone, Mail, Smartphone, Calendar } from 'lucide-react';
 import type { 
     Article, Personnel, Resident, Owner, Bank, FixedAsset, HealthProvider, 
     PensionFund, SpecialCondition, UnitType, Tower, Department, 
@@ -29,10 +29,13 @@ import { useInfrastructureItems } from '../context/InfrastructureItemContext';
 import { useEquipmentItems } from '../context/EquipmentItemContext';
 import { useSystemMessages } from '../context/SystemMessageContext';
 import { useEmergencyNumbers } from '../context/EmergencyNumberContext';
+import { useAFC } from '../context/AFCContext';
+import { useHolidays } from '../context/HolidayContext';
+import { useCommunications } from '../context/CommunicationContext';
 
 import * as XLSX from 'xlsx';
 
-type EntityType = 'articles' | 'personnel' | 'residents' | 'owners' | 'banks' | 'assets' | 'health' | 'afp' | 'conditions' | 'units' | 'extra_funds' | 'income' | 'community_expenses' | 'towers' | 'departments' | 'common_spaces' | 'parking' | 'article_categories' | 'ipc' | 'infra_items' | 'equip_items' | 'messages' | 'emergency_numbers';
+type EntityType = 'articles' | 'personnel' | 'residents' | 'owners' | 'banks' | 'assets' | 'health' | 'afp' | 'conditions' | 'units' | 'extra_funds' | 'income' | 'community_expenses' | 'towers' | 'departments' | 'common_spaces' | 'parking' | 'article_categories' | 'ipc' | 'infra_items' | 'equip_items' | 'messages' | 'emergency_numbers' | 'afc_master' | 'holiday_master' | 'comm_templates';
 
 interface ProcessingError {
     row: number;
@@ -70,6 +73,9 @@ export const MassiveUploadPage: React.FC = () => {
     const { items: equipItems, addItem: addEquipItem, updateItem: updateEquipItem } = useEquipmentItems();
     const { messages: systemMessages, addMessage: addSystemMessage, updateMessage: updateSystemMessage } = useSystemMessages();
     const { numbers: emergencyNumbers, addNumber, updateNumber } = useEmergencyNumbers();
+    const { afcs, addAFC, updateAFC } = useAFC();
+    const { holidays, addHoliday, updateHoliday } = useHolidays();
+    const { templates: commTemplates, addTemplate, updateTemplate } = useCommunications();
 
     const entities: { value: EntityType; label: string; icon: any; requiredHeaders: string[]; description: string; category: string }[] = [
         // Operaciones y Soporte
@@ -91,6 +97,8 @@ export const MassiveUploadPage: React.FC = () => {
         { value: 'health', label: 'Previsiones / Salud', icon: LifeBuoy, requiredHeaders: ['nombre'], description: 'Isapres y Fonasa.', category: 'Recursos Humanos' },
         { value: 'afp', label: 'AFPs', icon: FileText, requiredHeaders: ['nombre'], description: 'Administradoras de Fondos de Pensiones.', category: 'Recursos Humanos' },
         { value: 'banks', label: 'Bancos', icon: Landmark, requiredHeaders: ['nombre'], description: 'Instituciones bancarias.', category: 'Recursos Humanos' },
+        { value: 'afc_master', label: 'Maestro AFC', icon: ShieldCheck, requiredHeaders: ['nombre', 'tasa_plazo_fijo', 'tasa_indefinido'], description: 'Tasas del Seguro de Cesantía (AFC).', category: 'Recursos Humanos' },
+        { value: 'holiday_master', label: 'Maestro Feriados', icon: Calendar, requiredHeaders: ['fecha', 'descripcion'], description: 'Días feriados para el cálculo de nómina y turnos.', category: 'Recursos Humanos' },
 
         // Infraestructura
         { value: 'towers', label: 'Edificios (Torres)', icon: Building2, requiredHeaders: ['nombre'], description: 'Estructuras principales del condominio.', category: 'Infraestructura' },
@@ -104,6 +112,7 @@ export const MassiveUploadPage: React.FC = () => {
         { value: 'extra_funds', label: 'Maestro Fondos Especiales', icon: Landmark, requiredHeaders: ['nombre', 'codigo_fondo'], description: 'Fondos de reserva o emergencia.', category: 'Finanzas y Contabilidad' },
         { value: 'assets', label: 'Activo Fijo', icon: Database, requiredHeaders: ['descripcion'], description: 'Bienes del condominio sujetos a depreciación.', category: 'Finanzas y Contabilidad' },
         { value: 'ipc', label: 'Maestro IPC', icon: LineChart, requiredHeaders: ['nombre', 'tasa'], description: 'Índices de corrección monetaria.', category: 'Finanzas y Contabilidad' },
+        { value: 'comm_templates', label: 'Mensajes Prefijados', icon: Mail, requiredHeaders: ['nombre', 'asunto', 'mensaje'], description: 'Plantillas de comunicación para envíos masivos por email.', category: 'Finanzas y Contabilidad' },
     ];
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,7 +234,9 @@ export const MassiveUploadPage: React.FC = () => {
                                         price: Number(obj.precio || 0),
                                         stock: Number(obj.stock || 0),
                                         minStock: Number(obj.stock_minimo || 0),
-                                        isActive: obj.activo === 'SI' || obj.activo === true
+                                        isActive: obj.activo === 'SI' || obj.activo === true,
+                                        unit: String(obj.unidad || 'unidades'),
+                                        allowPersonnelRequest: obj.permite_solicitud === 'SI' || obj.permite_solicitud === true
                                     };
                                     if (existingArticle) {
                                         await updateArticle({ ...existingArticle, ...articleData });
@@ -293,7 +304,7 @@ export const MassiveUploadPage: React.FC = () => {
                                         await updateOwner({ ...existingOwner, ...ownerData });
                                         Object.assign(existingOwner, ownerData);
                                     } else {
-                                        const newOId = await addOwner({ ...ownerData, unitIds: [] });
+                                        const newOId = await addOwner(ownerData);
                                         if (newOId) localOwners.push({ ...ownerData, id: newOId } as any);
                                     }
                                     break;
@@ -525,6 +536,7 @@ export const MassiveUploadPage: React.FC = () => {
                                     const ipcData = {
                                         name: String(obj.nombre),
                                         ipcRate: Number(obj.tasa),
+                                        ponderadoRate: Number(obj.ponderado || 0),
                                         description: String(obj.descripcion || ''),
                                         isActive: true
                                     };
@@ -589,6 +601,49 @@ export const MassiveUploadPage: React.FC = () => {
                                         await updateNumber(existingNum.id, numData);
                                     } else {
                                         await addNumber(numData);
+                                    }
+                                    break;
+                                case 'afc_master':
+                                    if (!obj.nombre) throw new Error('Nombre del registro AFC es obligatorio');
+                                    const existingAFC = afcs.find(a => a.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                    const afcData = {
+                                        name: String(obj.nombre),
+                                        fixedTermRate: Number(obj.tasa_plazo_fijo || 0),
+                                        indefiniteTermRate: Number(obj.tasa_indefinido || 0),
+                                        isActive: true
+                                    };
+                                    if (existingAFC) {
+                                        await updateAFC({ ...existingAFC, ...afcData });
+                                    } else {
+                                        await addAFC(afcData);
+                                    }
+                                    break;
+                                case 'holiday_master':
+                                    if (!obj.fecha || !obj.descripcion) throw new Error('Fecha y Descripción son obligatorios');
+                                    const existingHoliday = holidays.find(h => h.date.split('T')[0] === String(obj.fecha).split('T')[0]);
+                                    const hData = {
+                                        date: String(obj.fecha),
+                                        description: String(obj.descripcion)
+                                    };
+                                    if (existingHoliday) {
+                                        await updateHoliday({ ...existingHoliday, ...hData });
+                                    } else {
+                                        await addHoliday(hData);
+                                    }
+                                    break;
+                                case 'comm_templates':
+                                    if (!obj.nombre || !obj.asunto || !obj.mensaje) throw new Error('Nombre, Asunto y Mensaje son obligatorios');
+                                    const existingTemplate = commTemplates.find(t => t.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                    const tplData = {
+                                        name: String(obj.nombre),
+                                        subject: String(obj.asunto),
+                                        message: String(obj.mensaje),
+                                        type: (obj.tipo || 'general') as any
+                                    };
+                                    if (existingTemplate) {
+                                        await updateTemplate({ ...existingTemplate, ...tplData });
+                                    } else {
+                                        await addTemplate(tplData);
                                     }
                                     break;
                             }
@@ -730,6 +785,18 @@ export const MassiveUploadPage: React.FC = () => {
             case 'emergency_numbers': 
                 headers = ['nombre', 'telefono', 'descripcion', 'categoria'];
                 emergencyNumbers?.forEach((n: EmergencyNumber) => data.push([n.name, n.phone, n.description, n.category]));
+                break;
+            case 'afc_master':
+                headers = ['nombre', 'tasa_plazo_fijo', 'tasa_indefinido'];
+                afcs?.forEach(a => data.push([a.name, a.fixedTermRate, a.indefiniteTermRate]));
+                break;
+            case 'holiday_master':
+                headers = ['fecha', 'descripcion'];
+                holidays?.forEach(h => data.push([h.date.split('T')[0], h.description]));
+                break;
+            case 'comm_templates':
+                headers = ['nombre', 'asunto', 'mensaje', 'tipo'];
+                commTemplates?.forEach(t => data.push([t.name, t.subject, t.message, t.type]));
                 break;
         }
 
@@ -1044,7 +1111,7 @@ export const MassiveUploadPage: React.FC = () => {
                                         <XCircle className="w-4 h-4" /> Errores encontrados ({errors.length})
                                     </h4>
                                     <Button 
-                                        variant="outline" 
+                                        variant="secondary" 
                                         size="sm" 
                                         onClick={downloadErrorReport}
                                         className="h-7 px-3 text-[9px] font-black uppercase tracking-tighter border-red-200 text-red-700 hover:bg-red-100"
