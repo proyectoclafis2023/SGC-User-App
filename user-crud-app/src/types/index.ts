@@ -169,12 +169,12 @@ export interface Article {
     name: string;
     description?: string;
     category: string;
+    unit: string;
     price: number;
     stock: number;
     minStock: number;
     isActive: boolean;
     allowPersonnelRequest: boolean;
-    canRequestByStaff?: boolean;
     isArchived?: boolean;
 }
 
@@ -478,6 +478,23 @@ export interface PensionFund {
     isArchived?: boolean;
 }
 
+export interface AFC {
+    id: string;
+    name: string;
+    fixedTermRate: number;    // % Seguro Cesantía Trabajador a Plazo
+    indefiniteTermRate: number; // % Seguro Cesantía Trabajador Indefinido
+    isActive: boolean;
+    createdAt: string;
+}
+
+export interface Holiday {
+    id: string;
+    date: string;
+    description: string;
+    isArchived?: boolean;
+    createdAt: string;
+}
+
 export interface HealthProviderContextType {
     providers: HealthProvider[];
     addProvider: (provider: Omit<HealthProvider, 'id'>) => Promise<void>;
@@ -490,6 +507,20 @@ export interface PensionFundContextType {
     addFund: (fund: Omit<PensionFund, 'id'>) => Promise<void>;
     updateFund: (fund: PensionFund) => Promise<void>;
     deleteFund: (id: string) => Promise<void>;
+}
+
+export interface AFCContextType {
+    afcs: AFC[];
+    addAFC: (afc: Omit<AFC, 'id' | 'createdAt'>) => Promise<void>;
+    updateAFC: (afc: AFC) => Promise<void>;
+    deleteAFC: (id: string) => Promise<void>;
+}
+
+export interface HolidayContextType {
+    holidays: Holiday[];
+    addHoliday: (holiday: Omit<Holiday, 'id' | 'createdAt'>) => Promise<void>;
+    updateHoliday: (holiday: Holiday) => Promise<void>;
+    deleteHoliday: (id: string) => Promise<void>;
 }
 
 export interface ProfilePermissions {

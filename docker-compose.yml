@@ -1,0 +1,62 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_DATABASE: user_crud
+    ports:
+      - "3309:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./user-crud-app/database_setup.sql:/docker-entrypoint-initdb.d/setup.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-proot"]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    image: node:20
+    working_dir: /app
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./sgc-backend:/app
+      - /app/node_modules
+    environment:
+      - PORT=3001
+      - DATABASE_URL=file:./prisma/dev.db
+    command: sh -c "npm install && npx prisma generate && npm run dev"
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./user-crud-app:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - backend
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  dbgate:
+    image: dbgate/dbgate
+    restart: always
+    ports:
+      - "8081:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

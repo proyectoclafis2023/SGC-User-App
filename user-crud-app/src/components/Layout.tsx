@@ -254,14 +254,14 @@ export const Layout: React.FC = () => {
                             isCollapsed={isCollapsed}
                             children={[
                                 { label: 'Reporte Diario', path: '/reporte-diario', icon: FileText },
-                                { label: 'Bitácora Turnos', path: '/bitacora-turnos', icon: History },
+                                { label: 'Libro de Novedades', path: '/bitacora-turnos', icon: History },
                                 { label: 'Controles', isHeader: true, icon: ShieldCheck },
                                 { label: 'Visitas', path: '/visitas', icon: Users },
                                 { label: 'Encomiendas', path: '/correspondencia', icon: Package },
                                 { label: 'Contratistas', path: '/registro-contratistas', icon: HardHat },
                                 { label: 'Gestión', isHeader: true, icon: ClipboardCheck },
                                 { label: 'Solicitud Insumos', path: '/solicitud-insumos', icon: Package },
-                                { label: 'Cámaras / Grabaciones', path: '/camaras', icon: Video },
+                                { label: 'Gestión Registros CCTV', path: '/camaras', icon: Video },
                             ]}
                         />
                     )}
@@ -356,13 +356,15 @@ export const Layout: React.FC = () => {
                                 { label: 'Recursos Humanos', isHeader: true, icon: Briefcase },
                                 { label: 'Previsiones', path: '/previsiones', icon: Briefcase },
                                 { label: 'AFPs', path: '/afps', icon: ShieldCheck },
+                                { label: 'Maestro AFC', path: '/afc', icon: ShieldCheck },
                                 { label: 'Maestro Insumos y EPP', path: '/articulos-personal', icon: ShieldCheck },
                                 { label: 'Maestro Categorías de Insumos', path: '/maestro-categorias-articulos', icon: Tag },
+                                { label: 'Maestro Feriados', path: '/feriados', icon: Calendar },
 
                                 { label: 'Finanzas y Operación', isHeader: true, icon: Landmark },
                                 { label: 'Bancos', path: '/bancos', icon: Landmark },
                                 { label: 'Maestro IPC', path: '/maestro-ipc', icon: BarChart3 },
-                                { label: 'Maestros Operativos', path: '/maestros-operativos', icon: History },
+                                { label: 'Maestro de Bitácora y Cámaras', path: '/maestros-operativos', icon: History },
                                 { label: 'Mensajes Prefijados', path: '/maestro-mensajes', icon: Mail },
                                 { label: 'Números Emergencia', path: '/maestro-emergencias', icon: Phone },
                                 { label: 'Condiciones Especiales', path: '/condiciones-especiales', icon: Shield },

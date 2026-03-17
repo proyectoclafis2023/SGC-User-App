@@ -81,6 +81,18 @@ export const PayslipDocument: React.FC<Props> = ({ payslip, person, health, fund
                             <span className="text-gray-600">Previsión ({fund?.name || 'AFP'})</span>
                             <span className="font-bold">{formatCurrency(payslip.pensionDiscount)}</span>
                         </div>
+                        {payslip.apvDiscount > 0 && (
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">APV</span>
+                                <span className="font-bold">{formatCurrency(payslip.apvDiscount)}</span>
+                            </div>
+                        )}
+                        {payslip.insuranceDiscount > 0 && (
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Seguro Complementario</span>
+                                <span className="font-bold">{formatCurrency(payslip.insuranceDiscount)}</span>
+                            </div>
+                        )}
                         {payslip.advancesDiscount > 0 && (
                             <div className="flex justify-between text-sm text-red-600 font-bold">
                                 <span>Adelantos de Sueldo</span>

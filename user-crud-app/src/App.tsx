@@ -96,6 +96,10 @@ import { CondoBoardProvider } from './context/CondoBoardContext';
 import { CondoBoardPage } from './pages/CondoBoardPage';
 import { ArticleCategoriesPage } from './pages/ArticleCategoriesPage';
 import { AvailableUnitsPage } from './pages/AvailableUnitsPage';
+import { AFCProvider } from './context/AFCContext';
+import { HolidayProvider } from './context/HolidayContext';
+import { AFCPage } from './pages/AFCPage';
+import { HolidaysPage } from './pages/HolidaysPage';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, user } = useAuth();
@@ -155,7 +159,9 @@ function App() {
                                                                                     <JornadaGroupProvider>
 
                                                                                       <CondoBoardProvider>
-                                                                                        <Routes>
+                                                        <AFCProvider>
+                                                          <HolidayProvider>
+                                                            <Routes>
                                                                                           <Route path="/login" element={<LoginPage />} />
                                                                                           <Route path="/visor-mensajes" element={<PublicCarouselPage />} />
                                                                                           <Route
@@ -173,6 +179,7 @@ function App() {
                                                                                             <Route path="propietarios" element={<OwnersPage />} />
                                                                                             <Route path="previsiones" element={<PrevisionesPage />} />
                                                                                             <Route path="afps" element={<AFPsPage />} />
+                                                              <Route path="afc" element={<AFCPage />} />
                                                                                             <Route path="perfiles" element={<ProfilesPage />} />
                                                                                             <Route path="infraestructura" element={<InfrastructurePage />} />
                                                                                             <Route path="tipos-unidad" element={<UnitTypesPage />} />
@@ -183,8 +190,9 @@ function App() {
                                                                                             <Route path="estacionamientos" element={<ParkingPage />} />
                                                                                             <Route path="bancos" element={<BanksPage />} />
                                                                                             <Route path="articulos-personal" element={<ArticlesPage />} />
-                                                                                            <Route path="maestro-categorias-articulos" element={<ArticleCategoriesPage />} />
-                                                                                            <Route path="solicitud-insumos" element={<StaffArticleRequestsPage />} />
+                                                              <Route path="maestro-categorias-articulos" element={<ArticleCategoriesPage />} />
+                                                              <Route path="feriados" element={<HolidaysPage />} />
+                                                              <Route path="solicitud-insumos" element={<StaffArticleRequestsPage />} />
                                                                                             <Route path="entregas-articulos" element={<ArticleDeliveriesPage />} />
                                                                                             <Route path="configuracion" element={<SettingsPage />} />
                                                                                             <Route path="gastos-comunes" element={<CommonExpensePaymentsPage />} />
@@ -211,8 +219,8 @@ function App() {
                                                                                             <Route path="maestro-emergencias" element={<EmergencyNumbersPage isMaster />} />
                                                                                             <Route path="servicios-residentes" element={<ResidentsServicesPage />} />
                                                                                             <Route path="cambio-clave" element={<ChangePasswordPage />} />
-                                                                                            <Route path="maestros-operativos" element={<OperationalMastersPage />} />
-                                                                                            <Route path="maestro-camaras" element={<CameraMasterPage />} />
+                                                                                            <Route path="maestros-operativos/:tab?" element={<OperationalMastersPage />} />
+                                                                                            <Route path="maestro-camaras" element={<Navigate to="/maestros-operativos/camaras" replace />} />
                                                                                             <Route path="maestro-correos" element={<EmailSettingsMasterPage />} />
                                                                                             <Route path="maestro-mensajes" element={<MessageMasterPage />} />
                                                                                             <Route path="parametros" element={<ParametersPage />} />
@@ -220,6 +228,8 @@ function App() {
                                                                                             <Route path="*" element={<Navigate to="/" replace />} />
                                                                                           </Route>
                                                                                         </Routes>
+                                                          </HolidayProvider>
+                                                        </AFCProvider>
                                                                                       </CondoBoardProvider>
 
                                                                                     </JornadaGroupProvider>

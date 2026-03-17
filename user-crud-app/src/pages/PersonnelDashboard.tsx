@@ -4,7 +4,7 @@ import { usePersonnel } from '../context/PersonnelContext';
 import { usePayslips } from '../context/PayslipContext';
 import { useShiftReport } from '../context/ShiftReportContext';
 import {
-    Clock, Banknote, Calendar, FileText, TrendingUp, CheckCircle2, History
+    Clock, Banknote, Calendar, FileText, TrendingUp, CheckCircle2, History, ShoppingCart
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { ShiftReport } from '../types';
@@ -85,6 +85,32 @@ export const PersonnelDashboard: React.FC = () => {
                     <p className="text-3xl font-black text-gray-900 dark:text-white">
                         {completedShifts}
                     </p>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+                        <TrendingUp className="w-6 h-6 text-indigo-500" />
+                        Acciones Rápidas
+                    </h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Link to="/solicitud-insumos" className="bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between group hover:border-emerald-500 transition-all hover:shadow-lg hover:shadow-emerald-500/10">
+                        <div className="flex items-center gap-5">
+                            <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                                <ShoppingCart className="w-7 h-7" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Bodega Digital</p>
+                                <p className="text-lg font-black text-gray-900 dark:text-white">Solicitud Insumos</p>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">Entrega Inmediata</span>
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
                 </div>
             </div>
 

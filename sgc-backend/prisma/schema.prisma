@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,71 +8,71 @@ datasource db {
 }
 
 model Bank {
-  id         String   @id @default(cuid())
+  id         String      @id @default(cuid())
   name       String
-  isArchived Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  isArchived Boolean     @default(false)
+  createdAt  DateTime    @default(now())
   personnel  Personnel[]
 }
 
 model PensionFund {
-  id           String   @id @default(cuid())
+  id           String      @id @default(cuid())
   name         String
   discountRate Float
-  isArchived   Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  isArchived   Boolean     @default(false)
+  createdAt    DateTime    @default(now())
   personnel    Personnel[]
 }
 
 model HealthProvider {
-  id           String   @id @default(cuid())
+  id           String      @id @default(cuid())
   name         String
-  type         String   // 'fonasa' or 'isapre'
+  type         String
   discountRate Float
-  isArchived   Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  isArchived   Boolean     @default(false)
+  createdAt    DateTime    @default(now())
   personnel    Personnel[]
 }
 
 model UnitType {
-  id                 String       @id @default(cuid())
+  id                 String              @id @default(cuid())
   name               String
-  baseCommonExpense Float
-  isArchived         Boolean      @default(false)
-  createdAt          DateTime     @default(now())
-  departments        Department[]
+  baseCommonExpense  Float
+  isArchived         Boolean             @default(false)
+  createdAt          DateTime            @default(now())
   commonExpenseRules CommonExpenseRule[]
+  departments        Department[]
 }
 
 model Tower {
-  id         String       @id @default(cuid())
-  name       String
-  isArchived Boolean      @default(false)
-  createdAt  DateTime     @default(now())
+  id          String       @id @default(cuid())
+  name        String
+  isArchived  Boolean      @default(false)
+  createdAt   DateTime     @default(now())
   departments Department[]
 }
 
 model Department {
-  id                  String   @id @default(cuid())
-  towerId             String?
-  tower               Tower?   @relation(fields: [towerId], references: [id])
-  number              String
-  unitTypeId          String?
-  unitType            UnitType? @relation(fields: [unitTypeId], references: [id])
-  propertyRole        String?
-  m2                  Float?
-  waterClientId       String?
-  electricityClientId String?
-  gasClientId         String?
-  ownerId             String?
-  owner               Owner?   @relation(fields: [ownerId], references: [id])
-  residentId          String?
-  resident            Resident? @relation(fields: [residentId], references: [id])
-  isArchived          Boolean  @default(false)
-  createdAt           DateTime @default(now())
-  correspondence      Correspondence[]
-  parking             Parking[]
+  id                    String                 @id @default(cuid())
+  towerId               String?
+  number                String
+  unitTypeId            String?
+  propertyRole          String?
+  m2                    Float?
+  waterClientId         String?
+  electricityClientId   String?
+  gasClientId           String?
+  ownerId               String?
+  residentId            String?
+  isArchived            Boolean                @default(false)
+  createdAt             DateTime               @default(now())
   commonExpensePayments CommonExpensePayment[]
+  correspondence        Correspondence[]
+  resident              Resident?              @relation(fields: [residentId], references: [id])
+  owner                 Owner?                 @relation(fields: [ownerId], references: [id])
+  unitType              UnitType?              @relation(fields: [unitTypeId], references: [id])
+  tower                 Tower?                 @relation(fields: [towerId], references: [id])
+  parking               Parking[]
 }
 
 model Owner {
@@ -93,58 +90,70 @@ model Owner {
 }
 
 model Resident {
-  id            String       @id @default(cuid())
-  names         String
-  lastNames     String
-  dni           String       @unique
-  phone         String
-  email         String
-  familyCount   Int          @default(1)
-  hasPets       Boolean      @default(false)
-  notes         String?
-  isTenant      Boolean      @default(false)
-  rentAmount    Float?
-  status        String       @default("active")
-  isArchived    Boolean      @default(false)
-  createdAt     DateTime     @default(now())
-  departments   Department[]
+  id          String       @id @default(cuid())
+  names       String
+  lastNames   String
+  dni         String       @unique
+  phone       String
+  email       String
+  familyCount Int          @default(1)
+  hasPets     Boolean      @default(false)
+  notes       String?
+  isTenant    Boolean      @default(false)
+  rentAmount  Float?
+  status      String       @default("active")
+  isArchived  Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  departments Department[]
 }
 
 model Personnel {
-  id                String       @id @default(cuid())
-  names             String
-  lastNames         String
-  dni               String       @unique
-  phone             String?
-  email             String?
-  isHonorary        Boolean      @default(false)
-  bankId            String?
-  bank              Bank?        @relation(fields: [bankId], references: [id])
-  accountNumber     String?
-  baseSalary        Float
-  vacationDays      Int          @default(0)
-  healthProviderId  String?
-  healthProvider    HealthProvider? @relation(fields: [healthProviderId], references: [id])
-  pensionFundId     String?
-  pensionFund       PensionFund? @relation(fields: [pensionFundId], references: [id])
-  jornadaGroupId     String?
-  jornadaGroup       JornadaGroup? @relation(fields: [jornadaGroupId], references: [id])
-  address           String
-  position          String?
-  status            String       @default("active")
-  isArchived        Boolean      @default(false)
-  createdAt         DateTime     @default(now())
+  id                          String          @id @default(cuid())
+  names                       String
+  lastNames                   String
+  dni                         String          @unique
+  phone                       String?
+  email                       String?
+  photo                       String?
+  isHonorary                  Boolean         @default(false)
+  bankId                      String?
+  accountNumber               String?
+  baseSalary                  Float
+  vacationDays                Int             @default(0)
+  healthProviderId            String?
+  hasComplementaryInsurance   Boolean         @default(false)
+  complementaryInsuranceType  String?
+  complementaryInsuranceValue Float           @default(0)
+  pensionFundId               String?
+  hasAPV                      Boolean         @default(false)
+  apvType                     String?
+  apvValue                    Float           @default(0)
+  jornadaGroupId              String?
+  address                     String
+  position                    String?
+  medicalInfo                 String?
+  contractType                String          @default("indefinido")
+  hasEmergencyContact         Boolean         @default(false)
+  emergencyContactJson        String?
+  assignedArticlesJson        String?
+  status                      String          @default("active")
+  isArchived                  Boolean         @default(false)
+  createdAt                   DateTime        @default(now())
+  jornadaGroup                JornadaGroup?   @relation(fields: [jornadaGroupId], references: [id])
+  pensionFund                 PensionFund?    @relation(fields: [pensionFundId], references: [id])
+  healthProvider              HealthProvider? @relation(fields: [healthProviderId], references: [id])
+  bank                        Bank?           @relation(fields: [bankId], references: [id])
 }
 
 model JornadaGroup {
   id           String      @id @default(cuid())
   name         String
   description  String?
-  startTime    String      // "08:00" - Mantener para compatibilidad
-  endTime      String      // "18:00" - Mantener para compatibilidad
-  workDays     String      // JSON string of [0,1,2,3,4]
-  schedules    String?     // Nuevo: JSON string de JornadaSchedule[]
-  breakMinutes Int         @default(0) // Nuevo: Descanso en minutos
+  startTime    String
+  endTime      String
+  workDays     String
+  schedules    String?
+  breakMinutes Int         @default(0)
   isActive     Boolean     @default(true)
   isArchived   Boolean     @default(false)
   createdAt    DateTime    @default(now())
@@ -180,89 +189,92 @@ model EquipmentItem {
 }
 
 model Article {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  category    String   // 'EPP', 'Aseo', 'Oficina', 'otro'
-  price       Float    @default(0)
-  stock       Int      @default(0)
-  minStock    Int      @default(0)
-  isActive    Boolean  @default(true)
-  isArchived  Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id                    String   @id @default(cuid())
+  name                  String
+  description           String?
+  category              String
+  unit                  String   @default("unidades")
+  price                 Float    @default(0)
+  stock                 Int      @default(0)
+  minStock              Int      @default(0)
+  isActive              Boolean  @default(true)
+  allowPersonnelRequest Boolean  @default(false)
+  isArchived            Boolean  @default(false)
+  createdAt             DateTime @default(now())
 }
 
 model Correspondence {
-  id             String     @id @default(cuid())
-  folio          String     @unique
-  departmentId   String
-  department     Department @relation(fields: [departmentId], references: [id])
-  towerId        String?
-  type           String     // 'package', 'letter', etc.
-  addressee      String
-  status         String     @default("pending") // 'pending', 'received', 'notified', 'delivered'
-  receivedAt     DateTime?  @default(now())
-  deliveredAt    DateTime?
-  createdAt      DateTime   @default(now())
+  id           String     @id @default(cuid())
+  folio        String     @unique
+  departmentId String
+  towerId      String?
+  type         String
+  addressee    String
+  status       String     @default("pending")
+  receivedAt   DateTime?  @default(now())
+  deliveredAt  DateTime?
+  createdAt    DateTime   @default(now())
+  department   Department @relation(fields: [departmentId], references: [id])
 }
 
 model Parking {
-  id            String     @id @default(cuid())
+  id            String      @id @default(cuid())
   number        String
   location      String?
-  isHandicapped Boolean    @default(false)
-  isArchived    Boolean    @default(false)
+  isHandicapped Boolean     @default(false)
+  isArchived    Boolean     @default(false)
   departmentId  String?
+  createdAt     DateTime    @default(now())
   department    Department? @relation(fields: [departmentId], references: [id])
-  createdAt     DateTime   @default(now())
 }
 
 model CommonExpenseRule {
-  id                String       @id @default(cuid())
-  unitTypeId        String?
-  unitType          UnitType?    @relation(fields: [unitTypeId], references: [id])
-  amount            Float
-  effectiveFrom     DateTime
-  description       String?
-  isArchived        Boolean      @default(false)
-  createdAt         DateTime     @default(now())
+  id            String    @id @default(cuid())
+  unitTypeId    String?
+  amount        Float
+  effectiveFrom DateTime
+  description   String?
+  isArchived    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  unitType      UnitType? @relation(fields: [unitTypeId], references: [id])
 }
 
 model CommonExpensePayment {
-  id                String       @id @default(cuid())
-  departmentId      String
-  department        Department   @relation(fields: [departmentId], references: [id])
-  periodMonth       Int
-  periodYear        Int
-  amountPaid        Float
-  paymentDate       DateTime     @default(now())
-  status            String       @default("paid") // 'paid', 'pending', 'overdue'
-  paymentMethod     String?
-  receiptFolio      String?      @unique
-  evidenceImage     String?      // Captura del documento manual
-  notes             String?
-  isElectronic      Boolean      @default(true)  // si es comprobante electrónico o captura manual
-  fundContributionsJson String?  // [ { "fundId": "...", "amount": 100 } ]
-  createdAt         DateTime     @default(now())
+  id                    String     @id @default(cuid())
+  departmentId          String
+  periodMonth           Int
+  periodYear            Int
+  amountPaid            Float
+  paymentDate           DateTime   @default(now())
+  status                String     @default("paid")
+  paymentMethod         String?
+  receiptFolio          String?    @unique
+  evidenceImage         String?
+  notes                 String?
+  isElectronic          Boolean    @default(true)
+  createdAt             DateTime   @default(now())
+  fundContributionsJson String?
+  department            Department @relation(fields: [departmentId], references: [id])
 }
 
 model SpecialFund {
-  id                  String   @id @default(cuid())
-  name                String
-  description         String
-  type                String   // 'reserve', 'extraordinary'
-  totalAmountPerUnit  Float
-  totalProjectAmount  Float?
-  deadline            String?
-  isActive            Boolean  @default(true)
-  isArchived          Boolean  @default(false)
-  unitConfigsJson     String?  // [ { "unitTypeId": "...", "calculationType": "fixed", "value": 100, "isExempt": false } ]
-  expensesJson        String?  // [ { "id": "...", "amount": 100, "description": "...", "date": "..." } ]
-  createdAt           DateTime @default(now())
+  id                 String   @id @default(cuid())
+  name               String
+  description        String
+  type               String
+  totalAmountPerUnit Float
+  totalProjectAmount Float?
+  deadline           String?
+  isActive           Boolean  @default(true)
+  isArchived         Boolean  @default(false)
+  unitConfigsJson    String?
+  expensesJson       String?
+  createdAt          DateTime @default(now())
 }
+
 model EmergencyNumber {
   id          String   @id @default(cuid())
-  category    String   // 'SEGURIDAD', 'EMERGENCIA', etc.
+  category    String
   name        String
   phone       String
   description String?
@@ -276,7 +288,7 @@ model CommunicationTemplate {
   name      String
   subject   String
   message   String   @default("")
-  type      String   @default("general") // 'mora', 'asamblea', 'comunicado', etc.
+  type      String   @default("general")
   createdAt DateTime @default(now())
 }
 
@@ -284,10 +296,35 @@ model CommunicationHistory {
   id            String   @id @default(cuid())
   subject       String
   message       String   @default("")
-  recipients    String   // JSON string of email addresses
+  recipients    String
   senderId      String
-  targetFilter  String   // readable description of the filter used
+  targetFilter  String
   attachmentUrl String?
   createdAt     DateTime @default(now())
 }
 
+model SystemParameter {
+  id          String   @id @default(cuid())
+  type        String
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model Holiday {
+  id          String   @id @default(cuid())
+  date        DateTime
+  description String
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Afc {
+  id                 String   @id @default(cuid())
+  name               String   @default("AFC")
+  fixedTermRate      Float
+  indefiniteTermRate Float
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+}

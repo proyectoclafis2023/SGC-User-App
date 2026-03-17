@@ -97,13 +97,50 @@ app.post('/api/residents/upload', upload.single('file'), (req, res) => {
 // --- Personal ---
 app.get('/api/personnel', async (req, res) => {
     const data = await prisma.personnel.findMany({ where: { isArchived: false } });
-    res.json(data);
+    const parsedData = data.map(p => ({
+        ...p,
+        emergencyContact: p.emergencyContactJson ? JSON.parse(p.emergencyContactJson) : undefined,
+        assignedArticles: p.assignedArticlesJson ? JSON.parse(p.assignedArticlesJson) : []
+    }));
+    res.json(parsedData);
 });
 
 app.post('/api/personnel', async (req, res) => {
     try {
-        const data = await prisma.personnel.create({ data: req.body });
+        const { emergencyContact, assignedArticles, ...rest } = req.body;
+        const data = await prisma.personnel.create({
+            data: {
+                ...rest,
+                emergencyContactJson: emergencyContact ? JSON.stringify(emergencyContact) : null,
+                assignedArticlesJson: assignedArticles ? JSON.stringify(assignedArticles) : null
+            }
+        });
         res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/personnel/:id', async (req, res) => {
+    try {
+        const { id, createdAt, emergencyContact, assignedArticles, ...updateData } = req.body;
+        const data = await prisma.personnel.update({
+            where: { id: req.params.id },
+            data: {
+                ...updateData,
+                emergencyContactJson: emergencyContact ? JSON.stringify(emergencyContact) : (emergencyContact === null ? null : undefined),
+                assignedArticlesJson: assignedArticles ? JSON.stringify(assignedArticles) : (assignedArticles === null ? null : undefined)
+            }
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/personnel/:id', async (req, res) => {
+    try {
+        await prisma.personnel.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
@@ -163,9 +200,11 @@ app.post('/api/articles/upload', upload.single('file'), (req, res) => {
                         name: row.name || row.nombre,
                         description: row.description || row.descripcion,
                         category: row.category || row.categoria || 'otro',
+                        unit: row.unit || row.unidad || 'unidades',
                         stock: parseInt(row.stock) || 0,
                         minStock: parseInt(row.minStock || row.stock_minimo) || 0,
-                        price: parseFloat(row.price || row.precio) || 0
+                        price: parseFloat(row.price || row.precio) || 0,
+                        allowPersonnelRequest: row.allowPersonnelRequest === 'true' || row.solicitar_personal === 'SI' || false
                     }
                 });
             }
@@ -173,6 +212,27 @@ app.post('/api/articles/upload', upload.single('file'), (req, res) => {
             res.json({ message: `Cargado inventario: ${results.length} artículos.` });
         } catch (err) { res.status(500).json({ error: err.message }); }
     });
+});
+
+app.put('/api/articles/:id', async (req, res) => {
+    try {
+        const { id, createdAt, ...updateData } = req.body;
+        const data = await prisma.article.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/articles/:id', async (req, res) => {
+    try {
+        await prisma.article.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 // --- Correspondencia ---
@@ -742,6 +802,116 @@ app.put('/api/equipment_items/:id', async (req, res) => {
 app.delete('/api/equipment_items/:id', async (req, res) => {
     try {
         await prisma.equipmentItem.update({ where: { id: req.params.id }, data: { isArchived: true } });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+
+// System Parameters (Maestros Varias)
+app.get('/api/system_parameters', async (req, res) => {
+    try {
+        const data = await prisma.systemParameter.findMany({ orderBy: { createdAt: 'desc' } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/system_parameters', async (req, res) => {
+    try {
+        const data = await prisma.systemParameter.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/system_parameters/:id', async (req, res) => {
+    try {
+        const { id, createdAt, ...updateData } = req.body;
+        const data = await prisma.systemParameter.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/system_parameters/:id', async (req, res) => {
+    try {
+        await prisma.systemParameter.delete({ where: { id: req.params.id } });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+
+// AFC
+app.get('/api/afcs', async (req, res) => {
+    try {
+        const data = await prisma.afc.findMany();
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/afcs', async (req, res) => {
+    try {
+        const data = await prisma.afc.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/afcs/:id', async (req, res) => {
+    try {
+        const { id, createdAt, ...updateData } = req.body;
+        const data = await prisma.afc.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/afcs/:id', async (req, res) => {
+    try {
+        await prisma.afc.delete({ where: { id: req.params.id } });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// Holidays
+app.get('/api/holidays', async (req, res) => {
+    try {
+        const data = await prisma.holiday.findMany({ where: { isArchived: false }, orderBy: { date: 'asc' } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/holidays', async (req, res) => {
+    try {
+        const data = await prisma.holiday.create({ 
+            data: {
+                ...req.body,
+                date: new Date(req.body.date)
+            } 
+        });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/holidays/:id', async (req, res) => {
+    try {
+        const { id, createdAt, ...updateData } = req.body;
+        if (updateData.date) updateData.date = new Date(updateData.date);
+        const data = await prisma.holiday.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/holidays/:id', async (req, res) => {
+    try {
+        await prisma.holiday.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });

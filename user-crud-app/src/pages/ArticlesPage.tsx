@@ -22,6 +22,7 @@ export const ArticlesPage: React.FC = () => {
     const [minStock, setMinStock] = useState(0);
     const [isActive, setIsActive] = useState(true);
     const [allowPersonnelRequest, setAllowPersonnelRequest] = useState(false);
+    const [unit, setUnit] = useState('unidades');
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('all');
 
@@ -36,6 +37,7 @@ export const ArticlesPage: React.FC = () => {
             setMinStock(art.minStock || 0);
             setIsActive(art.isActive !== undefined ? art.isActive : true);
             setAllowPersonnelRequest(art.allowPersonnelRequest || false);
+            setUnit(art.unit || 'unidades');
         } else {
             setEditingArticle(null);
             setName('');
@@ -46,13 +48,14 @@ export const ArticlesPage: React.FC = () => {
             setMinStock(0);
             setIsActive(true);
             setAllowPersonnelRequest(false);
+            setUnit('unidades');
         }
         setIsModalOpen(true);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { name, description, category, price: Number(price), stock: Number(stock), minStock: Number(minStock), isActive, allowPersonnelRequest };
+        const data = { name, description, category, unit, price: Number(price), stock: Number(stock), minStock: Number(minStock), isActive, allowPersonnelRequest };
         if (editingArticle) {
             await updateArticle({ ...editingArticle, ...data });
         } else {
@@ -312,6 +315,7 @@ export const ArticlesPage: React.FC = () => {
                                     {articleCategories.length === 0 && <option value="Otro">Otro</option>}
                                 </select>
                             </div>
+                            <Input label="Unidad de Medida" value={unit} onChange={(e) => setUnit(e.target.value)} required placeholder="Ej: unidades, kg, litros, cajas" />
                             <Input
                                 label="Precio Unitario ($)"
                                 type="number"
