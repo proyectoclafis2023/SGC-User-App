@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const HealthProviderContext = createContext<HealthProviderContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/health_providers`;
+const API_URL = `${API_BASE_URL}/health-providers`;
 
 export const HealthProviderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [providers, setProviders] = useState<HealthProvider[]>([]);
@@ -15,17 +15,13 @@ export const HealthProviderProvider: React.FC<{ children: ReactNode }> = ({ chil
             if (response.ok) {
                 const data = await response.json();
                 setProviders(Array.isArray(data) ? data : []);
+            } else {
+                const err = await response.json();
+                console.error('Failed to fetch health providers:', err.message);
             }
         } catch (error) {
             console.error('Failed to fetch health providers:', error);
         }
-        const response = await fetch(API_URL);
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Failed to fetch health providers');
-        }
-        const data = await response.json();
-        setProviders(Array.isArray(data) ? data : []);
     };
 
     useEffect(() => {

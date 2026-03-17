@@ -95,8 +95,10 @@ export interface SystemSettings {
 export interface WeightedIPC {
     id: string;
     name: string;
-    value: number; // Porcentaje (ej: 0.05 para 5%)
-    isProjected: boolean;
+    ipcRate: number;      // Valor del IPC Real
+    ponderadoRate: number; // Valor del IPC Ponderado
+    description?: string;
+    isActive: boolean;
     createdAt: string;
 }
 
@@ -126,7 +128,7 @@ export interface Personnel {
     accountNumber?: string;
     baseSalary: number;
     vacationDays: number;
-    healthInsuranceId?: string;
+    healthProviderId?: string;
     hasComplementaryInsurance?: boolean;
     complementaryInsuranceType?: 'percentage' | 'amount';
     complementaryInsuranceValue?: number;
@@ -139,6 +141,7 @@ export interface Personnel {
     emergencyContact?: EmergencyContact;
     medicalInfo?: string;
     position?: string;
+    contractType?: 'honorarios' | 'plazo' | 'indefinido';
     assignedShift?: 'Manana' | 'Tarde' | 'Noche';
     vacationLastUpdate?: string;
     assignedArticles?: AssignedArticle[];

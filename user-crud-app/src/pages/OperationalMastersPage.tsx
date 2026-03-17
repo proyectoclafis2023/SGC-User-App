@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useInfrastructureItems } from '../context/InfrastructureItemContext';
 import { useEquipmentItems } from '../context/EquipmentItemContext';
 import { Button } from '../components/Button';
@@ -10,14 +11,26 @@ import {
 } from 'lucide-react';
 import { useJornadaGroups } from '../context/JornadaGroupContext';
 import { useIPCProjections } from '../context/IPCProjectionContext';
-import type { JornadaGroup } from '../types';
+import { useCameras } from '../context/CameraContext';
+import { Video } from 'lucide-react';
+import type { JornadaGroup, Camera, InfrastructureItem, EquipmentItem, WeightedIPC } from '../types';
 
 export const OperationalMastersPage: React.FC = () => {
     const { items: infraItems, addItem: addInfra, updateItem: updateInfra, deleteItem: deleteInfra } = useInfrastructureItems();
     const { items: equipItems, addItem: addEquip, updateItem: updateEquip, deleteItem: deleteEquip } = useEquipmentItems();
     const { groups: jornadaGroups, addGroup: addJornada, updateGroup: updateJornada, deleteGroup: deleteJornada } = useJornadaGroups();
     const { projections, addProjection, updateProjection, deleteProjection } = useIPCProjections();
-    const [activeTab, setActiveTab] = useState<'infra' | 'equip' | 'jornadas' | 'ipc'>('infra');
+    const { cameras, addCamera, updateCamera, deleteCamera } = useCameras();
+    const { tab } = useParams<{ tab: string }>();
+    const [activeTab, setActiveTab] = useState<'infra' | 'equip' | 'jornadas' | 'ipc' | 'camaras'>('infra');
+
+    useEffect(() => {
+        if (tab === 'camaras') setActiveTab('camaras');
+        else if (tab === 'infra') setActiveTab('infra');
+        else if (tab === 'equip') setActiveTab('equip');
+        else if (tab === 'jornadas') setActiveTab('jornadas');
+        else if (tab === 'ipc') setActiveTab('ipc');
+    }, [tab]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -30,6 +43,14 @@ export const OperationalMastersPage: React.FC = () => {
     const [newItemPonderadoValue, setNewItemPonderadoValue] = useState(0);
     const [newItemSchedules, setNewItemSchedules] = useState<any[]>([]);
     const [newItemBreakMinutes, setNewItemBreakMinutes] = useState(0);
+    const [successToast, setSuccessToast] = useState<{show: boolean, message: string}>({ show: false, message: '' });
+
+    useEffect(() => {
+        if (successToast.show) {
+            const timer = setTimeout(() => setSuccessToast({ show: false, message: '' }), 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [successToast.show]);
 
     const getTabInfo = () => {
         switch (activeTab) {
@@ -57,13 +78,20 @@ export const OperationalMastersPage: React.FC = () => {
                 placeholder: 'ej. IPC Enero 2024, Proyección Contrato Seguridad...',
                 icon: <LineChart className="w-4 h-4" />
             };
+            case 'camaras': return {
+                title: 'Sistema CCTV',
+                description: 'Configuración de cámaras de seguridad y tiempos de respaldo de grabaciones.',
+                placeholder: 'ej. Cámara Acceso Peatonal, Domo Ascensor 1...',
+                icon: <Video className="w-4 h-4" />
+            };
         }
     };
 
-    const filteredInfra = infraItems?.filter(i => !i.isArchived && i.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
-    const filteredEquip = equipItems?.filter(i => !i.isArchived && i.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
-    const filteredJornadas = jornadaGroups?.filter(g => !g.isArchived && g.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
-    const filteredIPC = projections?.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
+    const filteredInfra = infraItems?.filter((i: InfrastructureItem) => !i.isArchived && i.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
+    const filteredEquip = equipItems?.filter((i: EquipmentItem) => !i.isArchived && i.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
+    const filteredJornadas = jornadaGroups?.filter((g: JornadaGroup) => !g.isArchived && g.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
+    const filteredIPC = projections?.filter((p: WeightedIPC) => p.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
+    const filteredCameras = cameras?.filter((c: Camera) => !c.isArchived && c.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
 
     const calculateWeeklyHours = (item: any) => {
         let totalMinutes = 0;
@@ -112,6 +140,12 @@ export const OperationalMastersPage: React.FC = () => {
                     description: newItemDescription,
                     isActive: true
                 });
+            } else if (activeTab === 'camaras') {
+                await addCamera({
+                    name: newItemName,
+                    description: newItemDescription,
+                    backupHours: newItemValue * 24 // Se ingresa en días
+                });
             }
             setNewItemName('');
             setNewItemDescription('');
@@ -121,6 +155,7 @@ export const OperationalMastersPage: React.FC = () => {
             setNewItemSchedules([]);
             setNewItemBreakMinutes(0);
             setIsAddModalOpen(false);
+            setSuccessToast({ show: true, message: 'Ítem agregado con éxito' });
         } catch (error: any) {
             alert(error.message || 'Error al agregar el ítem');
         }
@@ -133,22 +168,49 @@ export const OperationalMastersPage: React.FC = () => {
             else if (activeTab === 'equip') await updateEquip(editingItem);
             else if (activeTab === 'jornadas') await updateJornada(editingItem);
             else if (activeTab === 'ipc') await updateProjection(editingItem);
+            else if (activeTab === 'camaras') {
+                await updateCamera({
+                    ...editingItem,
+                    backupHours: editingItem.backupDays ? editingItem.backupDays * 24 : editingItem.backupHours
+                });
+            }
             setIsEditModalOpen(false);
             setEditingItem(null);
+            setSuccessToast({ show: true, message: 'Cambios guardados exitosamente' });
         } catch (error: any) {
             alert(error.message || 'Error al actualizar el ítem');
         }
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+            {/* Toast Notification */}
+            {successToast.show && (
+                <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-10 fade-in duration-500">
+                    <div className="bg-gray-900 dark:bg-indigo-600 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 border border-white/10 backdrop-blur-md">
+                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                            <CheckCircle2 className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Sistema SGC</p>
+                            <p className="text-sm font-bold uppercase tracking-tight">{successToast.message}</p>
+                        </div>
+                        <button 
+                            onClick={() => setSuccessToast({ show: false, message: '' })}
+                            className="ml-4 p-2 hover:bg-white/10 rounded-xl transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden">
                 <div className="relative z-10">
                     <h1 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-2">
                         <LayoutGrid className="w-8 h-8 text-indigo-600" />
-                        Maestros Operativos
+                        Maestro de Bitácora y Cámaras
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-bold italic text-sm">Gestiona los parámetros base, jornadas e índices proyectivos del sistema.</p>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-bold italic text-sm">Gestiona los parámetros de infraestructura, bitácora, jornadas e índices proyectivos.</p>
                 </div>
                 <Button onClick={() => setIsAddModalOpen(true)} className="relative z-10 shadow-lg shadow-indigo-600/20">
                     <Plus className="w-4 h-4 mr-2" />
@@ -157,7 +219,7 @@ export const OperationalMastersPage: React.FC = () => {
             </div>
 
             <div className="flex p-1.5 bg-gray-100 dark:bg-gray-800 rounded-3xl w-full md:w-fit border border-gray-200 dark:border-gray-700 overflow-x-auto no-scrollbar">
-                {(['infra', 'equip', 'jornadas', 'ipc'] as const).map(tab => (
+                {(['infra', 'equip', 'jornadas', 'ipc', 'camaras'] as const).map(tab => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
@@ -167,7 +229,8 @@ export const OperationalMastersPage: React.FC = () => {
                         {tab === 'equip' && <Smartphone className="w-4 h-4" />}
                         {tab === 'jornadas' && <Calendar className="w-4 h-4" />}
                         {tab === 'ipc' && <LineChart className="w-4 h-4" />}
-                        {tab === 'infra' ? 'Instalaciones' : tab === 'equip' ? 'Equipamiento' : tab === 'jornadas' ? 'Jornadas' : 'IPC y IPC Ponderado'}
+                        {tab === 'camaras' && <Video className="w-4 h-4" />}
+                        {tab === 'infra' ? 'Instalaciones' : tab === 'equip' ? 'Equipamiento' : tab === 'jornadas' ? 'Jornadas' : tab === 'ipc' ? 'IPC y IPC Ponderado' : 'CCTV'}
                     </button>
                 ))}
             </div>
@@ -187,7 +250,7 @@ export const OperationalMastersPage: React.FC = () => {
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                         type="text"
-                        placeholder={`Buscar en ${activeTab === 'infra' ? 'instalaciones' : activeTab === 'equip' ? 'equipamiento' : activeTab === 'jornadas' ? 'jornadas' : 'índices IPC'}...`}
+                        placeholder={`Buscar en ${activeTab === 'infra' ? 'instalaciones' : activeTab === 'equip' ? 'equipamiento' : activeTab === 'jornadas' ? 'jornadas' : activeTab === 'ipc' ? 'índices IPC' : 'cámaras'}...`}
                         className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -196,18 +259,18 @@ export const OperationalMastersPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(activeTab === 'infra' ? filteredInfra : activeTab === 'equip' ? filteredEquip : activeTab === 'jornadas' ? filteredJornadas : filteredIPC).map((item) => (
+                {(activeTab === 'infra' ? filteredInfra : activeTab === 'equip' ? filteredEquip : activeTab === 'jornadas' ? filteredJornadas : activeTab === 'ipc' ? filteredIPC : filteredCameras).map((item) => (
                     <div key={item.id} className="bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 translate-x-4 -translate-y-4 group-hover:translate-x-0 group-hover:translate-y-0 transition-all">
-                            <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/20 rounded-full flex items-center justify-center text-indigo-200">
-                                {activeTab === 'infra' ? <Building2 className="w-6 h-6" /> : activeTab === 'equip' ? <Smartphone className="w-6 h-6" /> : activeTab === 'jornadas' ? <Calendar className="w-6 h-6" /> : <LineChart className="w-6 h-6" />}
+                            <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/20 rounded-full flex items-center justify-center text-indigo-400">
+                                {activeTab === 'infra' ? <Building2 className="w-6 h-6" /> : activeTab === 'equip' ? <Smartphone className="w-6 h-6" /> : activeTab === 'jornadas' ? <Calendar className="w-6 h-6" /> : activeTab === 'ipc' ? <LineChart className="w-6 h-6" /> : <Video className="w-6 h-6" />}
                             </div>
                         </div>
 
                         <div className="relative z-10">
                             <h3 className="text-lg font-black text-gray-900 dark:text-white mb-2 pr-8">{item.name}</h3>
                             
-                            {activeTab !== 'jornadas' && activeTab !== 'ipc' && item.isMandatory && (
+                            {activeTab !== 'jornadas' && activeTab !== 'ipc' && activeTab !== 'camaras' && item.isMandatory && (
                                 <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4 flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/30 w-fit px-3 py-1.5 rounded-full border border-rose-100 dark:border-rose-900/30">
                                     <AlertCircle className="w-3.5 h-3.5" />
                                     Cierre Obligatorio
@@ -223,6 +286,20 @@ export const OperationalMastersPage: React.FC = () => {
                                     <div className="bg-purple-50/50 dark:bg-purple-900/10 p-3 rounded-2xl border border-purple-100/50 dark:border-purple-900/30">
                                         <p className="text-2xl font-black text-purple-600">+{item.ponderadoRate || 0}%</p>
                                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">IPC Ponderado</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'camaras' && (
+                                <div className="mb-6">
+                                    <div className="bg-indigo-50/50 dark:bg-indigo-900/10 p-5 rounded-[2rem] border border-indigo-100/50 dark:border-indigo-900/30 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <Clock className="w-6 h-6 text-indigo-600" />
+                                            <div>
+                                                <p className="text-2xl font-black text-indigo-600 leading-none">{Math.round((item.backupHours || 0) / 24)} días</p>
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Respaldo de Video</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -250,7 +327,7 @@ export const OperationalMastersPage: React.FC = () => {
                                         <div className="space-y-2">
                                             {item.schedules.map((sched: any, sIdx: number) => (
                                                 <div key={sIdx} className="bg-gray-50 dark:bg-gray-800/50 p-2 rounded-xl border border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                                                    <div className="flex gap-1">
+                                                    <div className="grid grid-cols-4 gap-1 w-fit mt-1">
                                                         {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, dIdx) => (
                                                             <span key={dIdx} className={`w-5 h-5 flex items-center justify-center rounded text-[8px] font-black ${sched.days.includes(dIdx) ? 'bg-indigo-600 text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>
                                                                 {day}
@@ -266,7 +343,7 @@ export const OperationalMastersPage: React.FC = () => {
                                         </div>
                                     ) : (
                                         <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-800">
-                                            <div className="flex flex-wrap gap-1 mb-2">
+                                            <div className="grid grid-cols-4 gap-1 mb-2 w-fit">
                                                 {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, idx) => (
                                                     <span key={day} className={`w-5 h-5 flex items-center justify-center rounded text-[8px] font-black ${item.workDays?.includes(idx) ? 'bg-indigo-600 text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>
                                                         {day}
@@ -307,7 +384,8 @@ export const OperationalMastersPage: React.FC = () => {
                                             if (activeTab === 'infra') deleteInfra(item.id);
                                             else if (activeTab === 'equip') deleteEquip(item.id);
                                             else if (activeTab === 'jornadas') deleteJornada(item.id);
-                                            else deleteProjection(item.id);
+                                            else if (activeTab === 'ipc') deleteProjection(item.id);
+                                            else deleteCamera(item.id);
                                         }}
                                         className="p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-2xl transition-all"
                                         title="Eliminar"
@@ -388,7 +466,7 @@ export const OperationalMastersPage: React.FC = () => {
                                                     >
                                                         <X className="w-3 h-3" />
                                                     </button>
-                                                    <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1 no-scrollbar">
+                                                    <div className="grid grid-cols-4 gap-1.5 mb-3 w-fit">
                                                         {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, dIdx) => (
                                                             <button
                                                                 key={dIdx}
@@ -454,14 +532,14 @@ export const OperationalMastersPage: React.FC = () => {
                                             type="number"
                                             step="0.01"
                                             value={newItemValue}
-                                            onChange={e => setNewItemValue(parseFloat(e.target.value))}
+                                            onChange={(e: any) => setNewItemValue(parseFloat(e.target.value))}
                                         />
                                         <Input
                                             label="IPC Ponderado (%)"
                                             type="number"
                                             step="0.01"
                                             value={newItemPonderadoValue}
-                                            onChange={e => setNewItemPonderadoValue(parseFloat(e.target.value))}
+                                            onChange={(e: any) => setNewItemPonderadoValue(parseFloat(e.target.value))}
                                         />
                                     </div>
                                     <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-3xl border border-amber-100 dark:border-amber-900/30">
@@ -471,6 +549,23 @@ export const OperationalMastersPage: React.FC = () => {
                                         </p>
                                         <p className="text-xs text-amber-800 dark:text-amber-200 font-bold leading-relaxed">
                                             El **IPC** mide la inflación general. El **IPC Ponderado** es un ajuste para el edificio basado en la proporción real de costos (ej: luz 30%, sueldos 50%, etc).
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'camaras' && (
+                                <div className="space-y-4">
+                                    <Input
+                                        label="Días de Respaldo"
+                                        type="number"
+                                        value={newItemValue}
+                                        onChange={(e: any) => setNewItemValue(parseInt(e.target.value))}
+                                        placeholder="Ej. 7"
+                                    />
+                                    <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-3xl border border-blue-100 dark:border-blue-900/30">
+                                        <p className="text-xs text-blue-800 dark:text-blue-200 font-bold leading-relaxed">
+                                            Indique cuántos días la cámara mantiene las grabaciones antes de sobreescribir. Esto se usará para validar solicitudes de residentes.
                                         </p>
                                     </div>
                                 </div>
@@ -571,7 +666,7 @@ export const OperationalMastersPage: React.FC = () => {
                                                     >
                                                         <X className="w-3 h-3" />
                                                     </button>
-                                                    <div className="flex gap-1.5 mb-3">
+                                                    <div className="grid grid-cols-4 gap-1.5 mb-3 w-fit">
                                                         {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, dIdx) => (
                                                             <button
                                                                 key={dIdx}
@@ -617,7 +712,7 @@ export const OperationalMastersPage: React.FC = () => {
                                             {(!editingItem.schedules || editingItem.schedules.length === 0) && (
                                                 <div className="bg-white dark:bg-gray-900/50 p-4 rounded-2xl border-2 border-dashed dark:border-gray-800">
                                                     <p className="text-[10px] text-gray-400 italic mb-3">Se usará el horario base L-V. Active horarios mixtos para mayor precisión.</p>
-                                                    <div className="flex gap-1 mb-3">
+                                                    <div className="grid grid-cols-4 gap-1 mb-3 w-fit">
                                                         {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, idx) => (
                                                             <button
                                                                 key={idx}
@@ -660,14 +755,25 @@ export const OperationalMastersPage: React.FC = () => {
                                         type="number"
                                         step="0.01"
                                         value={editingItem.ipcRate}
-                                        onChange={e => setEditingItem({ ...editingItem, ipcRate: parseFloat(e.target.value) })}
+                                        onChange={(e: any) => setEditingItem({ ...editingItem, ipcRate: parseFloat(e.target.value) })}
                                     />
                                     <Input
                                         label="IPC Ponderado (%)"
                                         type="number"
                                         step="0.01"
                                         value={editingItem.ponderadoRate || 0}
-                                        onChange={e => setEditingItem({ ...editingItem, ponderadoRate: parseFloat(e.target.value) })}
+                                        onChange={(e: any) => setEditingItem({ ...editingItem, ponderadoRate: parseFloat(e.target.value) })}
+                                    />
+                                </div>
+                            )}
+
+                            {activeTab === 'camaras' && (
+                                <div className="space-y-4">
+                                    <Input
+                                        label="Días de Respaldo"
+                                        type="number"
+                                        value={Math.round(editingItem.backupHours / 24) || editingItem.backupDays}
+                                        onChange={e => setEditingItem({ ...editingItem, backupDays: parseInt(e.target.value) })}
                                     />
                                 </div>
                             )}

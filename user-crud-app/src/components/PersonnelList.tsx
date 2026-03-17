@@ -1,21 +1,25 @@
-import { Edit2, Trash2, User as UserIcon, Calendar, ShieldCheck, Home, PhoneCall, AlertCircle, Banknote, Landmark, ShieldPlus, TrendingUp, Shirt } from 'lucide-react';
+import React from 'react';
+import { Edit2, Trash2, User as UserIcon, Calendar, ShieldCheck, Home, PhoneCall, AlertCircle, Banknote, Landmark, ShieldPlus, TrendingUp, Phone, Mail, Briefcase, FileText, Clock } from 'lucide-react';
 import { useHealthProviders } from '../context/HealthProviderContext';
 import { usePensionFunds } from '../context/PensionFundContext';
 import { useBanks } from '../context/BankContext';
-import { useArticles } from '../context/ArticleContext';
+import { useJornadaGroups } from '../context/JornadaGroupContext';
+
 import type { Personnel } from '../types';
 
 interface PersonnelListProps {
     personnel: Personnel[];
     onEdit: (person: Personnel) => void;
     onDelete: (id: string, name: string) => void;
+    viewMode?: 'cards' | 'grid';
 }
 
-export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit, onDelete }) => {
+export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit, onDelete, viewMode = 'cards' }) => {
     const { providers } = useHealthProviders();
     const { funds } = usePensionFunds();
     const { banks } = useBanks();
-    const { articles } = useArticles();
+    const { groups: jornadaGroups } = useJornadaGroups();
+
 
     if (personnel.length === 0) {
         return (
@@ -44,13 +48,112 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
         return bank ? bank.name : 'No registrado';
     };
 
+    const getJornadaName = (id: string) => {
+        const group = jornadaGroups.find(g => g.id === id);
+        return group ? group.name : 'No asignada';
+    };
+
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('es-CL', {
             style: 'currency',
             currency: 'CLP',
             minimumFractionDigits: 0
-        }).format(value);
+        }).format(value || 0);
     };
+
+    if (viewMode === 'grid') {
+        return (
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Personal</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">DNI / RUT</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Cargo</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Contacto</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Sueldo Base</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Contrato</th>
+                                <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-gray-400">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                            {personnel.map((person) => (
+                                <tr key={person.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors group">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 font-bold overflow-hidden">
+                                                {person.photo ? (
+                                                    <img src={person.photo} alt={person.names} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span className="text-xs">{person.names.charAt(0)}{person.lastNames.charAt(0)}</span>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{person.names}</p>
+                                                <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{person.lastNames}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">{person.dni}</span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{person.position}</span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="space-y-1">
+                                            {person.phone && (
+                                                <p className="text-[11px] font-bold text-gray-500 flex items-center gap-1.5">
+                                                    <Phone className="w-3 h-3" /> {person.phone}
+                                                </p>
+                                            )}
+                                            {person.email && (
+                                                <p className="text-[11px] font-bold text-gray-500 flex items-center gap-1.5">
+                                                    <Mail className="w-3 h-3" /> {person.email}
+                                                </p>
+                                            )}
+                                            {!person.phone && !person.email && <span className="text-gray-300 italic text-[11px]">No registrado</span>}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="text-xs font-black text-gray-900 dark:text-white">{formatCurrency(person.baseSalary)}</span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                                            person.isHonorary 
+                                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' 
+                                            : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                        }`}>
+                                            {person.isHonorary ? 'Honorarios' : person.contractType || 'Indefinido'}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => onEdit(person)}
+                                                className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
+                                                title="Editar"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => onDelete(person.id, `${person.names} ${person.lastNames}`)}
+                                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6 pb-20">
@@ -74,7 +177,16 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                             <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[9px] font-black rounded-lg uppercase tracking-widest">Honorarios</span>
                                         )}
                                     </div>
-                                    <p className="text-xs md:text-sm font-black text-indigo-600 dark:text-indigo-400 mt-2 uppercase tracking-widest">DNI: {person.dni}</p>
+                                    <div className="mt-2 space-y-1">
+                                        <p className="text-xs md:text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                                            DNI: {person.dni}
+                                        </p>
+                                        {person.phone && (
+                                            <p className="text-xs font-bold text-gray-500 flex items-center gap-1.5 capitalize">
+                                                <Phone className="w-3 h-3 text-indigo-500" /> {person.phone}
+                                            </p>
+                                        )}
+                                    </div>
 
                                     <div className="flex mt-4 gap-2">
                                         <button
@@ -98,6 +210,58 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
 
                         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
                             <div className="flex items-center space-x-3 text-sm">
+                                <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                                    <Briefcase className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <div className="truncate">
+                                    <p className="text-[10px] uppercase font-bold text-gray-400">Cargo / Función</p>
+                                    <p className="font-bold text-gray-900 dark:text-gray-100 truncate text-xs" title={person.position}>{person.position}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center space-x-3 text-sm">
+                                <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                    <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] uppercase font-bold text-gray-400">Tipo de Contrato</p>
+                                    <p className="font-bold text-gray-900 dark:text-gray-100 text-xs">
+                                        {person.isHonorary ? 'Honorarios' : person.contractType || 'Planta / Indefinido'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center space-x-3 text-sm">
+                                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                                    <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] uppercase font-bold text-gray-400">Jornada Asignada</p>
+                                    <p className="font-bold text-gray-900 dark:text-gray-100 text-xs">{getJornadaName(person.jornadaGroupId || '')}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center space-x-3 text-sm">
+                                <div className="p-2 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg">
+                                    <Phone className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] uppercase font-bold text-gray-400">Teléfono</p>
+                                    <p className="font-bold text-gray-900 dark:text-gray-100 text-xs">{person.phone || 'No registrado'}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center space-x-3 text-sm">
+                                <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                    <Mail className="w-4 h-4 text-gray-400" />
+                                </div>
+                                <div className="truncate">
+                                    <p className="text-[10px] uppercase font-bold text-gray-400">Correo Electrónico</p>
+                                    <p className="font-bold text-gray-900 dark:text-gray-100 truncate text-xs" title={person.email}>{person.email || 'No registrado'}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center space-x-3 text-sm">
                                 <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                                     <Banknote className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                                 </div>
@@ -116,7 +280,7 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                         <div>
                                             <p className="text-[10px] uppercase font-bold text-gray-400">Previsión / Seguro</p>
                                             <p className="font-medium text-gray-900 dark:text-gray-100 leading-tight text-xs">
-                                                {getHealthProviderName(person.healthInsuranceId || '')}
+                                                {getHealthProviderName(person.healthProviderId || '')}
                                                 {person.hasComplementaryInsurance && (
                                                     <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center mt-0.5">
                                                         <ShieldPlus className="w-3 h-3 mr-0.5" />
@@ -198,36 +362,7 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                             </div>
                         </div>
 
-                        <div className="mt-4 p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
-                            <p className="text-[10px] uppercase font-black text-gray-500 dark:text-gray-400 mb-3 tracking-widest flex items-center gap-2">
-                                <Shirt className="w-3 h-3 text-indigo-500" />
-                                Dotación Requerida / Artículos Pre-cargados
-                            </p>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                {articles.filter(a => a.isActive).map(art => {
-                                    const assignment = person.assignedArticles?.find(a => a.articleId === art.id);
-                                    const isAssigned = !!assignment;
 
-                                    return (
-                                        <div key={art.id} className={`p-2 rounded-xl border text-[9px] flex flex-col justify-between transition-all ${isAssigned
-                                            ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 shadow-sm'
-                                            : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 opacity-40 grayscale'}`}>
-                                            <p className="font-bold text-gray-700 dark:text-gray-300 leading-tight truncate">{art.name}</p>
-                                            {isAssigned && (
-                                                <div className="mt-1 flex items-center justify-between">
-                                                    <span className="bg-indigo-600 text-white px-1 rounded-sm font-black uppercase text-[8px]">
-                                                        {assignment.size || 'S.T'}
-                                                    </span>
-                                                    {assignment.quantity > 1 && (
-                                                        <span className="text-indigo-600 dark:text-indigo-400 font-black">X {assignment.quantity}</span>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
 
                         {person.medicalInfo && (
                             <div className="mt-4 p-3 bg-red-50/50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/30 flex items-start gap-3">
@@ -244,3 +379,4 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
         </div>
     );
 };
+

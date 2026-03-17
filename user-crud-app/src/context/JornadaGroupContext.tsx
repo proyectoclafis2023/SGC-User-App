@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { JornadaGroup } from '../types';
-import { api } from '../services/api';
+import { API_BASE_URL } from '../config/api';
 
 interface JornadaGroupContextType {
     groups: JornadaGroup[];
@@ -11,13 +11,18 @@ interface JornadaGroupContextType {
 
 const JornadaGroupContext = createContext<JornadaGroupContextType | undefined>(undefined);
 
+const API_URL = `${API_BASE_URL}/jornada_groups`;
+
 export const JornadaGroupProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [groups, setGroups] = useState<JornadaGroup[]>([]);
 
     const fetchGroups = async () => {
         try {
-            const data = await api.get<JornadaGroup[]>('/jornada_groups');
-            setGroups(Array.isArray(data) ? data : []);
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                const data = await response.json();
+                setGroups(Array.isArray(data) ? data : []);
+            }
         } catch (error) {
             console.error('Error fetching jornada groups:', error);
         }
@@ -28,30 +33,40 @@ export const JornadaGroupProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }, []);
 
     const addGroup = async (group: Omit<JornadaGroup, 'id'>) => {
-        try {
-            await api.post('/jornada_groups', group);
-            await fetchGroups();
-        } catch (error) {
-            console.error('Error adding jornada group:', error);
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(group)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al agregar el grupo de jornada');
         }
+        await fetchGroups();
     };
 
     const updateGroup = async (group: JornadaGroup) => {
-        try {
-            await api.put(`/jornada_groups/${group.id}`, group);
-            await fetchGroups();
-        } catch (error) {
-            console.error('Error updating jornada group:', error);
+        const response = await fetch(`${API_URL}/${group.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(group)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el grupo de jornada');
         }
+        await fetchGroups();
     };
 
     const deleteGroup = async (id: string) => {
-        try {
-            await api.delete(`/jornada_groups/${id}`);
-            await fetchGroups();
-        } catch (error) {
-            console.error('Error deleting jornada group:', error);
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al eliminar el grupo de jornada');
         }
+        await fetchGroups();
     };
 
     return (

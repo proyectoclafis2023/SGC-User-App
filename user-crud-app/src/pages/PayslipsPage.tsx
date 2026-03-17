@@ -84,21 +84,41 @@ export const PayslipsPage: React.FC = () => {
     };
 
     const calculateDeductions = (gross: number) => {
-        if (!selectedPerson) return { health: 0, pension: 0, total: 0 };
+        if (!selectedPerson) return { health: 0, pension: 0, apv: 0, insurance: 0, total: 0 };
 
-        const healthProvider = providers.find(p => p.id === selectedPerson.healthInsuranceId);
+        const healthProvider = providers.find(p => p.id === selectedPerson.healthProviderId);
         const pensionFund = funds.find(f => f.id === selectedPerson.pensionFundId);
 
-        const healthRate = healthProvider?.discountRate || 7; // Default Fonasa 7%
-        const pensionRate = pensionFund?.discountRate || 10; // Default 10%
+        const healthRate = healthProvider?.discountRate || 7; 
+        const pensionRate = pensionFund?.discountRate || 10; 
 
         const healthDiscount = Math.round(gross * (healthRate / 100));
         const pensionDiscount = Math.round(gross * (pensionRate / 100));
 
+        let apvDiscount = 0;
+        if (selectedPerson.hasAPV) {
+            if (selectedPerson.apvType === 'percentage') {
+                apvDiscount = Math.round(gross * ((selectedPerson.apvValue || 0) / 100));
+            } else {
+                apvDiscount = selectedPerson.apvValue || 0;
+            }
+        }
+
+        let insuranceDiscount = 0;
+        if (selectedPerson.hasComplementaryInsurance) {
+            if (selectedPerson.complementaryInsuranceType === 'percentage') {
+                insuranceDiscount = Math.round(gross * ((selectedPerson.complementaryInsuranceValue || 0) / 100));
+            } else {
+                insuranceDiscount = selectedPerson.complementaryInsuranceValue || 0;
+            }
+        }
+
         return {
             health: healthDiscount,
             pension: pensionDiscount,
-            total: healthDiscount + pensionDiscount
+            apv: apvDiscount,
+            insurance: insuranceDiscount,
+            total: healthDiscount + pensionDiscount + apvDiscount + insuranceDiscount
         };
     };
 
@@ -121,8 +141,8 @@ export const PayslipsPage: React.FC = () => {
             adjustedWorkedDays: manualWorkedDays !== null ? manualWorkedDays : undefined,
             healthDiscount: deductions.health,
             pensionDiscount: deductions.pension,
-            apvDiscount: 0,
-            insuranceDiscount: 0,
+            apvDiscount: deductions.apv,
+            insuranceDiscount: deductions.insurance,
             advancesDiscount: totalAdvances,
             totalDeductions,
             netSalary,
@@ -640,7 +660,7 @@ export const PayslipsPage: React.FC = () => {
                                 <PayslipDocument
                                     payslip={viewingPayslip}
                                     person={personnel.find(p => p.id === viewingPayslip.personnelId)}
-                                    health={providers.find(p => p.id === personnel.find(px => px.id === viewingPayslip.personnelId)?.healthInsuranceId)}
+                                    health={providers.find(p => p.id === personnel.find(px => px.id === viewingPayslip.personnelId)?.healthProviderId)}
                                     fund={funds.find(f => f.id === personnel.find(px => px.id === viewingPayslip.personnelId)?.pensionFundId)}
                                     settings={settings}
                                 />

@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const PensionFundContext = createContext<PensionFundContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/pension_funds`;
+const API_URL = `${API_BASE_URL}/pension-funds`;
 
 export const PensionFundProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [funds, setFunds] = useState<PensionFund[]>([]);

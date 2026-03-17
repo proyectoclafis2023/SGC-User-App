@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePersonnel } from '../context/PersonnelContext';
 import { PersonnelList } from '../components/PersonnelList';
 import { PersonnelForm } from '../components/PersonnelForm';
 import { Button } from '../components/Button';
 import { useUsers } from '../context/UserContext';
-import { Plus, Search, Users as UsersIcon, Download } from 'lucide-react';
+import { Plus, Search, Users as UsersIcon, Download, LayoutGrid, List, CheckCircle2, X } from 'lucide-react';
 import type { Personnel, AssignedArticle } from '../types';
 import { SecurityModal } from '../components/SecurityModal';
 import { useArticleDeliveries } from '../context/ArticleDeliveryContext';
@@ -20,7 +20,16 @@ export const PersonnelPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [personToDelete, setPersonToDelete] = useState<Personnel | null>(null);
+    const [viewMode, setViewMode] = useState<'cards' | 'grid'>('cards');
+    const [successToast, setSuccessToast] = useState<{show: boolean, message: string}>({ show: false, message: '' });
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (successToast.show) {
+            const timer = setTimeout(() => setSuccessToast({ show: false, message: '' }), 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [successToast.show]);
 
     const handleAddPerson = () => {
         setEditingPerson(null);
@@ -33,7 +42,7 @@ export const PersonnelPage: React.FC = () => {
     };
 
     const handleDeletePerson = (id: string, _name: string) => {
-        const person = personnel.find(p => p.id === id);
+        const person = personnel.find((p: Personnel) => p.id === id);
         if (person) {
             setPersonToDelete(person);
             setIsDeleteModalOpen(true);
@@ -42,13 +51,14 @@ export const PersonnelPage: React.FC = () => {
 
     const confirmDelete = async () => {
         if (personToDelete) {
-            const user = users.find(u => u.relatedId === personToDelete.id);
+            const user = users.find((u: any) => u.relatedId === personToDelete.id);
             if (user) {
                 await deleteUser(user.id);
             }
             await deletePersonnel(personToDelete.id);
             setPersonToDelete(null);
             setIsDeleteModalOpen(false);
+            setSuccessToast({ show: true, message: 'Ficha eliminada correctamente.' });
         }
     };
 
@@ -61,7 +71,7 @@ export const PersonnelPage: React.FC = () => {
         if (id && editingPerson) {
             // Caso edición: comparar con lo que tenía antes
             (data.assignedArticles || []).forEach((newItem: AssignedArticle) => {
-                const oldItem = editingPerson.assignedArticles?.find(a => a.articleId === newItem.articleId);
+                const oldItem = editingPerson.assignedArticles?.find((a: AssignedArticle) => a.articleId === newItem.articleId);
                 if (!oldItem) {
                     // Completamente nuevo
                     newArticlesForHistory.push({
@@ -81,7 +91,8 @@ export const PersonnelPage: React.FC = () => {
             await updatePersonnel({ ...data, id, createdAt: editingPerson.createdAt, status: editingPerson.status });
         } else {
             // Caso nuevo: todos los artículos asignados van al historial
-            finalPersonnelId = await addPersonnel(data);
+            const newPerson = await addPersonnel(data);
+            if (newPerson) finalPersonnelId = newPerson.id;
             if (data.assignedArticles && data.assignedArticles.length > 0) {
                 data.assignedArticles.forEach((item: AssignedArticle) => {
                     newArticlesForHistory.push({
@@ -109,11 +120,14 @@ export const PersonnelPage: React.FC = () => {
             }
         }
 
-        alert(id ? 'Cambios guardados exitosamente.' : 'Personal registrado exitosamente.');
+        setSuccessToast({ 
+            show: true, 
+            message: id ? 'Cambios guardados con éxito.' : 'Personal registrado correctamente.' 
+        });
         setIsModalOpen(false);
     };
 
-    const filteredPersonnel = personnel.filter(p => {
+    const filteredPersonnel = personnel.filter((p: Personnel) => {
         if (p.isArchived) return false;
 
         const cleanSearch = searchTerm.toLowerCase().trim();
@@ -126,14 +140,35 @@ export const PersonnelPage: React.FC = () => {
     });
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+            {/* Toast Notification */}
+            {successToast.show && (
+                <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-10 fade-in duration-500">
+                    <div className="bg-gray-900 dark:bg-emerald-600 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 border border-white/10 backdrop-blur-md">
+                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                            <CheckCircle2 className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Sistema SGC</p>
+                            <p className="text-sm font-bold uppercase tracking-tight">{successToast.message}</p>
+                        </div>
+                        <button 
+                            onClick={() => setSuccessToast({ show: false, message: '' })}
+                            className="ml-4 p-2 hover:bg-white/10 rounded-xl transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <UsersIcon className="w-8 h-8 text-indigo-600" />
                         Maestro de Personal
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Gestión de fichas, contratos y previsión del personal.</p>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium">Gestión de fichas, contratos y previsión del personal.</p>
                 </div>
                 <div className="flex gap-2">
                     <input
@@ -146,7 +181,7 @@ export const PersonnelPage: React.FC = () => {
                             if (file) {
                                 try {
                                     const result = await uploadPersonnel(file);
-                                    alert(result.message);
+                                    setSuccessToast({ show: true, message: result.message });
                                 } catch (err: any) {
                                     alert(err.message);
                                 }
@@ -161,27 +196,53 @@ export const PersonnelPage: React.FC = () => {
                         <Download className="w-4 h-4 mr-2" />
                         Exportar
                     </Button>
-                    <Button onClick={handleAddPerson} className="shadow-indigo-500/20">
+                    <Button onClick={handleAddPerson} className="shadow-xl shadow-indigo-500/20 bg-indigo-600 hover:bg-indigo-700 text-white border-0">
                         <Plus className="w-4 h-4 mr-2" />
                         Nuevo Trabajador
                     </Button>
                 </div>
             </div>
 
-            {/* Buscador */}
-            <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4 transition-colors">
-                <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            {/* Buscador y Controles de Vista */}
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col md:flex-row items-center gap-4 transition-colors">
+                <div className="relative flex-1 w-full md:max-w-md group">
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-indigo-500 transition-colors" />
                     <input
                         type="text"
                         placeholder="Buscar por nombre o DNI..."
-                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all text-sm"
+                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white dark:focus:bg-gray-800 transition-all text-sm font-medium"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div className="text-sm text-gray-500 ml-auto hidden md:block">
-                    Total personal: <span className="font-bold text-indigo-600">{filteredPersonnel.length}</span>
+                
+                <div className="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                    <button
+                        onClick={() => setViewMode('cards')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                            viewMode === 'cards' 
+                            ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-gray-100 shadow-sm' 
+                            : 'text-gray-400 hover:text-gray-600'
+                        }`}
+                    >
+                        <LayoutGrid className="w-3.5 h-3.5" />
+                        Tarjetas
+                    </button>
+                    <button
+                        onClick={() => setViewMode('grid')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                            viewMode === 'grid' 
+                            ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-gray-100 shadow-sm' 
+                            : 'text-gray-400 hover:text-gray-600'
+                        }`}
+                    >
+                        <List className="w-3.5 h-3.5" />
+                        Grilla
+                    </button>
+                </div>
+
+                <div className="text-sm font-bold text-gray-400 ml-auto hidden md:block">
+                    Personal activo: <span className="text-indigo-600">{filteredPersonnel.length}</span>
                 </div>
             </div>
 
@@ -189,6 +250,7 @@ export const PersonnelPage: React.FC = () => {
                 personnel={filteredPersonnel}
                 onEdit={handleEditPerson}
                 onDelete={handleDeletePerson}
+                viewMode={viewMode}
             />
 
             <PersonnelForm
@@ -213,3 +275,4 @@ export const PersonnelPage: React.FC = () => {
         </div>
     );
 };
+
