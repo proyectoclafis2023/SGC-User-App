@@ -942,6 +942,319 @@ app.put('/api/system_settings/:id', async (req, res) => {
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
+// --- Health Providers (Previsiones / Salud) - PUT & DELETE missing ---
+app.put('/api/health-providers/:id', async (req, res) => {
+    try {
+        const { id, createdAt, isArchived, personnel, ...updateData } = req.body;
+        const data = await prisma.healthProvider.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/health-providers/:id', async (req, res) => {
+    try {
+        await prisma.healthProvider.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Banks - PUT & DELETE missing ---
+app.put('/api/banks/:id', async (req, res) => {
+    try {
+        const { id, createdAt, isArchived, personnel, ...updateData } = req.body;
+        const data = await prisma.bank.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/banks/:id', async (req, res) => {
+    try {
+        await prisma.bank.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Pension Funds (AFPs) - PUT & DELETE missing ---
+app.put('/api/pension-funds/:id', async (req, res) => {
+    try {
+        const { id, createdAt, isArchived, personnel, ...updateData } = req.body;
+        const data = await prisma.pensionFund.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/pension-funds/:id', async (req, res) => {
+    try {
+        await prisma.pensionFund.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Special Conditions (Condiciones Especiales) - full CRUD missing ---
+app.get('/api/special_conditions', async (req, res) => {
+    try {
+        const data = await prisma.specialCondition.findMany({ where: { isArchived: false } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/special_conditions', async (req, res) => {
+    try {
+        const data = await prisma.specialCondition.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/special_conditions/:id', async (req, res) => {
+    try {
+        const { id, createdAt, ...updateData } = req.body;
+        const data = await prisma.specialCondition.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/special_conditions/:id', async (req, res) => {
+    try {
+        await prisma.specialCondition.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Unit Types (Tipos de Unidad) - full CRUD missing ---
+app.get('/api/unit_types', async (req, res) => {
+    try {
+        const data = await prisma.unitType.findMany({ where: { isArchived: false } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/unit_types', async (req, res) => {
+    try {
+        const { defaultM2, ...rest } = req.body;
+        // defaultM2 is a frontend-only field – store it if the schema has it, otherwise ignore safely
+        const data = await prisma.unitType.create({ data: rest });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/unit_types/:id', async (req, res) => {
+    try {
+        const { id, createdAt, isArchived, departments, commonExpenseRules, defaultM2, ...updateData } = req.body;
+        const data = await prisma.unitType.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/unit_types/:id', async (req, res) => {
+    try {
+        await prisma.unitType.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Common Spaces (Espacios Comunes) - full CRUD missing ---
+app.get('/api/common_spaces', async (req, res) => {
+    try {
+        const data = await prisma.commonSpace.findMany({ where: { isArchived: false } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/common_spaces', async (req, res) => {
+    try {
+        const data = await prisma.commonSpace.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/common_spaces/:id', async (req, res) => {
+    try {
+        const { id, createdAt, isArchived, ...updateData } = req.body;
+        const data = await prisma.commonSpace.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/common_spaces/:id', async (req, res) => {
+    try {
+        await prisma.commonSpace.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Parking (Estacionamientos) - full CRUD missing ---
+app.get('/api/parking', async (req, res) => {
+    try {
+        const data = await prisma.parking.findMany({ where: { isArchived: false } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/parking', async (req, res) => {
+    try {
+        const data = await prisma.parking.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/parking/:id', async (req, res) => {
+    try {
+        const { id, createdAt, isArchived, department, ...updateData } = req.body;
+        const data = await prisma.parking.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/parking/:id', async (req, res) => {
+    try {
+        await prisma.parking.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Residents - PUT & DELETE missing ---
+app.put('/api/residents/:id', async (req, res) => {
+    try {
+        const { id, createdAt, departments, conditionIds, unitId, towerId, parkingIds, photo, ...updateData } = req.body;
+        const data = await prisma.resident.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/residents/:id', async (req, res) => {
+    try {
+        await prisma.resident.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Community Expenses (Egresos GC) - full CRUD missing ---
+app.get('/api/community_expenses', async (req, res) => {
+    try {
+        const data = await prisma.communityExpense.findMany({
+            where: { isArchived: false },
+            orderBy: { date: 'desc' }
+        });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/community_expenses', async (req, res) => {
+    try {
+        const data = await prisma.communityExpense.create({ data: req.body });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/community_expenses/:id', async (req, res) => {
+    try {
+        const { id, createdAt, isArchived, receiptImages, ...updateData } = req.body;
+        const data = await prisma.communityExpense.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/community_expenses/:id', async (req, res) => {
+    try {
+        await prisma.communityExpense.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Departments - full CRUD missing ---
+app.get('/api/departments', async (req, res) => {
+    try {
+        const data = await prisma.department.findMany({
+            where: { isArchived: false },
+            include: { tower: true, unitType: true }
+        });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/departments', async (req, res) => {
+    try {
+        const { history, ...rest } = req.body;
+        const data = await prisma.department.create({ data: rest });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/departments/:id', async (req, res) => {
+    try {
+        const { id, createdAt, isArchived, tower, unitType, resident, owner, commonExpensePayments, correspondence, parking, history, ...updateData } = req.body;
+        const data = await prisma.department.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/departments/:id', async (req, res) => {
+    try {
+        await prisma.department.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 SGC Full Backend en http://localhost:${PORT}`);
 });

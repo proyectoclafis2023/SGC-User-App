@@ -329,6 +329,37 @@ model Afc {
   createdAt          DateTime @default(now())
 }
 
+model SpecialCondition {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model CommonSpace {
+  id            String   @id @default(cuid())
+  name          String
+  location      String
+  rentalValue   Float    @default(0)
+  durationHours Int      @default(1)
+  conditions    String?
+  isArchived    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
+
+model CommunityExpense {
+  id           String   @id @default(cuid())
+  description  String
+  amount       Float
+  category     String   @default("Otros")
+  date         String
+  receiptUrl   String?
+  isArchived   Boolean  @default(false)
+  isProjected  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
 model SystemSettings {
   id                  String   @id @default(cuid())
   systemName          String   @default("Administración GAG")
