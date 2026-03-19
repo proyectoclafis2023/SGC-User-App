@@ -33,8 +33,8 @@ export const OwnerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         });
 
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al agregar el propietario');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al agregar el propietario');
         }
 
         const newOwner = await response.json();
@@ -55,8 +55,8 @@ export const OwnerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             body: JSON.stringify(owner)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al actualizar el propietario');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al actualizar el propietario');
         }
         await fetchOwners();
         await addLog({
@@ -70,8 +70,8 @@ export const OwnerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const deleteOwner = async (id: string) => {
         const response = await fetch(`${API_BASE_URL}/owners/${id}`, { method: 'DELETE' });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al eliminar el propietario');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al eliminar el propietario');
         }
         await fetchOwners();
     };

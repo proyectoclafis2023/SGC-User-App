@@ -32,8 +32,8 @@ export const FixedAssetProvider: React.FC<{ children: ReactNode }> = ({ children
             body: JSON.stringify(asset)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al agregar el activo fijo');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al agregar el activo fijo');
         }
         await fetchAssets();
     };
@@ -45,8 +45,8 @@ export const FixedAssetProvider: React.FC<{ children: ReactNode }> = ({ children
             body: JSON.stringify(asset)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al actualizar el activo fijo');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al actualizar el activo fijo');
         }
         await fetchAssets();
     };
@@ -54,8 +54,8 @@ export const FixedAssetProvider: React.FC<{ children: ReactNode }> = ({ children
     const deleteAsset = async (id: string) => {
         const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al eliminar el activo fijo');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al eliminar el activo fijo');
         }
         await fetchAssets();
     };

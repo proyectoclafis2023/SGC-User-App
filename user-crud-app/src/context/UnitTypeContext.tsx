@@ -32,8 +32,8 @@ export const UnitTypeProvider: React.FC<{ children: ReactNode }> = ({ children }
             body: JSON.stringify(unitType)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al agregar el tipo de unidad');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al agregar el tipo de unidad');
         }
         const data = await response.json();
         await fetchUnitTypes();
@@ -47,8 +47,8 @@ export const UnitTypeProvider: React.FC<{ children: ReactNode }> = ({ children }
             body: JSON.stringify(unitType)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al actualizar el tipo de unidad');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al actualizar el tipo de unidad');
         }
         await fetchUnitTypes();
     };
@@ -56,8 +56,8 @@ export const UnitTypeProvider: React.FC<{ children: ReactNode }> = ({ children }
     const deleteUnitType = async (id: string) => {
         const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al eliminar el tipo de unidad');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al eliminar el tipo de unidad');
         }
         await fetchUnitTypes();
     };

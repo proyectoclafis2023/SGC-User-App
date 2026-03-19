@@ -32,8 +32,8 @@ export const AFCProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             body: JSON.stringify(afc)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al agregar el registro AFC');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al agregar el registro AFC');
         }
         await fetchAfcs();
     };
@@ -45,8 +45,8 @@ export const AFCProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             body: JSON.stringify(afc)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al actualizar el registro AFC');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al actualizar el registro AFC');
         }
         await fetchAfcs();
     };
@@ -54,8 +54,8 @@ export const AFCProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const deleteAFC = async (id: string) => {
         const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al eliminar el registro AFC');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al eliminar el registro AFC');
         }
         await fetchAfcs();
     };

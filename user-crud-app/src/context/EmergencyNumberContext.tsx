@@ -39,8 +39,8 @@ export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ chi
             body: JSON.stringify(newRecord)
         });
         if (!resp.ok) {
-            const err = await resp.json();
-            throw new Error(err.message || 'Error al agregar el número de emergencia');
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al agregar el número de emergencia');
         }
         fetchNumbers();
     };
@@ -57,8 +57,8 @@ export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ chi
             body: JSON.stringify(updated)
         });
         if (!resp.ok) {
-            const err = await resp.json();
-            throw new Error(err.message || 'Error al actualizar el número de emergencia');
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al actualizar el número de emergencia');
         }
         fetchNumbers();
     };
@@ -66,8 +66,8 @@ export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ chi
     const deleteNumber = async (id: string) => {
         const resp = await fetch(`${BACKEND_URL}/${id}`, { method: 'DELETE' });
         if (!resp.ok) {
-            const err = await resp.json();
-            throw new Error(err.message || 'Error al eliminar el número de emergencia');
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al eliminar el número de emergencia');
         }
         fetchNumbers();
     };

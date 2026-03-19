@@ -32,8 +32,8 @@ export const SpecialConditionProvider: React.FC<{ children: ReactNode }> = ({ ch
             body: JSON.stringify(condition)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al agregar la condición especial');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al agregar la condición especial');
         }
         await fetchConditions();
     };
@@ -45,8 +45,8 @@ export const SpecialConditionProvider: React.FC<{ children: ReactNode }> = ({ ch
             body: JSON.stringify(condition)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al actualizar la condición especial');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al actualizar la condición especial');
         }
         await fetchConditions();
     };
@@ -54,8 +54,8 @@ export const SpecialConditionProvider: React.FC<{ children: ReactNode }> = ({ ch
     const deleteCondition = async (id: string) => {
         const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al eliminar la condición especial');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al eliminar la condición especial');
         }
         await fetchConditions();
     };

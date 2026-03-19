@@ -32,8 +32,8 @@ export const PensionFundProvider: React.FC<{ children: ReactNode }> = ({ childre
             body: JSON.stringify(fund)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al agregar la AFP');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al agregar la AFP');
         }
         await fetchFunds();
     };
@@ -45,8 +45,8 @@ export const PensionFundProvider: React.FC<{ children: ReactNode }> = ({ childre
             body: JSON.stringify(fund)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al actualizar la AFP');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al actualizar la AFP');
         }
         await fetchFunds();
     };
@@ -54,8 +54,8 @@ export const PensionFundProvider: React.FC<{ children: ReactNode }> = ({ childre
     const deleteFund = async (id: string) => {
         const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al eliminar la AFP');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al eliminar la AFP');
         }
         await fetchFunds();
     };

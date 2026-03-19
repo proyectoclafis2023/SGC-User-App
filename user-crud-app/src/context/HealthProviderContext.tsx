@@ -35,8 +35,8 @@ export const HealthProviderProvider: React.FC<{ children: ReactNode }> = ({ chil
             body: JSON.stringify(provider)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al agregar el sistema de salud');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al agregar el sistema de salud');
         }
         await fetchProviders();
     };
@@ -48,8 +48,8 @@ export const HealthProviderProvider: React.FC<{ children: ReactNode }> = ({ chil
             body: JSON.stringify(provider)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al actualizar el sistema de salud');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al actualizar el sistema de salud');
         }
         await fetchProviders();
     };
@@ -57,8 +57,8 @@ export const HealthProviderProvider: React.FC<{ children: ReactNode }> = ({ chil
     const deleteProvider = async (id: string) => {
         const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al eliminar el sistema de salud');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al eliminar el sistema de salud');
         }
         await fetchProviders();
     };

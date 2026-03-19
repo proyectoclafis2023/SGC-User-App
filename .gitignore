@@ -1,0 +1,16 @@
+node_modules/
+.env
+dist/
+build/
+*.log
+local_files/
+.DS_Store
+.idea/
+.vscode/
+sgc-backend/prisma/dev.db
+sgc-backend/prisma/dev.db-journal
+sgc-backend/prisma/prisma/
+package-lock.json
+user-crud-app/package-lock.json
+sgc-backend/package-lock.json
+

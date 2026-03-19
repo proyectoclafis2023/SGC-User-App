@@ -1255,6 +1255,81 @@ app.delete('/api/departments/:id', async (req, res) => {
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
+
+// --- Owners (Propietarios) - MISSING ---
+app.get('/api/owners', async (req, res) => {
+    try {
+        const data = await prisma.owner.findMany({ where: { isArchived: false } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/owners', async (req, res) => {
+    try {
+        const { id, createdAt, departments, ...rest } = req.body;
+        const data = await prisma.owner.create({ data: rest });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/owners/:id', async (req, res) => {
+    try {
+        const { id, createdAt, departments, ...updateData } = req.body;
+        const data = await prisma.owner.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/owners/:id', async (req, res) => {
+    try {
+        await prisma.owner.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Fixed Assets (Activo Fijo) - MISSING ---
+app.get('/api/fixed_assets', async (req, res) => {
+    try {
+        const data = await prisma.fixedAsset.findMany({ where: { isArchived: false } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/fixed_assets', async (req, res) => {
+    try {
+        const { id, createdAt, maintenanceHistory, requiresMaintenance, nextMaintenanceDate, image, ...rest } = req.body;
+        const data = await prisma.fixedAsset.create({ data: rest });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/fixed_assets/:id', async (req, res) => {
+    try {
+        const { id, createdAt, isArchived, maintenanceHistory, requiresMaintenance, nextMaintenanceDate, image, ...updateData } = req.body;
+        const data = await prisma.fixedAsset.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/fixed_assets/:id', async (req, res) => {
+    try {
+        await prisma.fixedAsset.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 SGC Full Backend en http://localhost:${PORT}`);
 });

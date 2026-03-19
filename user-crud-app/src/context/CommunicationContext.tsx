@@ -37,8 +37,8 @@ export const CommunicationProvider: React.FC<{ children: React.ReactNode }> = ({
             body: JSON.stringify(template)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al agregar la plantilla de comunicación');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al agregar la plantilla de comunicación');
         }
         fetchAll();
     };
@@ -50,8 +50,8 @@ export const CommunicationProvider: React.FC<{ children: React.ReactNode }> = ({
             body: JSON.stringify(template)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al actualizar la plantilla de comunicación');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al actualizar la plantilla de comunicación');
         }
         fetchAll();
     };
@@ -59,8 +59,8 @@ export const CommunicationProvider: React.FC<{ children: React.ReactNode }> = ({
     const deleteTemplate = async (id: string) => {
         const response = await fetch(`${TPL_API}/${id}`, { method: 'DELETE' });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al eliminar la plantilla de comunicación');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al eliminar la plantilla de comunicación');
         }
         fetchAll();
     };

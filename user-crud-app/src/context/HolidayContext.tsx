@@ -32,8 +32,8 @@ export const HolidayProvider: React.FC<{ children: ReactNode }> = ({ children })
             body: JSON.stringify(holiday)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al agregar el feriado');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al agregar el feriado');
         }
         await fetchHolidays();
     };
@@ -45,8 +45,8 @@ export const HolidayProvider: React.FC<{ children: ReactNode }> = ({ children })
             body: JSON.stringify(holiday)
         });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al actualizar el feriado');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al actualizar el feriado');
         }
         await fetchHolidays();
     };
@@ -54,8 +54,8 @@ export const HolidayProvider: React.FC<{ children: ReactNode }> = ({ children })
     const deleteHoliday = async (id: string) => {
         const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al eliminar el feriado');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || err.message || 'Error al eliminar el feriado');
         }
         await fetchHolidays();
     };
