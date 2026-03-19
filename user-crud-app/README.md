@@ -12,6 +12,11 @@
 *   **Operaciones Diarias**: Bitácora de turnos, control de visitas, gestión de correspondencia y solicitudes de cámaras.
 *   **Soporte y Servicios**: Directorio de servicios recomendados, sistema de sugerencias y reclamos, y números de emergencia.
 *   **Comunicación**: Maestro de avisos sistema para carruseles públicos y notificaciones a residentes.
+## 📐 Arquitectura y Estándares
+
+Para garantizar la consistencia y escalabilidad del sistema, todo desarrollo nuevo o migración de módulos debe seguir el estándar oficial de implementación:
+
+*   [**SGC Module Standard v1.0**](../docs/architecture/sgc-module-standard.md)
 
 ## 🛠️ Stack Tecnológico
 
