@@ -17,7 +17,7 @@ import type {
     PensionFund, SpecialCondition, UnitType, Tower, Department, 
     CommonSpace, Parking, SystemParameter, 
     InfrastructureItem, EquipmentItem, SystemMessage, EmergencyNumber,
-    CommunityExpense, SpecialFund
+    CommunityExpense, SpecialFund, Camera
 } from '../types';
 import type { IPCProjection } from '../context/IPCProjectionContext';
 import { useInfrastructure } from '../context/InfrastructureContext';
@@ -32,10 +32,11 @@ import { useEmergencyNumbers } from '../context/EmergencyNumberContext';
 import { useAFC } from '../context/AFCContext';
 import { useHolidays } from '../context/HolidayContext';
 import { useCommunications } from '../context/CommunicationContext';
+import { useCameras } from '../context/CameraContext';
 
 import * as XLSX from 'xlsx';
 
-type EntityType = 'articles' | 'personnel' | 'residents' | 'owners' | 'banks' | 'assets' | 'health' | 'afp' | 'conditions' | 'units' | 'extra_funds' | 'income' | 'community_expenses' | 'towers' | 'departments' | 'common_spaces' | 'parking' | 'article_categories' | 'ipc' | 'infra_items' | 'equip_items' | 'messages' | 'emergency_numbers' | 'afc_master' | 'holiday_master' | 'comm_templates';
+type EntityType = 'articles' | 'personnel' | 'residents' | 'owners' | 'banks' | 'assets' | 'health' | 'afp' | 'conditions' | 'units' | 'extra_funds' | 'income' | 'community_expenses' | 'towers' | 'departments' | 'common_spaces' | 'parking' | 'article_categories' | 'ipc' | 'infra_items' | 'equip_items' | 'messages' | 'emergency_numbers' | 'afc_master' | 'holiday_master' | 'comm_templates' | 'cameras';
 
 interface ProcessingError {
     row: number;
@@ -76,6 +77,7 @@ export const MassiveUploadPage: React.FC = () => {
     const { afcs, addAFC, updateAFC } = useAFC();
     const { holidays, addHoliday, updateHoliday } = useHolidays();
     const { templates: commTemplates, addTemplate, updateTemplate } = useCommunications();
+    const { cameras: localCameras, addCamera, updateCamera } = useCameras();
 
     const entities: { value: EntityType; label: string; icon: any; requiredHeaders: string[]; description: string; category: string }[] = [
         // Operaciones y Soporte
@@ -83,6 +85,7 @@ export const MassiveUploadPage: React.FC = () => {
         { value: 'equip_items', label: 'Bitácora (Equipamiento)', icon: Smartphone, requiredHeaders: ['nombre'], description: 'Puntos de control para equipamiento crítico (Cámaras, Radios, etc).', category: 'Operaciones y Soporte' },
         { value: 'emergency_numbers', label: 'Números Emergencia', icon: Phone, requiredHeaders: ['nombre', 'telefono'], description: 'Directorio de servicios de emergencia y soporte técnico.', category: 'Operaciones y Soporte' },
         { value: 'common_spaces', label: 'Espacios Comunes', icon: Landmark, requiredHeaders: ['nombre', 'ubicacion'], description: 'Áreas de uso común como quinchos, gimnasios o salas multiuso.', category: 'Operaciones y Soporte' },
+        { value: 'cameras', label: 'Maestro Cámaras (CCTV)', icon: Smartphone, requiredHeaders: ['nombre', 'horas_respaldo'], description: 'Inventario de cámaras de seguridad y capacidad de respaldo.', category: 'Operaciones y Soporte' },
         
         // Comunidad
         { value: 'residents', label: 'Residentes', icon: Users, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Habitantes actuales de las unidades del condominio.', category: 'Comunidad y Administración' },
@@ -256,14 +259,17 @@ export const MassiveUploadPage: React.FC = () => {
                                         isHonorary: obj.honorario === 'SI' || obj.honorario === true,
                                         baseSalary: Number(obj.sueldo_base || 0),
                                         vacationDays: Number(obj.dias_vacaciones || 0),
+                                        vacationLastUpdate: String(obj.ultima_actualizacion_vacaciones || ''),
                                         phone: String(obj.telefono || ''),
-                                        email: String(obj.email || '')
+                                        email: String(obj.email || ''),
+                                        assignedShift: String(obj.turno_asignado || ''),
+                                        status: 'active' as any
                                     };
                                     if (existingPerson) {
-                                        await updatePersonnel({ ...existingPerson, ...personData });
+                                        await updatePersonnel({ ...existingPerson, ...personData } as any);
                                         Object.assign(existingPerson, personData);
                                     } else {
-                                        const newP = await addPersonnel({ ...personData, hasEmergencyContact: false });
+                                        const newP = await addPersonnel({ ...personData, hasEmergencyContact: false } as any);
                                         if (newP?.id) localPersonnel.push(newP);
                                     }
                                     break;
@@ -278,7 +284,10 @@ export const MassiveUploadPage: React.FC = () => {
                                         phone: String(obj.telefono || ''),
                                         familyCount: Number(obj.integrantes || 1),
                                         hasPets: obj.mascotas === 'SI' || obj.mascotas === true,
-                                        isTenant: obj.arrendatario === 'SI' || obj.arrendatario === true
+                                        isTenant: obj.arrendatario === 'SI' || obj.arrendatario === true,
+                                        rentAmount: Number(obj.monto_arriendo || 0),
+                                        notes: String(obj.observaciones || ''),
+                                        status: 'active' as any
                                     };
                                     if (existingResident) {
                                         await updateResident({ ...existingResident, ...residentData });
@@ -298,6 +307,8 @@ export const MassiveUploadPage: React.FC = () => {
                                         dni: String(obj.rut),
                                         email: String(obj.email || ''),
                                         phone: String(obj.telefono || ''),
+                                        receiveResidentNotifications: obj.notificaciones === 'SI' || obj.notificaciones === true || true,
+                                        canResidentSeeArrears: obj.ver_deudas === 'SI' || obj.ver_deudas === true || false,
                                         status: 'active' as any
                                     };
                                     if (existingOwner) {
@@ -314,7 +325,7 @@ export const MassiveUploadPage: React.FC = () => {
                                     const unitData = {
                                         name: String(obj.nombre),
                                         baseCommonExpense: Number(obj.gasto_base || 0),
-                                        defaultM2: Number(obj.m2 || 60)
+                                        defaultM2: Number(obj.m2_defecto || obj.m2 || 60)
                                     };
                                     if (existingUnit) {
                                         await updateUnitType({ ...existingUnit, ...unitData });
@@ -478,7 +489,19 @@ export const MassiveUploadPage: React.FC = () => {
                                         floor: Number(obj.piso || 1),
                                         towerId: tower?.id || '',
                                         unitTypeId: unitType?.id,
-                                        m2: Number(obj.m2 || 60)
+                                        m2: Number(obj.m2 || 60),
+                                        terrainM2: Number(obj.m2_terreno || 0),
+                                        value: Number(obj.valor || 0),
+                                        dormitorios: Number(obj.dormitorios || 0),
+                                        banos: Number(obj.banos || 0),
+                                        estacionamientos: Number(obj.estacionamientos || 0),
+                                        yearBuilt: Number(obj.ano_construccion || new Date().getFullYear()),
+                                        isAvailable: obj.disponible === 'SI' || obj.disponible === true,
+                                        publishType: obj.tipo_publicacion || 'venta',
+                                        propertyRole: obj.rol_sii || '',
+                                        waterClientId: obj.agua || '',
+                                        electricityClientId: obj.luz || '',
+                                        gasClientId: obj.gas || ''
                                     };
                                     if (existingDept) {
                                         await updateDepartment({ ...existingDept, ...deptData });
@@ -558,6 +581,21 @@ export const MassiveUploadPage: React.FC = () => {
                                         await updateInfraItem({ ...existingInfra, ...infraData });
                                     } else {
                                         await addInfraItem(infraData);
+                                    }
+                                    break;
+                                case 'cameras':
+                                    if (!obj.nombre) throw new Error('Nombre de la cámara es obligatorio');
+                                    const existingCam = localCameras.find((c: Camera) => c.name.toLowerCase() === String(obj.nombre).toLowerCase());
+                                    const camData = {
+                                        name: String(obj.nombre),
+                                        description: String(obj.descripcion || ''),
+                                        backupHours: Number(obj.horas_respaldo || 168),
+                                        isArchived: false
+                                    };
+                                    if (existingCam) {
+                                        await updateCamera({ ...existingCam, ...camData });
+                                    } else {
+                                        await addCamera(camData);
                                     }
                                     break;
                                 case 'equip_items':
@@ -692,19 +730,19 @@ export const MassiveUploadPage: React.FC = () => {
                 articles?.forEach((a: Article) => data.push([a.name, a.description, a.category, a.price, a.stock, a.minStock, a.isActive ? 'SI' : 'NO']));
                 break;
             case 'personnel': 
-                headers = ['nombres', 'apellidos', 'rut', 'cargo', 'direccion', 'honorario', 'sueldo_base', 'dias_vacaciones', 'telefono', 'email']; 
-                personnel?.forEach((p: Personnel) => data.push([p.names, p.lastNames, p.dni, p.position, p.address, p.isHonorary ? 'SI' : 'NO', p.baseSalary, p.vacationDays, p.phone, p.email]));
+                headers = ['nombres', 'apellidos', 'rut', 'cargo', 'direccion', 'honorario', 'sueldo_base', 'dias_vacaciones', 'telefono', 'email', 'turno_asignado', 'ultima_actualizacion_vacaciones']; 
+                personnel?.forEach((p: Personnel) => data.push([p.names, p.lastNames, p.dni, p.position, p.address, p.isHonorary ? 'SI' : 'NO', p.baseSalary, p.vacationDays, p.phone, p.email, p.assignedShift, p.vacationLastUpdate]));
                 break;
             case 'residents': 
-                headers = ['nombres', 'apellidos', 'rut', 'email', 'telefono', 'integrantes', 'mascotas', 'arrendatario'];
-                residents?.forEach((r: Resident) => data.push([r.names, r.lastNames, r.dni, r.email, r.phone, r.familyCount, r.hasPets ? 'SI' : 'NO', r.isTenant ? 'SI' : 'NO']));
+                headers = ['nombres', 'apellidos', 'rut', 'email', 'telefono', 'integrantes', 'mascotas', 'arrendatario', 'monto_arriendo', 'observaciones'];
+                residents?.forEach((r: Resident) => data.push([r.names, r.lastNames, r.dni, r.email, r.phone, r.familyCount, r.hasPets ? 'SI' : 'NO', r.isTenant ? 'SI' : 'NO', r.rentAmount, r.notes]));
                 break;
             case 'owners': 
-                headers = ['nombres', 'apellidos', 'rut', 'email', 'telefono'];
-                owners?.forEach((o: Owner) => data.push([o.names, o.lastNames, o.dni, o.email, o.phone]));
+                headers = ['nombres', 'apellidos', 'rut', 'email', 'telefono', 'notificaciones', 'ver_deudas'];
+                owners?.forEach((o: Owner) => data.push([o.names, o.lastNames, o.dni, o.email, o.phone, o.receiveResidentNotifications ? 'SI' : 'NO', o.canResidentSeeArrears ? 'SI' : 'NO']));
                 break;
             case 'units': 
-                headers = ['nombre', 'gasto_base', 'm2'];
+                headers = ['nombre', 'gasto_base', 'm2_defecto'];
                 unitTypes?.forEach((u: UnitType) => data.push([u.name, u.baseCommonExpense, u.defaultM2]));
                 break;
             case 'banks': 
@@ -744,11 +782,29 @@ export const MassiveUploadPage: React.FC = () => {
                 towers?.forEach((t: Tower) => data.push([t.name]));
                 break;
             case 'departments': 
-                headers = ['numero', 'piso', 'torre', 'tipo_unidad', 'm2'];
+                headers = ['numero', 'piso', 'torre', 'tipo_unidad', 'm2', 'm2_terreno', 'valor', 'dormitorios', 'banos', 'estacionamientos', 'ano_construccion', 'disponible', 'tipo_publicacion', 'rol_sii', 'agua', 'luz', 'gas'];
                 departments?.forEach((d: Department) => {
                     const towerName = towers?.find((t: Tower) => t.id === d.towerId)?.name || '';
                     const unitTypeName = unitTypes?.find((u: UnitType) => u.id === d.unitTypeId)?.name || '';
-                    data.push([d.number, d.floor, towerName, unitTypeName, d.m2]);
+                    data.push([
+                        d.number, 
+                        d.floor, 
+                        towerName, 
+                        unitTypeName, 
+                        d.m2, 
+                        d.terrainM2, 
+                        d.value, 
+                        d.dormitorios, 
+                        d.banos, 
+                        d.estacionamientos, 
+                        d.yearBuilt, 
+                        d.isAvailable ? 'SI' : 'NO', 
+                        d.publishType, 
+                        d.propertyRole, 
+                        d.waterClientId, 
+                        d.electricityClientId, 
+                        d.gasClientId
+                    ]);
                 });
                 break;
             case 'common_spaces': 
@@ -797,6 +853,10 @@ export const MassiveUploadPage: React.FC = () => {
             case 'comm_templates':
                 headers = ['nombre', 'asunto', 'mensaje', 'tipo'];
                 commTemplates?.forEach(t => data.push([t.name, t.subject, t.message, t.type]));
+                break;
+            case 'cameras':
+                headers = ['nombre', 'descripcion', 'horas_respaldo'];
+                localCameras?.forEach(c => data.push([c.name, c.description, c.backupHours]));
                 break;
         }
 

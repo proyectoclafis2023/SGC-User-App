@@ -50,12 +50,24 @@ app.get('/api/health', (req, res) => {
  */
 app.get('/api/residents', async (req, res) => {
     const data = await prisma.resident.findMany({ where: { isArchived: false } });
-    res.json(data);
+    const parsedData = data.map(r => ({
+        ...r,
+        parkingIds: r.parkingIds ? JSON.parse(r.parkingIds) : [],
+        conditionIds: r.conditionIds ? JSON.parse(r.conditionIds) : []
+    }));
+    res.json(parsedData);
 });
 
 app.post('/api/residents', async (req, res) => {
     try {
-        const data = await prisma.resident.create({ data: req.body });
+        const { parkingIds, conditionIds, ...rest } = req.body;
+        const data = await prisma.resident.create({
+            data: {
+                ...rest,
+                parkingIds: parkingIds ? JSON.stringify(parkingIds) : null,
+                conditionIds: conditionIds ? JSON.stringify(conditionIds) : null
+            }
+        });
         res.status(201).json(data);
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -489,6 +501,33 @@ app.get('/api/common-expenses/funds', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Alias for UI consistency
+app.get('/api/special_funds', async (req, res) => {
+    try {
+        const data = await prisma.specialFund.findMany({ where: { isArchived: false } });
+        const parsedData = data.map(f => ({
+            ...f,
+            unitConfigs: f.unitConfigsJson ? JSON.parse(f.unitConfigsJson) : [],
+            expenses: f.expensesJson ? JSON.parse(f.expensesJson) : []
+        }));
+        res.json(parsedData);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/special_funds', async (req, res) => {
+    try {
+        const { unitConfigs, expenses, ...rest } = req.body;
+        const data = await prisma.specialFund.create({
+            data: {
+                ...rest,
+                unitConfigsJson: JSON.stringify(unitConfigs || []),
+                expensesJson: JSON.stringify(expenses || [])
+            }
+        });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
 app.post('/api/common-expenses/funds', async (req, res) => {
     try {
         const { unitConfigs, expenses, ...rest } = req.body;
@@ -541,6 +580,31 @@ app.post('/api/common-expenses/funds/restore/:id', async (req, res) => {
         await prisma.specialFund.update({
             where: { id: req.params.id },
             data: { isArchived: false }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/special_funds/:id', async (req, res) => {
+    try {
+        const { unitConfigs, expenses, ...rest } = req.body;
+        const data = await prisma.specialFund.update({
+            where: { id: req.params.id },
+            data: {
+                ...rest,
+                unitConfigsJson: JSON.stringify(unitConfigs || []),
+                expensesJson: JSON.stringify(expenses || [])
+            }
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/special_funds/:id', async (req, res) => {
+    try {
+        await prisma.specialFund.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
         });
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
@@ -920,23 +984,36 @@ app.delete('/api/holidays/:id', async (req, res) => {
 app.get('/api/system_settings', async (req, res) => {
     try {
         const data = await prisma.systemSettings.findMany();
-        res.json(data);
+        const parsedData = data.map(s => ({
+            ...s,
+            emailTriggers: s.emailTriggers ? JSON.parse(s.emailTriggers) : {}
+        }));
+        res.json(parsedData);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/system_settings', async (req, res) => {
     try {
-        const data = await prisma.systemSettings.create({ data: req.body });
+        const { emailTriggers, ...rest } = req.body;
+        const data = await prisma.systemSettings.create({ 
+            data: {
+                ...rest,
+                emailTriggers: emailTriggers ? JSON.stringify(emailTriggers) : null
+            }
+        });
         res.status(201).json(data);
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 app.put('/api/system_settings/:id', async (req, res) => {
     try {
-        const { id, createdAt, updatedAt, ...updateData } = req.body;
+        const { id, createdAt, updatedAt, emailTriggers, ...updateData } = req.body;
         const data = await prisma.systemSettings.update({
             where: { id: req.params.id },
-            data: updateData
+            data: {
+                ...updateData,
+                emailTriggers: emailTriggers ? JSON.stringify(emailTriggers) : (emailTriggers === null ? null : undefined)
+            }
         });
         res.json(data);
     } catch (err) { res.status(400).json({ error: err.message }); }
@@ -1160,7 +1237,11 @@ app.put('/api/residents/:id', async (req, res) => {
         const { id, createdAt, departments, conditionIds, unitId, towerId, parkingIds, photo, ...updateData } = req.body;
         const data = await prisma.resident.update({
             where: { id: req.params.id },
-            data: updateData
+            data: {
+                ...updateData,
+                parkingIds: parkingIds ? JSON.stringify(parkingIds) : (parkingIds === null ? null : undefined),
+                conditionIds: conditionIds ? JSON.stringify(conditionIds) : (conditionIds === null ? null : undefined)
+            }
         });
         res.json(data);
     } catch (err) { res.status(400).json({ error: err.message }); }
@@ -1222,14 +1303,23 @@ app.get('/api/departments', async (req, res) => {
             where: { isArchived: false },
             include: { tower: true, unitType: true }
         });
-        res.json(data);
+        const parsedData = data.map(d => ({
+            ...d,
+            history: d.historyJson ? JSON.parse(d.historyJson) : []
+        }));
+        res.json(parsedData);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/departments', async (req, res) => {
     try {
         const { history, ...rest } = req.body;
-        const data = await prisma.department.create({ data: rest });
+        const data = await prisma.department.create({ 
+            data: {
+                ...rest,
+                historyJson: history ? JSON.stringify(history) : null
+            }
+        });
         res.status(201).json(data);
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -1239,7 +1329,10 @@ app.put('/api/departments/:id', async (req, res) => {
         const { id, createdAt, isArchived, tower, unitType, resident, owner, commonExpensePayments, correspondence, parking, history, ...updateData } = req.body;
         const data = await prisma.department.update({
             where: { id: req.params.id },
-            data: updateData
+            data: {
+                ...updateData,
+                historyJson: history ? JSON.stringify(history) : (history === null ? null : undefined)
+            }
         });
         res.json(data);
     } catch (err) { res.status(400).json({ error: err.message }); }
@@ -1326,6 +1419,92 @@ app.delete('/api/fixed_assets/:id', async (req, res) => {
             where: { id: req.params.id },
             data: { isArchived: true }
         });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Soporte Especial: Cámaras (CCTV) ---
+app.get('/api/cameras', async (req, res) => {
+    try {
+        const data = await prisma.camera.findMany({ where: { isArchived: false } });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/cameras', async (req, res) => {
+    try {
+        const { id, createdAt, ...rest } = req.body;
+        const data = await prisma.camera.create({ data: rest });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/cameras/:id', async (req, res) => {
+    try {
+        const { id, createdAt, ...updateData } = req.body;
+        const data = await prisma.camera.update({
+            where: { id: req.params.id },
+            data: updateData
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/cameras/:id', async (req, res) => {
+    try {
+        await prisma.camera.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Article Deliveries (Vales de Entrega) ---
+app.get('/api/article_deliveries', async (req, res) => {
+    try {
+        const data = await prisma.articleDelivery.findMany({
+            include: { personnel: true },
+            orderBy: { createdAt: 'desc' }
+        });
+        const parsedData = data.map(d => ({
+            ...d,
+            articles: d.articlesJson ? JSON.parse(d.articlesJson) : []
+        }));
+        res.json(parsedData);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/article_deliveries', async (req, res) => {
+    try {
+        const { articles, ...rest } = req.body;
+        const data = await prisma.articleDelivery.create({
+            data: {
+                ...rest,
+                articlesJson: JSON.stringify(articles || [])
+            }
+        });
+        res.status(201).json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/article_deliveries/:id', async (req, res) => {
+    try {
+        const { id, createdAt, personnel, articles, ...updateData } = req.body;
+        const data = await prisma.articleDelivery.update({
+            where: { id: req.params.id },
+            data: {
+                ...updateData,
+                articlesJson: articles ? JSON.stringify(articles) : undefined
+            }
+        });
+        res.json(data);
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/article_deliveries/:id', async (req, res) => {
+    try {
+        await prisma.articleDelivery.delete({ where: { id: req.params.id } });
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });

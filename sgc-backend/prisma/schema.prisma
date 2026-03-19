@@ -38,6 +38,7 @@ model UnitType {
   id                 String              @id @default(cuid())
   name               String
   baseCommonExpense  Float
+  defaultM2          Float?
   isArchived         Boolean             @default(false)
   createdAt          DateTime            @default(now())
   commonExpenseRules CommonExpenseRule[]
@@ -56,14 +57,27 @@ model Department {
   id                    String                 @id @default(cuid())
   towerId               String?
   number                String
+  floor                 Int?
   unitTypeId            String?
   propertyRole          String?
   m2                    Float?
+  terrainM2             Float?
+  value                 Float?
+  dormitorios           Int?
+  banos                 Int?
+  estacionamientos      Int?
+  yearBuilt             Int?
+  isAvailable           Boolean                @default(false)
+  publishType           String?
+  image                 String?
+  locationMapUrl        String?
   waterClientId         String?
   electricityClientId   String?
   gasClientId           String?
   ownerId               String?
   residentId            String?
+  lastCensusDate        String?
+  historyJson           String?
   isArchived            Boolean                @default(false)
   createdAt             DateTime               @default(now())
   commonExpensePayments CommonExpensePayment[]
@@ -76,35 +90,42 @@ model Department {
 }
 
 model Owner {
-  id          String       @id @default(cuid())
-  names       String
-  lastNames   String
-  dni         String       @unique
-  phone       String
-  email       String
-  notes       String?
-  status      String       @default("active")
-  isArchived  Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  departments Department[]
+  id                           String       @id @default(cuid())
+  names                        String
+  lastNames                    String
+  dni                          String       @unique
+  phone                        String
+  email                        String
+  notes                        String?
+  status                       String       @default("active")
+  receiveResidentNotifications Boolean      @default(true)
+  canResidentSeeArrears        Boolean      @default(false)
+  isArchived                   Boolean      @default(false)
+  createdAt                    DateTime     @default(now())
+  departments                  Department[]
 }
 
 model Resident {
-  id          String       @id @default(cuid())
-  names       String
-  lastNames   String
-  dni         String       @unique
-  phone       String
-  email       String
-  familyCount Int          @default(1)
-  hasPets     Boolean      @default(false)
-  notes       String?
-  isTenant    Boolean      @default(false)
-  rentAmount  Float?
-  status      String       @default("active")
-  isArchived  Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  departments Department[]
+  id           String       @id @default(cuid())
+  names        String
+  lastNames    String
+  dni          String       @unique
+  phone        String
+  email        String
+  photo        String?
+  towerId      String?
+  unitId       String?
+  parkingIds   String?
+  familyCount  Int          @default(1)
+  hasPets      Boolean      @default(false)
+  conditionIds String?
+  notes        String?
+  isTenant     Boolean      @default(false)
+  rentAmount   Float?
+  status       String       @default("active")
+  isArchived   Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  departments  Department[]
 }
 
 model Personnel {
@@ -120,6 +141,7 @@ model Personnel {
   accountNumber               String?
   baseSalary                  Float
   vacationDays                Int             @default(0)
+  vacationLastUpdate          String?
   healthProviderId            String?
   hasComplementaryInsurance   Boolean         @default(false)
   complementaryInsuranceType  String?
@@ -133,13 +155,15 @@ model Personnel {
   position                    String?
   medicalInfo                 String?
   contractType                String          @default("indefinido")
+  assignedShift               String?
   hasEmergencyContact         Boolean         @default(false)
   emergencyContactJson        String?
   assignedArticlesJson        String?
-  status                      String          @default("active")
-  isArchived                  Boolean         @default(false)
-  createdAt                   DateTime        @default(now())
-  jornadaGroup                JornadaGroup?   @relation(fields: [jornadaGroupId], references: [id])
+  status                      String            @default("active")
+  isArchived                  Boolean           @default(false)
+  createdAt                   DateTime          @default(now())
+  articleDeliveries           ArticleDelivery[]
+  jornadaGroup                JornadaGroup?     @relation(fields: [jornadaGroupId], references: [id])
   pensionFund                 PensionFund?    @relation(fields: [pensionFundId], references: [id])
   healthProvider              HealthProvider? @relation(fields: [healthProviderId], references: [id])
   bank                        Bank?           @relation(fields: [bankId], references: [id])
@@ -267,6 +291,7 @@ model SpecialFund {
   deadline           String?
   isActive           Boolean  @default(true)
   isArchived         Boolean  @default(false)
+  fundCode           Int      @default(1)
   unitConfigsJson    String?
   expensesJson       String?
   createdAt          DateTime @default(now())
@@ -361,26 +386,59 @@ model CommunityExpense {
 }
 
 model SystemSettings {
-  id                  String   @id @default(cuid())
-  systemName          String   @default("Administración GAG")
-  systemIcon          String   @default("G")
-  systemLogo          String?
-  systemFavicon       String?
-  cameraBackupDays    Int      @default(7)
-  darkMode            Boolean  @default(false)
-  theme               String   @default("light")
-  adminName           String   @default("")
-  adminRut            String   @default("")
-  condoRut            String   @default("")
-  condoAddress        String   @default("")
-  adminPhone          String   @default("")
-  adminSignature      String?
-  deletionPassword    String   @default("")
-  vacationAccrualRate Float    @default(1.25)
-  paymentDeadlineDay  Int      @default(5)
-  maxArrearsMonths    Int      @default(3)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  systemName            String   @default("Administración GAG")
+  systemIcon            String   @default("G")
+  systemLogo            String?
+  systemFavicon         String?
+  cameraBackupDays      Int      @default(7)
+  darkMode              Boolean  @default(false)
+  theme                 String   @default("light")
+  adminName             String   @default("")
+  adminRut              String   @default("")
+  condoRut              String   @default("")
+  condoAddress          String   @default("")
+  adminPhone            String   @default("")
+  adminSignature        String?
+  deletionPassword      String   @default("")
+  vacationAccrualRate   Float    @default(1.25)
+  smtpHost              String?
+  smtpPort              Int?
+  smtpUser              String?
+  smtpPassword          String?
+  smtpFrom              String?
+  smtpBcc               String?
+  conciergeEmail        String?
+  emailTriggers         String?
+  paymentDeadlineDay    Int      @default(5)
+  maxArrearsMonths      Int      @default(3)
+  arrearsFineAmount     Float    @default(0)
+  arrearsFinePercentage Float    @default(0)
+  censusFrequencyYears  Int      @default(1)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model ArticleDelivery {
+  id             String   @id @default(cuid())
+  folio          String   @unique
+  personnelId    String
+  deliveryDate   String
+  articlesJson   String
+  notes          String?
+  status         String   @default("active")
+  signedDocument String?
+  createdAt      DateTime @default(now())
+  personnel      Personnel @relation(fields: [personnelId], references: [id])
+}
+
+model Camera {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  backupHours Int      @default(168)
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }
 
 model FixedAsset {
