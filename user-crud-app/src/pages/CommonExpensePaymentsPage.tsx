@@ -33,14 +33,14 @@ export const CommonExpensePaymentsPage: React.FC = () => {
 
     const [selectedTowerId, setSelectedTowerId] = useState('');
     const [selectedDeptId, setSelectedDeptId] = useState('');
-    const [periodMonth, setPeriodMonth] = useState(new Date().getMonth() + 1);
-    const [periodYear, setPeriodYear] = useState(new Date().getFullYear());
-    const [amountPaid, setAmountPaid] = useState(0);
-    const [paymentMethod, setPaymentMethod] = useState('transfer');
+    const [period_month, setPeriodMonth] = useState(new Date().getMonth() + 1);
+    const [period_year, setPeriodYear] = useState(new Date().getFullYear());
+    const [amount_paid, setAmountPaid] = useState(0);
+    const [payment_method, setPaymentMethod] = useState('transfer');
     const [notes, setNotes] = useState('');
-    const [isElectronic, setIsElectronic] = useState(true);
-    const [evidenceImage, setEvidenceImage] = useState<string | undefined>(undefined);
-    const [fundContributions, setFundContributions] = useState<{ fundId: string, amount: number }[]>([]);
+    const [is_electronic, setIsElectronic] = useState(true);
+    const [evidence_image, setEvidenceImage] = useState<string | undefined>(undefined);
+    const [fund_contributions, setFundContributions] = useState<{ fund_id: string, amount: number }[]>([]);
 
     const resetForm = () => {
         setSelectedTowerId('');
@@ -84,19 +84,19 @@ export const CommonExpensePaymentsPage: React.FC = () => {
         }
     };
 
-    const handleFundContributionChange = (fundId: string, amount: number) => {
+    const handleFundContributionChange = (fund_id: string, amount: number) => {
         setFundContributions(prev => {
-            const existing = prev.find(c => c.fundId === fundId);
+            const existing = prev.find(c => c.fund_id === fund_id);
             if (existing) {
-                if (amount === 0) return prev.filter(c => c.fundId !== fundId);
-                return prev.map(c => c.fundId === fundId ? { ...c, amount } : c);
+                if (amount === 0) return prev.filter(c => c.fund_id !== fund_id);
+                return prev.map(c => c.fund_id === fund_id ? { ...c, amount } : c);
             }
             if (amount === 0) return prev;
-            return [...prev, { fundId, amount }];
+            return [...prev, { fund_id, amount }];
         });
     };
 
-    const totalAmount = amountPaid + fundContributions.reduce((acc, c) => acc + c.amount, 0);
+    const totalAmount = amount_paid + fund_contributions.reduce((acc, c) => acc + c.amount, 0);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -106,25 +106,25 @@ export const CommonExpensePaymentsPage: React.FC = () => {
         }
 
         const data = {
-            departmentId: selectedDeptId,
-            periodMonth,
-            periodYear,
-            amountPaid: totalAmount,
-            paymentMethod,
-            evidenceImage,
+            department_id: selectedDeptId,
+            period_month: period_month,
+            period_year: period_year,
+            amount_paid: totalAmount,
+            payment_method: payment_method,
+            evidence_image: evidence_image,
             notes,
-            isElectronic,
-            fundContributions,
+            is_electronic: is_electronic,
+            fund_contributions: fund_contributions,
             status: 'paid' as const,
-            paymentDate: new Date().toISOString()
+            payment_date: new Date().toISOString()
         };
 
-        await addPayment(data);
+        await addPayment(data as any);
         setIsModalOpen(false);
     };
 
     const filteredPayments = payments.filter(p => {
-        const dept = towers.flatMap(t => t.departments).find(d => d.id === p.departmentId);
+        const dept = towers.flatMap(t => t.departments).find(d => d.id === p.department_id);
         return dept?.number.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
@@ -181,8 +181,8 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                         </div>
                     ) : (
                         filteredPayments.map(payment => {
-                            const dept = towers.flatMap(t => t.departments).find(d => d.id === payment.departmentId);
-                            const tower = towers.find(t => t.departments.some(d => d.id === payment.departmentId));
+                            const dept = towers.flatMap(t => t.departments).find(d => d.id === payment.department_id);
+                            const tower = towers.find(t => t.departments.some(d => d.id === payment.department_id));
 
                             return (
                                 <div key={payment.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all group relative">
@@ -206,8 +206,8 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                                     >
                                                         <Printer className="w-5 h-5" />
                                                     </button>
-                                                    {payment.evidenceImage && (
-                                                        <a href={payment.evidenceImage} target="_blank" rel="noreferrer" className="p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                                                    {payment.evidence_image && (
+                                                        <a href={payment.evidence_image} target="_blank" rel="noreferrer" className="p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
                                                             <FileUp className="w-5 h-5" />
                                                         </a>
                                                     )}
@@ -218,11 +218,11 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                         <div className="grid grid-cols-2 gap-4 mb-6">
                                             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
                                                 <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Periodo</p>
-                                                <p className="text-lg font-black">{monthsNames[payment.periodMonth - 1]} {payment.periodYear}</p>
+                                                <p className="text-lg font-black">{monthsNames[payment.period_month - 1]} {payment.period_year}</p>
                                             </div>
                                             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
                                                 <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Folio</p>
-                                                <p className="text-lg font-black truncate">{payment.receiptFolio || 'MANUAL'}</p>
+                                                <p className="text-lg font-black truncate">{payment.receipt_folio || 'MANUAL'}</p>
                                             </div>
                                         </div>
 
@@ -231,12 +231,12 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                                 <div>
                                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Fecha de Pago</p>
                                                     <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                                                        {new Date(payment.paymentDate).toLocaleDateString(undefined, { day: '2-digit', month: 'long', year: 'numeric' })}
+                                                        {new Date(payment.payment_date).toLocaleDateString(undefined, { day: '2-digit', month: 'long', year: 'numeric' })}
                                                     </p>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Pagado</p>
-                                                    <p className="text-3xl font-black text-emerald-600">${payment.amountPaid.toLocaleString()}</p>
+                                                    <p className="text-3xl font-black text-emerald-600">${payment.amount_paid.toLocaleString()}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -269,17 +269,17 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                             <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                                 {departments.filter(d => {
                                     if (d.is_archived) return false;
-                                    const tower = towers.find(t => t.id === d.towerId);
+                                    const tower = towers.find(t => t.id === d.tower_id);
                                     if (!tower) return false;
                                     const q = searchTerm.toLowerCase();
                                     return tower.name.toLowerCase().includes(q) || d.number.toLowerCase().includes(q);
                                 }).map(dept => {
-                                    const tower = towers.find(t => t.id === dept.towerId);
-                                    const ut = unitTypes.find(u => u.id === dept.unitTypeId);
-                                    const owner = owners.find(o => o.id === dept.ownerId);
-                                    const resident = residents.find(r => r.id === dept.residentId);
+                                    const tower = towers.find(t => t.id === dept.tower_id);
+                                    const ut = unitTypes.find(u => u.id === dept.unit_type_id);
+                                    const owner = owners.find(o => o.id === dept.owner_id);
+                                    const resident = residents.find(r => r.id === dept.resident_id);
                                     
-                                    const deptPayments = payments.filter(p => p.departmentId === dept.id);
+                                    const deptPayments = payments.filter(p => p.department_id === dept.id);
                                     const now = new Date();
                                     const currentMonth = now.getMonth() + 1;
                                     const currentYear = now.getFullYear();
@@ -296,8 +296,8 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                         if (y === currentYear && m === currentMonth && now.getDate() <= deadline) continue;
                                         
                                         const paid = deptPayments
-                                            .filter(p => p.periodMonth === m && p.periodYear === y)
-                                            .reduce((acc, p) => acc + p.amountPaid, 0);
+                                            .filter(p => p.period_month === m && p.period_year === y)
+                                            .reduce((acc, p) => acc + p.amount_paid, 0);
                                         
                                         const target = (ut?.base_common_expense || 0);
                                         if (paid < target) {
@@ -318,7 +318,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <p className="font-bold text-sm text-gray-700 dark:text-gray-300">
-                                                    {owner ? `${owner.names} ${owner.lastNames}` : resident ? `${resident.names} ${resident.lastNames}` : 'N/A'}
+                                                    {owner ? `${owner.names} ${owner.last_names}` : resident ? `${resident.names} ${resident.last_names}` : 'N/A'}
                                                 </p>
                                                 <p className="text-[10px] text-gray-400 capitalize">{owner ? 'Propietario' : resident ? 'Residente' : ''}</p>
                                             </td>
@@ -367,7 +367,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                 </div>
                                 <div>
                                     <h2 className="text-3xl font-black text-gray-900 dark:text-white leading-none">Registrar Pago</h2>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">{isElectronic ? 'Emisión Electrónica' : 'Registro Manual'}</p>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">{is_electronic ? 'Emisión Electrónica' : 'Registro Manual'}</p>
                                 </div>
                             </div>
                             <button onClick={() => setIsModalOpen(false)} className="p-4 hover:bg-white dark:hover:bg-gray-800 rounded-2xl transition-all text-gray-400 hover:text-red-500">
@@ -414,14 +414,14 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                                 <label className="text-xs font-black text-gray-500 ml-1 uppercase">Mes</label>
                                                 <select
                                                     className="w-full p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-black outline-none focus:border-indigo-500 transition-all shadow-sm"
-                                                    value={periodMonth}
+                                                    value={period_month}
                                                     onChange={(e) => setPeriodMonth(Number(e.target.value))}
                                                     required
                                                 >
                                                     {monthsNames.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
                                                 </select>
                                             </div>
-                                            <Input label="AÑO" type="number" value={periodYear} onChange={(e) => setPeriodYear(Number(e.target.value))} required />
+                                            <Input label="AÑO" type="number" value={period_year} onChange={(e) => setPeriodYear(Number(e.target.value))} required />
                                         </div>
                                     </div>
                                 </section>
@@ -432,7 +432,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                     </h3>
                                     <div className="space-y-4">
                                         <div className="p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100 dark:border-indigo-900/30">
-                                            <Input label="Gasto Común Suggested ($)" type="number" value={amountPaid} onChange={(e) => setAmountPaid(Number(e.target.value))} required className="text-xl font-black text-indigo-700" />
+                                            <Input label="Gasto Común Suggested ($)" type="number" value={amount_paid} onChange={(e) => setAmountPaid(Number(e.target.value))} required className="text-xl font-black text-indigo-700" />
                                         </div>
 
                                         {funds.filter(f => !f.is_archived).length > 0 && (
@@ -440,12 +440,12 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Cuotas Especiales / Fondos</p>
                                                 <div className="space-y-2">
                                                     {funds.filter(f => !f.is_archived).map(fund => {
-                                                        const contribution = fundContributions.find(c => c.fundId === fund.id);
+                                                        const contribution = fund_contributions.find(c => c.fund_id === fund.id);
                                                         return (
                                                             <div key={fund.id} className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
                                                                 <div className="flex-1">
                                                                     <p className="text-xs font-black text-gray-700 dark:text-gray-300">{fund.name}</p>
-                                                                    <p className="text-[9px] text-gray-400 uppercase">Monto: ${fund.totalAmountPerUnit.toLocaleString()}</p>
+                                                                    <p className="text-[9px] text-gray-400 uppercase">Monto: ${fund.total_amount_per_unit.toLocaleString()}</p>
                                                                 </div>
                                                                 <div className="w-32">
                                                                     <input
@@ -474,7 +474,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                             <label className="text-xs font-black text-gray-500 ml-1 uppercase">Método de Pago</label>
                                             <select
                                                 className="w-full p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-black outline-none focus:border-emerald-500 transition-all shadow-sm"
-                                                value={paymentMethod}
+                                                value={payment_method}
                                                 onChange={(e) => setPaymentMethod(e.target.value)}
                                                 required
                                             >
@@ -491,8 +491,8 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                                     onClick={() => document.getElementById('evidence-upload')?.click()}
                                                     className="w-20 h-20 bg-white dark:bg-gray-700 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-sm cursor-pointer hover:scale-105 transition-all overflow-hidden relative border border-gray-100 dark:border-gray-600"
                                                 >
-                                                    {evidenceImage ? (
-                                                        <img src={evidenceImage} className="w-full h-full object-cover" alt="Evidencia" />
+                                                    {evidence_image ? (
+                                                        <img src={evidence_image} className="w-full h-full object-cover" alt="Evidencia" />
                                                     ) : (
                                                         <>
                                                             <Camera className="w-6 h-6 text-indigo-600" />

@@ -83,7 +83,7 @@ export const UserList: React.FC<UserListProps> = ({ users, onEdit, onDelete }) =
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                    {new Date(user.createdAt).toLocaleDateString('es-ES')}
+                                    {new Date(user.created_at).toLocaleDateString('es-ES')}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

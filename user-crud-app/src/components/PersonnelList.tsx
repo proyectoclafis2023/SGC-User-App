@@ -45,7 +45,7 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
 
     const getBankName = (id: string) => {
         const bank = banks.find(b => b.id === id);
-        return bank ? bank.nombre : 'No registrado';
+        return bank ? bank.name : 'No registrado';
     };
 
     const getJornadaName = (id: string) => {
@@ -86,12 +86,12 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                                 {person.photo ? (
                                                     <img src={person.photo} alt={person.names} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <span className="text-xs">{person.names.charAt(0)}{person.lastNames.charAt(0)}</span>
+                                                    <span className="text-xs">{person.names.charAt(0)}{person.last_names.charAt(0)}</span>
                                                 )}
                                             </div>
                                             <div>
                                                 <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{person.names}</p>
-                                                <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{person.lastNames}</p>
+                                                <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{person.last_names}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -99,7 +99,7 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                         <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">{person.dni}</span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{person.position}</span>
+                                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{person.role}</span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="space-y-1">
@@ -117,15 +117,15 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className="text-xs font-black text-gray-900 dark:text-white">{formatCurrency(person.baseSalary)}</span>
+                                        <span className="text-xs font-black text-gray-900 dark:text-white">{formatCurrency(person.base_salary)}</span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
-                                            person.isHonorary 
+                                            person.is_honorary 
                                             ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' 
                                             : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                                         }`}>
-                                            {person.isHonorary ? 'Honorarios' : person.contractType || 'Indefinido'}
+                                            {person.is_honorary ? 'Honorarios' : person.contract_type || 'Indefinido'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
@@ -138,7 +138,7 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                                 <Edit2 className="w-4 h-4" />
                                             </button>
                                             <button
-                                                onClick={() => onDelete(person.id, `${person.names} ${person.lastNames}`)}
+                                                onClick={() => onDelete(person.id, `${person.names} ${person.last_names}`)}
                                                 className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
                                                 title="Eliminar"
                                             >
@@ -166,14 +166,14 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                     {person.photo ? (
                                         <img src={person.photo} alt={person.names} className="w-full h-full object-cover" />
                                     ) : (
-                                        <span className="text-2xl">{person.names.charAt(0)}{person.lastNames.charAt(0)}</span>
+                                        <span className="text-2xl">{person.names.charAt(0)}{person.last_names.charAt(0)}</span>
                                     )}
                                 </div>
 
                                 <div className="min-w-0 flex-1 pt-1">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <h3 className="text-lg md:text-xl font-black text-gray-900 dark:text-white leading-tight">{person.names} <br /> {person.lastNames}</h3>
-                                        {person.isHonorary && (
+                                        <h3 className="text-lg md:text-xl font-black text-gray-900 dark:text-white leading-tight">{person.names} <br /> {person.last_names}</h3>
+                                        {person.is_honorary && (
                                             <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[9px] font-black rounded-lg uppercase tracking-widest">Honorarios</span>
                                         )}
                                     </div>
@@ -197,7 +197,7 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                             Editar Ficha
                                         </button>
                                         <button
-                                            onClick={() => onDelete(person.id, `${person.names} ${person.lastNames}`)}
+                                            onClick={() => onDelete(person.id, `${person.names} ${person.last_names}`)}
                                             className="p-1 px-3 text-[10px] font-black uppercase tracking-widest bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg transition-all hover:bg-red-600 hover:text-white flex items-center gap-1.5"
                                         >
                                             <Trash2 className="w-3 h-3" />
@@ -215,7 +215,7 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                 </div>
                                 <div className="truncate">
                                     <p className="text-[10px] uppercase font-bold text-gray-400">Cargo / Función</p>
-                                    <p className="font-bold text-gray-900 dark:text-gray-100 truncate text-xs" title={person.position}>{person.position}</p>
+                                    <p className="font-bold text-gray-900 dark:text-gray-100 truncate text-xs" title={person.role}>{person.role}</p>
                                 </div>
                             </div>
 
@@ -226,7 +226,7 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-gray-400">Tipo de Contrato</p>
                                     <p className="font-bold text-gray-900 dark:text-gray-100 text-xs">
-                                        {person.isHonorary ? 'Honorarios' : person.contractType || 'Planta / Indefinido'}
+                                        {person.is_honorary ? 'Honorarios' : person.contract_type || 'Planta / Indefinido'}
                                     </p>
                                 </div>
                             </div>
@@ -237,7 +237,7 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                 </div>
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-gray-400">Jornada Asignada</p>
-                                    <p className="font-bold text-gray-900 dark:text-gray-100 text-xs">{getJornadaName(person.jornadaGroupId || '')}</p>
+                                    <p className="font-bold text-gray-900 dark:text-gray-100 text-xs">{getJornadaName(person.jornada_group_id || '')}</p>
                                 </div>
                             </div>
 
@@ -267,11 +267,11 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                 </div>
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-gray-400">Sueldo Base</p>
-                                    <p className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(person.baseSalary)}</p>
+                                    <p className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(person.base_salary)}</p>
                                 </div>
                             </div>
 
-                            {!person.isHonorary ? (
+                            {!person.is_honorary ? (
                                 <>
                                     <div className="flex items-center space-x-3 text-sm">
                                         <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -280,11 +280,11 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                         <div>
                                             <p className="text-[10px] uppercase font-bold text-gray-400">Previsión / Seguro</p>
                                             <p className="font-medium text-gray-900 dark:text-gray-100 leading-tight text-xs">
-                                                {getHealthProviderName(person.healthProviderId || '')}
-                                                {person.hasComplementaryInsurance && (
+                                                {getHealthProviderName(person.health_provider_id || '')}
+                                                {person.has_complementary_insurance && (
                                                     <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center mt-0.5">
                                                         <ShieldPlus className="w-3 h-3 mr-0.5" />
-                                                        + Complementario ({person.complementaryInsuranceType === 'percentage' ? `${person.complementaryInsuranceValue}%` : formatCurrency(person.complementaryInsuranceValue || 0)})
+                                                        + Complementario ({person.complementary_insurance_type === 'percentage' ? `${person.complementary_insurance_value}%` : formatCurrency(person.complementary_insurance_value || 0)})
                                                     </span>
                                                 )}
                                             </p>
@@ -298,11 +298,11 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                         <div>
                                             <p className="text-[10px] uppercase font-bold text-gray-400">AFP / APV</p>
                                             <p className="font-medium text-gray-900 dark:text-gray-100 leading-tight text-xs">
-                                                {getPensionFundName(person.pensionFundId || '')}
-                                                {person.hasAPV && (
+                                                {getPensionFundName(person.pension_fund_id || '')}
+                                                {person.has_apv && (
                                                     <span className="ml-1 text-[10px] text-indigo-600 dark:text-indigo-400 font-bold flex items-center mt-0.5">
                                                         <TrendingUp className="w-3 h-3 mr-0.5" />
-                                                        + APV ({person.apvType === 'percentage' ? `${person.apvValue}%` : formatCurrency(person.apvValue || 0)})
+                                                        + APV ({person.apv_type === 'percentage' ? `${person.apv_value}%` : formatCurrency(person.apv_value || 0)})
                                                     </span>
                                                 )}
                                             </p>
@@ -322,7 +322,7 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-gray-400">Datos Bancarios</p>
                                     <p className="font-medium text-gray-900 dark:text-gray-100 uppercase text-[10px]">
-                                        {person.bankId ? `${getBankName(person.bankId)} - ${person.accountNumber}` : 'No registrados'}
+                                        {person.bank_id ? `${getBankName(person.bank_id)} - ${person.account_number}` : 'No registrados'}
                                     </p>
                                 </div>
                             </div>
@@ -333,7 +333,7 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                 </div>
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-gray-400">Vacaciones</p>
-                                    <p className="font-medium text-gray-900 dark:text-gray-100 text-xs">{person.vacationDays} días disponibles</p>
+                                    <p className="font-medium text-gray-900 dark:text-gray-100 text-xs">{person.vacation_days} días disponibles</p>
                                 </div>
                             </div>
 
@@ -354,8 +354,8 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-gray-400">Emergencia</p>
                                     <p className="font-medium text-gray-900 dark:text-gray-100 text-xs">
-                                        {person.hasEmergencyContact && person.emergencyContact
-                                            ? `${person.emergencyContact.names} (${person.emergencyContact.phone})`
+                                        {person.has_emergency_contact && person.emergency_contact
+                                            ? `${person.emergency_contact.names} (${person.emergency_contact.phone})`
                                             : 'No registra'}
                                     </p>
                                 </div>
@@ -364,12 +364,12 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
 
 
 
-                        {person.medicalInfo && (
+                        {person.medical_info && (
                             <div className="mt-4 p-3 bg-red-50/50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/30 flex items-start gap-3">
                                 <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-red-500/70 dark:text-red-400/70">Información Médica</p>
-                                    <p className="text-xs text-gray-700 dark:text-gray-300 font-medium leading-relaxed">{person.medicalInfo}</p>
+                                    <p className="text-xs text-gray-700 dark:text-gray-300 font-medium leading-relaxed">{person.medical_info}</p>
                                 </div>
                             </div>
                         )}

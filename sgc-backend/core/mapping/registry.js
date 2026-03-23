@@ -534,6 +534,200 @@ const registry = {
             { api: 'created_at', bd: 'createdAt', excel: 'fecha_creacion' },
             { api: 'updated_at', bd: 'updatedAt', excel: 'fecha_actualizacion' }
         ]
+    },
+    personnel: {
+        model: 'Personnel',
+        fields: [
+            { api: 'id', bd: 'id', excel: 'id' },
+            { api: 'names', bd: 'names', excel: 'nombres' },
+            { api: 'last_names', bd: 'lastNames', excel: 'apellidos' },
+            { api: 'dni', bd: 'dni', excel: 'rut' },
+            { api: 'phone', bd: 'phone', excel: 'telefono' },
+            { api: 'email', bd: 'email', excel: 'correo' },
+            { api: 'photo', bd: 'photo', excel: 'foto' },
+            { api: 'is_honorary', bd: 'isHonorary', excel: 'honorario' },
+            { api: 'bank_id', bd: 'bankId', excel: 'banco_id' },
+            { api: 'account_number', bd: 'accountNumber', excel: 'numero_cuenta' },
+            { api: 'base_salary', bd: 'baseSalary', excel: 'sueldo_base' },
+            { api: 'vacation_days', bd: 'vacationDays', excel: 'dias_vacaciones' },
+            { api: 'vacation_last_update', bd: 'vacationLastUpdate', excel: 'ultima_actualizacion_vacaciones' },
+            { api: 'health_provider_id', bd: 'healthProviderId', excel: 'prevision_id' },
+            { api: 'has_complementary_insurance', bd: 'hasComplementaryInsurance', excel: 'tiene_seguro_complementario' },
+            { api: 'complementary_insurance_type', bd: 'complementaryInsuranceType', excel: 'tipo_seguro_complementario' },
+            { api: 'complementary_insurance_value', bd: 'complementaryInsuranceValue', excel: 'valor_seguro_complementario' },
+            { api: 'pension_fund_id', bd: 'pensionFundId', excel: 'afp_id' },
+            { api: 'has_apv', bd: 'hasAPV', excel: 'tiene_apv' },
+            { api: 'apv_type', bd: 'apvType', excel: 'tipo_apv' },
+            { api: 'apv_value', bd: 'apvValue', excel: 'valor_apv' },
+            { api: 'jornada_group_id', bd: 'jornadaGroupId', excel: 'grupo_jornada_id' },
+            { api: 'address', bd: 'address', excel: 'direccion' },
+            { api: 'role', bd: 'position', excel: 'cargo' },
+            { api: 'medical_info', bd: 'medicalInfo', excel: 'informacion_medica' },
+            { api: 'contract_type', bd: 'contractType', excel: 'tipo_contrato' },
+            { api: 'assigned_shift', bd: 'assignedShift', excel: 'turno_asignado' },
+            { api: 'has_emergency_contact', bd: 'hasEmergencyContact', excel: 'tiene_contacto_emergencia' },
+            { api: 'emergency_contact', bd: 'emergencyContactJson', excel: 'contacto_emergencia', isJson: true },
+            { api: 'assigned_articles_json', bd: 'assignedArticlesJson', excel: 'articulos_asignados', isJson: true },
+            { api: 'status', bd: 'status', excel: 'estado' },
+            { api: 'role_id', bd: 'roleId', excel: 'rol_id' },
+            { api: 'is_archived', bd: 'isArchived', excel: 'archivado' },
+            { api: 'created_at', bd: 'createdAt', excel: 'fecha_creacion' }
+        ],
+        relations: {
+            bank: 'bank',
+            pensionFund: 'pension_fund',
+            healthProvider: 'health_provider',
+            supplyRequests: 'supply_request',
+            articleDeliveries: 'inventory_item',
+            role_ref: 'role'
+        }
+    },
+    article: {
+        model: 'Articulo',
+        fields: [
+            { api: 'id', bd: 'id', excel: 'id' },
+            { api: 'name', bd: 'nombre', excel: 'nombre' },
+            { api: 'description', bd: 'description', excel: 'descripcion' },
+            { api: 'category', bd: 'category', excel: 'categoria' },
+            { api: 'unit', bd: 'unit', excel: 'unidad' },
+            { api: 'price', bd: 'price', excel: 'precio' },
+            { api: 'stock', bd: 'stock', excel: 'stock' },
+            { api: 'min_stock', bd: 'minStock', excel: 'stock_minimo' },
+            { api: 'is_active', bd: 'isActive', excel: 'activo' },
+            { api: 'allow_personnel_request', bd: 'allowPersonnelRequest', excel: 'solicitable_por_personal' },
+            { api: 'is_archived', bd: 'isArchived', excel: 'archivado' },
+            { api: 'created_at', bd: 'createdAt', excel: 'fecha_creacion' }
+        ]
+    },
+    inventory_item: {
+        model: 'EntregaArticulo',
+        fields: [
+            { api: 'id', bd: 'id', excel: 'id' },
+            { api: 'folio', bd: 'folio', excel: 'folio' },
+            { api: 'assigned_to', bd: 'personnelId', excel: 'asignado_a' },
+            { api: 'delivery_date', bd: 'deliveryDate', excel: 'fecha_entrega' },
+            { api: 'articles', bd: 'articlesJson', excel: 'articulos', isJson: true },
+            { api: 'notes', bd: 'notes', excel: 'notas' },
+            { api: 'status', bd: 'status', excel: 'estado' },
+            { api: 'signed_document', bd: 'signedDocument', excel: 'documento_firmado' },
+            { api: 'created_at', bd: 'createdAt', excel: 'fecha_creacion' }
+        ],
+        relations: {
+            personnel: 'personnel'
+        }
+    },
+    common_expense: {
+        model: 'CommonExpense',
+        fields: [
+            { api: 'id', bd: 'id', excel: 'id' },
+            { api: 'total_amount', bd: 'totalAmount', excel: 'monto_total' },
+            { api: 'period', bd: 'period', excel: 'periodo' },
+            { api: 'calculated_at', bd: 'calculatedAt', excel: 'fecha_calculo' },
+            { api: 'is_archived', bd: 'isArchived', excel: 'archivado' },
+            { api: 'created_at', bd: 'createdAt', excel: 'fecha_creacion' }
+        ],
+        relations: {
+            payments: 'common_expense_payment'
+        }
+    },
+    common_expense_payment: {
+        model: 'CommonExpensePayment',
+        fields: [
+            { api: 'id', bd: 'id', excel: 'id' },
+            { api: 'department_id', bd: 'departmentId', excel: 'departamento_id' },
+            { api: 'common_expense_id', bd: 'commonExpenseId', excel: 'gasto_comun_id' },
+            { api: 'period_month', bd: 'periodMonth', excel: 'mes' },
+            { api: 'period_year', bd: 'periodYear', excel: 'anio' },
+            { api: 'amount_paid', bd: 'amountPaid', excel: 'monto_pagado' },
+            { api: 'payment_date', bd: 'paymentDate', excel: 'fecha_pago' },
+            { api: 'status', bd: 'status', excel: 'estado' },
+            { api: 'payment_method', bd: 'paymentMethod', excel: 'metodo_pago' },
+            { api: 'receipt_folio', bd: 'receiptFolio', excel: 'folio_recibo' },
+            { api: 'evidence_image', bd: 'evidenceImage', excel: 'comprobante' },
+            { api: 'notes', bd: 'notes', excel: 'notas' },
+            { api: 'is_electronic', bd: 'isElectronic', excel: 'electronico' },
+            { api: 'is_archived', bd: 'isArchived', excel: 'archivado' },
+            { api: 'created_at', bd: 'createdAt', excel: 'fecha_creacion' },
+            { api: 'fund_contributions', bd: 'fundContributionsJson', excel: 'fondos', isJson: true }
+        ],
+        relations: {
+            department: 'department',
+            common_expense: 'common_expense'
+        }
+    },
+    expense: {
+        model: 'CommunityExpense',
+        fields: [
+            { api: 'id', bd: 'id', excel: 'id' },
+            { api: 'amount', bd: 'amount', excel: 'monto' },
+            { api: 'expense_date', bd: 'date', excel: 'fecha' },
+            { api: 'description', bd: 'description', excel: 'glosa' },
+            { api: 'category_id', bd: 'categoryId', excel: 'categoria_id' },
+            { api: 'category_name', bd: 'category', excel: 'categoria' },
+            { api: 'payment_method', bd: 'paymentMethod', excel: 'metodo_pago' },
+            { api: 'reference', bd: 'reference', excel: 'folio' },
+            { api: 'is_archived', bd: 'isArchived', excel: 'archivado' },
+            { api: 'is_projected', bd: 'isProjected', excel: 'proyectivo' },
+            { api: 'receipt_url', bd: 'receiptUrl', excel: 'boleta_url' },
+            { api: 'created_at', bd: 'createdAt', excel: 'fecha_creacion' }
+        ],
+        relations: {}
+    },
+    charge_rule: {
+        model: 'ChargeRule',
+        fields: [
+            { api: 'id', bd: 'id', excel: 'id' },
+            { api: 'name', bd: 'name', excel: 'nombre' },
+            { api: 'rule_type', bd: 'ruleType', excel: 'tipo' },
+            { api: 'value', bd: 'value', excel: 'valor' },
+            { api: 'applies_to', bd: 'appliesTo', excel: 'aplica_a' },
+            { api: 'target_id', bd: 'targetId', excel: 'objetivo_id' },
+            { api: 'is_active', bd: 'isActive', excel: 'activo' },
+            { api: 'is_archived', bd: 'isArchived', excel: 'archivado' },
+            { api: 'created_at', bd: 'createdAt', excel: 'fecha_creacion' }
+        ],
+        relations: {}
+    },
+    payment: {
+        model: 'Payment',
+        fields: [
+            { api: 'id', bd: 'id', excel: 'id' },
+            { api: 'amount', bd: 'amount', excel: 'monto' },
+            { api: 'payment_date', bd: 'paymentDate', excel: 'fecha_pago' },
+            { api: 'payment_method', bd: 'paymentMethod', excel: 'metodo' },
+            { api: 'reference', bd: 'reference', excel: 'referencia' },
+            { api: 'resident_id', bd: 'residentId', excel: 'residente_id' },
+            { api: 'department_id', bd: 'departmentId', excel: 'departamento_id' },
+            { api: 'common_expense_payment_id', bd: 'commonExpensePaymentId', excel: 'deuda_id' },
+            { api: 'is_archived', bd: 'isArchived', excel: 'archivado' },
+            { api: 'created_at', bd: 'createdAt', excel: 'fecha_creacion' }
+        ],
+        relations: {
+            resident: 'personnel',
+            common_expense_payment: 'common_expense_payment'
+        }
+    },
+    role: {
+        model: 'Role',
+        fields: [
+            { api: 'id', bd: 'id', excel: 'id' },
+            { api: 'name', bd: 'name', excel: 'nombre' },
+            { api: 'description', bd: 'description', excel: 'descripcion' },
+            { api: 'is_archived', bd: 'isArchived', excel: 'archivado' },
+            { api: 'created_at', bd: 'createdAt', excel: 'fecha_creacion' }
+        ],
+        relations: {
+            personnel: 'personnel'
+        }
+    },
+    permission: {
+        model: 'Permission',
+        fields: [
+            { api: 'id', bd: 'id', excel: 'id' },
+            { api: 'slug', bd: 'slug', excel: 'identificador' },
+            { api: 'description', bd: 'description', excel: 'descripcion' }
+        ],
+        relations: {}
     }
 };
 

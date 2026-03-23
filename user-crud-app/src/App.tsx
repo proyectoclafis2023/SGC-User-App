@@ -91,6 +91,7 @@ import { ManagementKPICenter } from './pages/ManagementKPICenter';
 import { MaestroIPCPage } from './pages/MaestroIPCPage';
 import { IPCProjectionProvider } from './context/IPCProjectionContext';
 import { StaffArticleRequestsPage } from './pages/StaffArticleRequestsPage';
+import { MyPaymentsPage } from './pages/MyPaymentsPage';
 
 import { CondoBoardProvider } from './context/CondoBoardContext';
 import { CondoBoardPage } from './pages/CondoBoardPage';
@@ -228,6 +229,7 @@ function App() {
                                                                                             <Route path="maestro-mensajes" element={<MaestroMensajesPage />} />
                                                                                             <Route path="parametros" element={<ParametersPage />} />
                                                                                             <Route path="unidades-disponibles" element={<AvailableUnitsPage />} />
+                                                                                            <Route path="mis-pagos" element={<MyPaymentsPage />} />
                                                                                             <Route path="*" element={<Navigate to="/" replace />} />
                                                                                           </Route>
                                                                                         </Routes>

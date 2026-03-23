@@ -347,7 +347,7 @@ export const CorrespondencePage: React.FC = () => {
                                         required
                                     >
                                         <option value="">Seleccionar Courier...</option>
-                                        {couriers.filter(c => !c.isArchived).map(c => (
+                                        {couriers.filter(c => !c.is_archived).map(c => (
                                             <option key={c.id} value={c.name}>{c.name}</option>
                                         ))}
                                         <option value="OTRO">OTRO (Manual)</option>

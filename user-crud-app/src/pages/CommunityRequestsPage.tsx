@@ -413,7 +413,7 @@ export const CommunityRequestsPage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {numbers.length > 0 ? numbers.filter(n => !n.isArchived).map(num => {
+                    {numbers.length > 0 ? numbers.filter(n => !n.is_archived).map(num => {
                         const Icon = getCategoryIcon(num.category);
                         const colors = getCategoryColor(num.category);
                         return (

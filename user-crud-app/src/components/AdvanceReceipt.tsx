@@ -33,7 +33,7 @@ export const AdvanceReceipt: React.FC<Props> = ({ advance, person, settings }) =
                 <div className="space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Trabajador Beneficiario</label>
                     <div className="w-full p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <p className="text-md font-black uppercase">{person?.names} {person?.lastNames}</p>
+                        <p className="text-md font-black uppercase">{person?.names} {person?.last_names}</p>
                         <p className="text-xs font-bold text-indigo-600">RUT: {person?.dni}</p>
                     </div>
                 </div>

@@ -117,7 +117,7 @@ export const CameraRequestsPage: React.FC = () => {
 
     const handleUnitSelect = (uId: string) => {
         setUnitId(uId);
-        const res = residents.find(r => r.unitId === uId && !r.isArchived);
+        const res = residents.find(r => r.unitId === uId && !r.is_archived);
         if (res) setResidentName(`${res.names} ${res.lastNames}`);
     };
 
@@ -489,7 +489,7 @@ export const CameraRequestsPage: React.FC = () => {
                                     onChange={e => setCameraId(e.target.value)}
                                 >
                                     <option value="">Seleccione una cámara...</option>
-                                    {cameras.filter(c => !c.isArchived).map(c => (
+                                    {cameras.filter(c => !c.is_archived).map(c => (
                                         <option key={c.id} value={c.id}>{c.name} ({Math.round(c.backupHours / 24)} días de respaldo)</option>
                                     ))}
                                 </select>

@@ -65,7 +65,7 @@ export const CommunicationsPage: React.FC = () => {
         } else if (targetType === 'unit' && selectedTowerId && selectedUnitId) {
             filtered = filtered.filter((d: Department) => d.towerId === selectedTowerId && d.id === selectedUnitId);
         } else if (targetType === 'unitType' && selectedUnitTypeId) {
-            filtered = filtered.filter((d: Department) => d.unitTypeId === selectedUnitTypeId);
+            filtered = filtered.filter((d: Department) => d.unit_type_id === selectedUnitTypeId);
         }
         
         return filtered;

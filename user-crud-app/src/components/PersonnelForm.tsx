@@ -10,7 +10,6 @@ import { useArticleDeliveries } from '../context/ArticleDeliveryContext';
 import { useJornadaGroups } from '../context/JornadaGroupContext';
 import { useArticles } from '../context/ArticleContext';
 import { formatRUT } from '../utils/formatters';
-import { useNavigate } from 'react-router-dom';
 import { usePayslips } from '../context/PayslipContext';
 import { useSettings } from '../context/SettingsContext';
 import { useHistoryLogs } from '../context/HistoryLogContext';
@@ -22,7 +21,7 @@ import type { Payslip, Advance } from '../types';
 interface PersonnelFormProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (person: Omit<Personnel, 'id' | 'createdAt' | 'status'>, id?: string) => void;
+    onSubmit: (person: Omit<Personnel, 'id' | 'created_at' | 'status'>, id?: string) => void;
     initialData?: Personnel | null;
 }
 
@@ -36,7 +35,6 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
     const { settings } = useSettings();
     const { getLogsByEntity } = useHistoryLogs();
     const { groups: jornadaGroups } = useJornadaGroups();
-    const navigate = useNavigate();
 
     const [names, setNames] = useState('');
     const [lastNames, setLastNames] = useState('');
@@ -80,40 +78,40 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
     useEffect(() => {
         if (initialData) {
             setNames(initialData.names || '');
-            setLastNames(initialData.lastNames || '');
+            setLastNames(initialData.last_names || '');
             setDni(initialData.dni || '');
-            setBaseSalary(initialData.baseSalary || 0);
-            setVacationDays(initialData.vacationDays || 0);
-            setHealthProviderId(initialData.healthProviderId || '');
-            setHasComplementaryInsurance(!!initialData.hasComplementaryInsurance);
-            setPensionFundId(initialData.pensionFundId || '');
-            setHasAPV(!!initialData.hasAPV);
+            setBaseSalary(initialData.base_salary || 0);
+            setVacationDays(initialData.vacation_days || 0);
+            setHealthProviderId(initialData.health_provider_id || '');
+            setHasComplementaryInsurance(!!initialData.has_complementary_insurance);
+            setPensionFundId(initialData.pension_fund_id || '');
+            setHasAPV(!!initialData.has_apv);
             setAddress(initialData.address || '');
-            setHasEmergencyContact(!!initialData.hasEmergencyContact);
-            if (initialData.emergencyContact) {
-                setEmergencyNames(initialData.emergencyContact.names || '');
-                setEmergencyLastNames(initialData.emergencyContact.lastNames || '');
-                setEmergencyPhone(initialData.emergencyContact.phone || '');
+            setHasEmergencyContact(!!initialData.has_emergency_contact);
+            if (initialData.emergency_contact) {
+                setEmergencyNames(initialData.emergency_contact.names || '');
+                setEmergencyLastNames(initialData.emergency_contact.last_names || '');
+                setEmergencyPhone(initialData.emergency_contact.phone || '');
             } else {
                 setEmergencyNames('');
                 setEmergencyLastNames('');
                 setEmergencyPhone('');
             }
-            setMedicalInfo(initialData.medicalInfo || '');
-            setComplementaryInsuranceType(initialData.complementaryInsuranceType || 'percentage');
-            setComplementaryInsuranceValue(initialData.complementaryInsuranceValue || 0);
-            setApvType(initialData.apvType || 'percentage');
-            setApvValue(initialData.apvValue || 0);
+            setMedicalInfo(initialData.medical_info || '');
+            setComplementaryInsuranceType(initialData.complementary_insurance_type || 'percentage');
+            setComplementaryInsuranceValue(initialData.complementary_insurance_value || 0);
+            setApvType(initialData.apv_type || 'percentage');
+            setApvValue(initialData.apv_value || 0);
             setPhoto(initialData.photo || '');
-            setPosition(initialData.position || '');
-            const initialContractType = initialData.contractType || (initialData.isHonorary ? 'honorarios' : 'indefinido');
+            setPosition(initialData.role || '');
+            const initialContractType = initialData.contract_type || (initialData.is_honorary ? 'honorarios' : 'indefinido');
             setContractType(initialContractType as any);
-            setBankId(initialData.bankId || '');
-            setAccountNumber(initialData.accountNumber || '');
-            setJornadaGroupId(initialData.jornadaGroupId || '');
+            setBankId(initialData.bank_id || '');
+            setAccountNumber(initialData.account_number || '');
+            setJornadaGroupId(initialData.jornada_group_id || '');
             setEmail(initialData.email || '');
             setPhone(initialData.phone || '');
-            setAssignedArticles(initialData.assignedArticles || []);
+            setAssignedArticles(initialData.assigned_articles || []);
         } else {
             setNames('');
             setLastNames('');
@@ -149,7 +147,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
     const handleQuickAddBank = async (e: React.FormEvent) => {
         e.preventDefault();
         if (newBankName.trim()) {
-            const id = await addBank({ nombre: newBankName.trim() });
+            const id = await addBank({ name: newBankName.trim() });
             setBankId(id);
             setNewBankName('');
             setIsAddingBank(false);
@@ -167,36 +165,36 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
         e.preventDefault();
         onSubmit({
             names,
-            lastNames,
+            last_names: lastNames,
             dni,
             email,
             phone,
-            baseSalary: Number(baseSalary),
-            vacationDays: Number(vacationDays),
+            base_salary: Number(baseSalary),
+            vacation_days: Number(vacationDays),
             address,
-            hasEmergencyContact,
-            emergencyContact: hasEmergencyContact ? {
+            has_emergency_contact: hasEmergencyContact,
+            emergency_contact: hasEmergencyContact ? {
                 names: emergencyNames,
-                lastNames: emergencyLastNames,
+                last_names: emergencyLastNames,
                 phone: emergencyPhone
-            } : null,
-            medicalInfo,
-            complementaryInsuranceType,
-            complementaryInsuranceValue: Number(complementaryInsuranceValue),
-            apvType,
-            apvValue: Number(apvValue),
+            } : undefined,
+            medical_info: medicalInfo,
+            complementary_insurance_type: complementaryInsuranceType,
+            complementary_insurance_value: Number(complementaryInsuranceValue),
+            apv_type: apvType,
+            apv_value: Number(apvValue),
             photo,
-            position,
-            isHonorary: contractType === 'honorarios',
-            contractType,
-            bankId,
-            accountNumber,
-            assignedArticles, 
-            healthProviderId: contractType === 'honorarios' ? undefined : healthProviderId,
-            pensionFundId: contractType === 'honorarios' ? undefined : pensionFundId,
-            hasComplementaryInsurance: contractType === 'honorarios' ? false : hasComplementaryInsurance,
-            hasAPV: contractType === 'honorarios' ? false : hasAPV,
-            jornadaGroupId: jornadaGroupId || null,
+            role: position,
+            is_honorary: contractType === 'honorarios',
+            contract_type: contractType,
+            bank_id: bankId,
+            account_number: accountNumber,
+            assigned_articles: assignedArticles, 
+            health_provider_id: contractType === 'honorarios' ? undefined : healthProviderId,
+            pension_fund_id: contractType === 'honorarios' ? undefined : pensionFundId,
+            has_complementary_insurance: contractType === 'honorarios' ? false : hasComplementaryInsurance,
+            has_apv: contractType === 'honorarios' ? false : hasAPV,
+            jornada_group_id: jornadaGroupId || undefined,
         }, initialData?.id);
     };
 
@@ -369,7 +367,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                                 className="w-full h-12 px-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-sm font-bold shadow-inner focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
                                             >
                                                 <option value="">Seleccione jornada...</option>
-                                                {jornadaGroups.filter(g => !g.isArchived).map(g => (
+                                                {jornadaGroups.filter(g => !g.is_archived).map(g => (
                                                     <option key={g.id} value={g.id}>{g.name}</option>
                                                 ))}
                                             </select>
@@ -482,7 +480,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                         >
                                             <option value="">Seleccione previsión...</option>
                                             {providers.map(p => (
-                                                <option key={p.id} value={p.id}>{p.name} ({p.type.toUpperCase()} - {p.discountRate}%)</option>
+                                                <option key={p.id} value={p.id}>{p.name} ({p.type.toUpperCase()} - {p.discount_rate}%)</option>
                                             ))}
                                         </select>
                                         <label className="flex items-center space-x-2 cursor-pointer mt-2 ml-1">
@@ -527,7 +525,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                         >
                                             <option value="">Seleccione AFP...</option>
                                             {funds.map(f => (
-                                                <option key={f.id} value={f.id}>{f.name} ({f.discountRate}%)</option>
+                                                <option key={f.id} value={f.id}>{f.name} ({f.discount_rate}%)</option>
                                             ))}
                                         </select>
                                         <label className="flex items-center space-x-2 cursor-pointer mt-2 ml-1">
@@ -613,7 +611,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                         className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
                                     >
                                         <option value="">Seleccione banco...</option>
-                                        {banks.map(b => <option key={b.id} value={b.id}>{b.nombre}</option>)}
+                                        {banks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                                     </select>
                                 </div>
                                 <Input
@@ -688,7 +686,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                             </h3>
                             <div className="space-y-2">
                                 {(() => {
-                                    const personalDeliveries = deliveries.filter(d => d.personnelId === initialData.id);
+                                    const personalDeliveries = deliveries.filter(d => d.personnel_id === initialData.id);
                                     if (personalDeliveries.length === 0) {
                                         return (
                                             <div className="py-8 text-center bg-gray-50 dark:bg-gray-800/30 rounded-2xl border border-gray-100 dark:border-gray-700">
@@ -704,12 +702,12 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">
-                                                        {new Date(delivery.deliveryDate).toLocaleDateString()}
+                                                        {new Date(delivery.delivery_date).toLocaleDateString()}
                                                         {delivery.status === 'voided' && <span className="ml-2 text-red-500 font-black">— ANULADA</span>}
                                                     </p>
                                                     <div className="flex flex-wrap gap-1">
                                                         {delivery.articles.map((a, i) => {
-                                                            const art = articles.find(ar => ar.id === a.articleId);
+                                                            const art = articles.find(ar => ar.id === a.article_id);
                                                             return (
                                                                 <span key={i} className="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-bold">
                                                                     {art?.name || 'Art.'} x{a.quantity}
@@ -734,7 +732,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                                             if (file) {
                                                                 const reader = new FileReader();
                                                                 reader.onloadend = () => {
-                                                                    updateDelivery({ ...delivery, signedDocument: reader.result as string });
+                                                                    updateDelivery({ ...delivery, signed_document: reader.result as string });
                                                                     alert('Documento de respaldo subido con éxito.');
                                                                 };
                                                                 reader.readAsDataURL(file);
@@ -742,10 +740,10 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                                         }}
                                                     />
                                                 </label>
-                                                {delivery.signedDocument && (
+                                                {delivery.signed_document && (
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleViewDocument(delivery.signedDocument!)}
+                                                        onClick={() => handleViewDocument(delivery.signed_document!)}
                                                         className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all"
                                                         title="Ver documento cargado"
                                                     >
@@ -939,8 +937,8 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                     <PayslipDocument
                                         payslip={viewingPayslip}
                                         person={initialData || undefined}
-                                        health={providers.find(p => p.id === (initialData?.healthProviderId))}
-                                        fund={funds.find(f => f.id === (initialData?.pensionFundId))}
+                                        health={providers.find(p => p.id === (initialData?.health_provider_id))}
+                                        fund={funds.find(f => f.id === (initialData?.pension_fund_id))}
                                         settings={settings}
                                     />
                                 )}

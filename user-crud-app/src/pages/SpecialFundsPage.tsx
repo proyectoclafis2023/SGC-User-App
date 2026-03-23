@@ -27,8 +27,8 @@ export const SpecialFundsPage: React.FC = () => {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [type, setType] = useState<'reserve' | 'extraordinary'>('extraordinary');
-    const [totalAmountPerUnit, setTotalAmountPerUnit] = useState(0);
-    const [totalProjectAmount, setTotalProjectAmount] = useState<number | undefined>(undefined);
+    const [total_amount_per_unit, setTotalAmountPerUnit] = useState(0);
+    const [total_project_amount, setTotalProjectAmount] = useState<number | undefined>(undefined);
     const [deadline, setDeadline] = useState('');
     const [unitConfigs, setUnitConfigs] = useState<FundUnitTypeConfig[]>([]);
     const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
@@ -41,7 +41,7 @@ export const SpecialFundsPage: React.FC = () => {
 
     // Delete confirmation state
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [fundCode, setFundCode] = useState<number>(0);
+    const [fund_code, setFundCode] = useState<number>(0);
     const [fundToDelete, setFundToDelete] = useState<SpecialFund | null>(null);
 
     const resetForm = () => {
@@ -62,10 +62,10 @@ export const SpecialFundsPage: React.FC = () => {
             setName(fund.name);
             setDescription(fund.description);
             setType(fund.type);
-            setTotalAmountPerUnit(fund.totalAmountPerUnit);
-            setTotalProjectAmount(fund.totalProjectAmount);
+            setTotalAmountPerUnit(fund.total_amount_per_unit);
+            setTotalProjectAmount(fund.total_project_amount);
             setDeadline(fund.deadline || '');
-            setFundCode(fund.fundCode);
+            setFundCode(fund.fund_code);
             setUnitConfigs(fund.unitConfigs || []);
         } else {
             resetForm();
@@ -80,16 +80,16 @@ export const SpecialFundsPage: React.FC = () => {
             name,
             description,
             type,
-            totalAmountPerUnit,
-            totalProjectAmount,
+            total_amount_per_unit,
+            total_project_amount,
             deadline,
             unitConfigs,
-            fundCode,
+            fund_code,
             isActive: true
         };
 
         if (editingFund) {
-            await updateFund({ ...fundData, id: editingFund.id, createdAt: editingFund.createdAt });
+            await updateFund({ ...fundData, id: editingFund.id, created_at: editingFund.created_at });
         } else {
             await addFund(fundData);
         }
@@ -125,12 +125,12 @@ export const SpecialFundsPage: React.FC = () => {
         let unitsCompleted = 0;
         let unitsPending = 0;
 
-        const allDepts = towers.flatMap(t => t.departments).filter(d => !d.isArchived);
+        const allDepts = towers.flatMap(t => t.departments).filter(d => !d.is_archived);
 
         allDepts.forEach(dept => {
-            const config = fund.unitConfigs?.find(c => c.unitTypeId === dept.unitTypeId);
-            const unitType = unitTypes.find(ut => ut.id === dept.unitTypeId);
-            let targetForThisDept = fund.totalAmountPerUnit;
+            const config = fund.unitConfigs?.find(c => c.unit_type_id === dept.unit_type_id);
+            const unitType = unitTypes.find(ut => ut.id === dept.unit_type_id);
+            let targetForThisDept = fund.total_amount_per_unit;
 
             if (config) {
                 if (config.isExempt) {
@@ -181,8 +181,8 @@ export const SpecialFundsPage: React.FC = () => {
             amountPending
         };
     }).filter(f => {
-        if (!showArchived && f.isArchived) return false;
-        if (showArchived && !f.isArchived) return false;
+        if (!showArchived && f.is_archived) return false;
+        if (showArchived && !f.is_archived) return false;
         const name = f.name?.toLowerCase() || '';
         const description = f.description?.toLowerCase() || '';
         const search = searchTerm.toLowerCase();
@@ -245,7 +245,7 @@ export const SpecialFundsPage: React.FC = () => {
                                 
                                 <div className="flex items-center gap-2 mb-2">
                                     <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-800 text-[10px] font-black text-gray-500">
-                                        {fund.fundCode}
+                                        {fund.fund_code}
                                     </span>
                                     <h3 className="text-xl font-black text-gray-900 dark:text-white">{fund.name}</h3>
                                 </div>
@@ -254,13 +254,13 @@ export const SpecialFundsPage: React.FC = () => {
                                 <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl space-y-4">
                                     <div className="flex justify-between items-center bg-indigo-50/50 dark:bg-indigo-900/20 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
                                         <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Meta x Unidad</span>
-                                        <span className="text-lg font-black text-gray-900 dark:text-white">${fund.totalAmountPerUnit.toLocaleString()}</span>
+                                        <span className="text-lg font-black text-gray-900 dark:text-white">${fund.total_amount_per_unit.toLocaleString()}</span>
                                     </div>
 
-                                    {fund.totalProjectAmount && (
+                                    {fund.total_project_amount && (
                                         <div className="flex justify-between items-center text-[10px] px-1">
                                             <span className="text-gray-400 font-bold uppercase">Presupuesto Total</span>
-                                            <span className="font-black text-gray-700 dark:text-gray-300">${fund.totalProjectAmount.toLocaleString()}</span>
+                                            <span className="font-black text-gray-700 dark:text-gray-300">${fund.total_project_amount.toLocaleString()}</span>
                                         </div>
                                     )}
 
@@ -313,7 +313,7 @@ export const SpecialFundsPage: React.FC = () => {
                                 </div>
 
                                 <div className="mt-6 flex gap-2">
-                                    {fund.isArchived ? (
+                                    {fund.is_archived ? (
                                         <Button
                                             onClick={() => {
                                                 console.log('Restaurando fondo:', fund.id);
@@ -395,7 +395,7 @@ export const SpecialFundsPage: React.FC = () => {
                                         <Input
                                             label="Código de Identificación (0=GC, 1+ Otros)"
                                             type="number"
-                                            value={fundCode}
+                                            value={fund_code}
                                             onChange={(e) => setFundCode(Number(e.target.value))}
                                             required
                                         />
@@ -405,7 +405,7 @@ export const SpecialFundsPage: React.FC = () => {
                                             <Input
                                                 label="Monto Total Proyecto ($)"
                                                 type="number"
-                                                value={totalProjectAmount || ''}
+                                                value={total_project_amount || ''}
                                                 onChange={(e) => setTotalProjectAmount(Number(e.target.value))}
                                                 placeholder="Ej: 1500000"
                                             />
@@ -416,13 +416,13 @@ export const SpecialFundsPage: React.FC = () => {
                                                 variant="secondary"
                                                 className="w-full text-[10px]"
                                                 onClick={() => {
-                                                    if (!totalProjectAmount) return;
+                                                    if (!total_project_amount) return;
                                                     // Obtener todos los departamentos activos
-                                                    const depts = towers.flatMap(t => t.departments).filter(d => !d.isArchived);
+                                                    const depts = towers.flatMap(t => t.departments).filter(d => !d.is_archived);
 
                                                     // Filtrar solo departamentos no exentos según la configuración actual
                                                     const activeDepts = depts.filter(d => {
-                                                        const config = unitConfigs.find(c => c.unitTypeId === d.unitTypeId);
+                                                        const config = unitConfigs.find(c => c.unit_type_id === d.unit_type_id);
                                                         return !config?.isExempt;
                                                     });
 
@@ -431,22 +431,22 @@ export const SpecialFundsPage: React.FC = () => {
                                                     // Calcular peso total basado en el gasto común base de cada tipo de unidad
                                                     // Esto asegura un prorrateo equitativo según el tamaño/valor de la unidad
                                                     const totalWeight = activeDepts.reduce((acc, d) => {
-                                                        const ut = unitTypes.find(u => u.id === d.unitTypeId);
+                                                        const ut = unitTypes.find(u => u.id === d.unit_type_id);
                                                         return acc + (ut?.base_common_expense || 0);
                                                     }, 0);
 
                                                     if (totalWeight === 0) {
                                                         // Fallback: división simple si no hay pesos definidos
-                                                        setTotalAmountPerUnit(Math.round(totalProjectAmount / activeDepts.length));
+                                                        setTotalAmountPerUnit(Math.round(total_project_amount / activeDepts.length));
                                                     } else {
                                                         // Generar nuevas configuraciones proporcionales por tipo de unidad
                                                         const newConfigs = unitTypes.map(ut => {
-                                                            const existing = unitConfigs.find(c => c.unitTypeId === ut.id);
+                                                            const existing = unitConfigs.find(c => c.unit_type_id === ut.id);
                                                             if (existing?.isExempt) return existing;
 
-                                                            const proportionalValue = Math.round((totalProjectAmount * ut.base_common_expense) / totalWeight);
+                                                            const proportionalValue = Math.round((total_project_amount * ut.base_common_expense) / totalWeight);
                                                             return {
-                                                                unitTypeId: ut.id,
+                                                                unit_type_id: ut.id,
                                                                 calculationType: 'fixed' as const,
                                                                 value: proportionalValue,
                                                                 isExempt: false
@@ -454,7 +454,7 @@ export const SpecialFundsPage: React.FC = () => {
                                                         });
                                                         setUnitConfigs(newConfigs);
                                                         // El promedio se mantiene como referencia visual general
-                                                        setTotalAmountPerUnit(Math.round(totalProjectAmount / depts.length));
+                                                        setTotalAmountPerUnit(Math.round(total_project_amount / depts.length));
                                                     }
                                                 }}
                                             >
@@ -466,7 +466,7 @@ export const SpecialFundsPage: React.FC = () => {
                                     <Input
                                         label="Meta por Defecto ($)"
                                         type="number"
-                                        value={totalAmountPerUnit}
+                                        value={total_amount_per_unit}
                                         onChange={(e) => setTotalAmountPerUnit(Number(e.target.value))}
                                         required
                                     />
@@ -486,14 +486,14 @@ export const SpecialFundsPage: React.FC = () => {
                                     </div>
                                     <div className="grid grid-cols-1 gap-3">
                                         {unitTypes.map(ut => {
-                                            const config = unitConfigs.find(c => c.unitTypeId === ut.id);
+                                            const config = unitConfigs.find(c => c.unit_type_id === ut.id);
                                             const isExempt = config?.isExempt || false;
                                             const calcType = config?.calculationType || 'fixed';
                                             const val = config?.value || 0;
 
                                             const updateConfig = (newCfg: Partial<FundUnitTypeConfig>) => {
-                                                const others = unitConfigs.filter(c => c.unitTypeId !== ut.id);
-                                                const current = config || { unitTypeId: ut.id, calculationType: 'fixed', value: 0, isExempt: false };
+                                                const others = unitConfigs.filter(c => c.unit_type_id !== ut.id);
+                                                const current = config || { unit_type_id: ut.id, calculationType: 'fixed', value: 0, isExempt: false };
                                                 setUnitConfigs([...others, { ...current, ...newCfg }]);
                                             };
 

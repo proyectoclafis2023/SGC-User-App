@@ -39,12 +39,12 @@ export const PayslipDocument: React.FC<Props> = ({ payslip, person, health, fund
             <div className="grid grid-cols-2 gap-8 mb-8 bg-gray-50 p-6 rounded-2xl border border-gray-200">
                 <div className="space-y-2">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Trabajador</p>
-                    <p className="text-lg font-black uppercase">{person?.names} {person?.lastNames}</p>
+                    <p className="text-lg font-black uppercase">{person?.names} {person?.last_names}</p>
                     <p className="text-sm font-bold text-indigo-600">RUT: {person?.dni}</p>
                 </div>
                 <div className="space-y-2 text-right">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Cargo / Función</p>
-                    <p className="text-md font-bold uppercase">{person?.position || 'Personal de Condominio'}</p>
+                    <p className="text-md font-bold uppercase">{person?.role || 'Personal de Condominio'}</p>
                 </div>
             </div>
 
@@ -58,11 +58,11 @@ export const PayslipDocument: React.FC<Props> = ({ payslip, person, health, fund
                     <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Sueldo Base (30 días)</span>
-                            <span className="font-bold">{formatCurrency(payslip.baseSalary)}</span>
+                            <span className="font-bold">{formatCurrency(payslip.base_salary)}</span>
                         </div>
                         <div className="flex justify-between text-sm font-black pt-4 border-t border-gray-100">
                             <span>Total Haberes</span>
-                            <span>{formatCurrency(payslip.grossSalary)}</span>
+                            <span>{formatCurrency(payslip.gross_salary)}</span>
                         </div>
                     </div>
                 </div>
@@ -75,33 +75,33 @@ export const PayslipDocument: React.FC<Props> = ({ payslip, person, health, fund
                     <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Salud ({health?.name || 'Fonasa'})</span>
-                            <span className="font-bold">{formatCurrency(payslip.healthDiscount)}</span>
+                            <span className="font-bold">{formatCurrency(payslip.health_discount)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Previsión ({fund?.name || 'AFP'})</span>
-                            <span className="font-bold">{formatCurrency(payslip.pensionDiscount)}</span>
+                            <span className="font-bold">{formatCurrency(payslip.pension_discount)}</span>
                         </div>
-                        {payslip.apvDiscount > 0 && (
+                        {payslip.apv_discount > 0 && (
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-600">APV</span>
-                                <span className="font-bold">{formatCurrency(payslip.apvDiscount)}</span>
+                                <span className="font-bold">{formatCurrency(payslip.apv_discount)}</span>
                             </div>
                         )}
-                        {payslip.insuranceDiscount > 0 && (
+                        {payslip.insurance_discount > 0 && (
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-600">Seguro Complementario</span>
-                                <span className="font-bold">{formatCurrency(payslip.insuranceDiscount)}</span>
+                                <span className="font-bold">{formatCurrency(payslip.insurance_discount)}</span>
                             </div>
                         )}
-                        {payslip.advancesDiscount > 0 && (
+                        {payslip.advances_discount > 0 && (
                             <div className="flex justify-between text-sm text-red-600 font-bold">
                                 <span>Adelantos de Sueldo</span>
-                                <span>-{formatCurrency(payslip.advancesDiscount)}</span>
+                                <span>-{formatCurrency(payslip.advances_discount)}</span>
                             </div>
                         )}
                         <div className="flex justify-between text-sm font-black pt-4 border-t border-gray-100">
                             <span>Total Descuentos</span>
-                            <span>{formatCurrency(payslip.totalDeductions)}</span>
+                            <span>{formatCurrency(payslip.total_deductions)}</span>
                         </div>
                     </div>
                 </div>
@@ -111,15 +111,15 @@ export const PayslipDocument: React.FC<Props> = ({ payslip, person, health, fund
             <div className="mt-12 bg-indigo-600 text-white p-8 rounded-3xl flex justify-between items-center shadow-xl shadow-indigo-600/20">
                 <div>
                     <p className="text-xs font-bold uppercase tracking-widest opacity-80">Alcance Líquido a Pago</p>
-                    <p className="text-sm italic font-medium opacity-60">Son: {payslip.netSalary.toLocaleString('es-CL')} pesos chilenos</p>
+                    <p className="text-sm italic font-medium opacity-60">Son: {payslip.net_salary.toLocaleString('es-CL')} pesos chilenos</p>
                 </div>
-                <div className="text-4xl font-black">{formatCurrency(payslip.netSalary)}</div>
+                <div className="text-4xl font-black">{formatCurrency(payslip.net_salary)}</div>
             </div>
 
             {/* Signatures */}
             <div className="mt-24 grid grid-cols-2 gap-20">
                 <div className="border-t border-gray-300 pt-4 text-center">
-                    <p className="text-xs font-bold uppercase">{person?.names} {person?.lastNames}</p>
+                    <p className="text-xs font-bold uppercase">{person?.names} {person?.last_names}</p>
                     <p className="text-[10px] text-gray-400 uppercase">Firma del Trabajador</p>
                 </div>
                 <div className="border-t border-gray-300 pt-4 text-center">

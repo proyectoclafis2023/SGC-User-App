@@ -25,7 +25,7 @@ export const HolidayProvider: React.FC<{ children: ReactNode }> = ({ children })
         fetchHolidays();
     }, []);
 
-    const addHoliday = async (holiday: Omit<Holiday, 'id' | 'createdAt'>) => {
+    const addHoliday = async (holiday: Omit<Holiday, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

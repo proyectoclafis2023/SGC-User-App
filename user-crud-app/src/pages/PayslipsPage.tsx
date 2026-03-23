@@ -60,10 +60,10 @@ export const PayslipsPage: React.FC = () => {
     const workedDaysFromReports = useMemo(() => {
         if (!selectedPersonId) return 0;
         return reports.filter(r => 
-            r.workerId === selectedPersonId && 
+            r.worker_id === selectedPersonId && 
             r.status === 'closed' &&
-            new Date(r.shiftDate).getMonth() + 1 === month &&
-            new Date(r.shiftDate).getFullYear() === year
+            new Date(r.shift_date).getMonth() + 1 === month &&
+            new Date(r.shift_date).getFullYear() === year
         ).length;
     }, [reports, selectedPersonId, month, year]);
 
@@ -72,7 +72,7 @@ export const PayslipsPage: React.FC = () => {
     const pendingAdvances = useMemo(() => {
         if (!selectedPersonId) return 0;
         return advances
-            .filter(a => a.personnelId === selectedPersonId && a.status === 'pending')
+            .filter(a => a.personnel_id === selectedPersonId && a.status === 'pending')
             .reduce((sum, a) => sum + a.amount, 0);
     }, [advances, selectedPersonId]);
 
@@ -80,36 +80,36 @@ export const PayslipsPage: React.FC = () => {
     const calculateGrossSalary = () => {
         if (!selectedPerson) return 0;
         // Simple proportional calculation: (Base / 30) * Days
-        return Math.round((selectedPerson.baseSalary / 30) * finalWorkedDays);
+        return Math.round((selectedPerson.base_salary / 30) * finalWorkedDays);
     };
 
     const calculateDeductions = (gross: number) => {
         if (!selectedPerson) return { health: 0, pension: 0, apv: 0, insurance: 0, total: 0 };
 
-        const healthProvider = providers.find(p => p.id === selectedPerson.healthProviderId);
-        const pensionFund = funds.find(f => f.id === selectedPerson.pensionFundId);
+        const healthProvider = providers.find(p => p.id === selectedPerson.health_provider_id);
+        const pensionFund = funds.find(f => f.id === selectedPerson.pension_fund_id);
 
-        const healthRate = healthProvider?.discountRate || 7; 
-        const pensionRate = pensionFund?.discountRate || 10; 
+        const healthRate = healthProvider?.discount_rate || 7; 
+        const pensionRate = pensionFund?.discount_rate || 10; 
 
         const healthDiscount = Math.round(gross * (healthRate / 100));
         const pensionDiscount = Math.round(gross * (pensionRate / 100));
 
         let apvDiscount = 0;
-        if (selectedPerson.hasAPV) {
-            if (selectedPerson.apvType === 'percentage') {
-                apvDiscount = Math.round(gross * ((selectedPerson.apvValue || 0) / 100));
+        if (selectedPerson.has_apv) {
+            if (selectedPerson.apv_type === 'percentage') {
+                apvDiscount = Math.round(gross * ((selectedPerson.apv_value || 0) / 100));
             } else {
-                apvDiscount = selectedPerson.apvValue || 0;
+                apvDiscount = selectedPerson.apv_value || 0;
             }
         }
 
         let insuranceDiscount = 0;
-        if (selectedPerson.hasComplementaryInsurance) {
-            if (selectedPerson.complementaryInsuranceType === 'percentage') {
-                insuranceDiscount = Math.round(gross * ((selectedPerson.complementaryInsuranceValue || 0) / 100));
+        if (selectedPerson.has_complementary_insurance) {
+            if (selectedPerson.complementary_insurance_type === 'percentage') {
+                insuranceDiscount = Math.round(gross * ((selectedPerson.complementary_insurance_value || 0) / 100));
             } else {
-                insuranceDiscount = selectedPerson.complementaryInsuranceValue || 0;
+                insuranceDiscount = selectedPerson.complementary_insurance_value || 0;
             }
         }
 
@@ -132,25 +132,25 @@ export const PayslipsPage: React.FC = () => {
         const netSalary = grossSalary - totalDeductions;
 
         const newPayslip = await addPayslip({
-            personnelId: selectedPerson.id,
+            personnel_id: selectedPerson.id,
             month,
             year,
-            baseSalary: selectedPerson.baseSalary,
-            grossSalary,
-            workedDays: workedDaysFromReports,
-            adjustedWorkedDays: manualWorkedDays !== null ? manualWorkedDays : undefined,
-            healthDiscount: deductions.health,
-            pensionDiscount: deductions.pension,
-            apvDiscount: deductions.apv,
-            insuranceDiscount: deductions.insurance,
-            advancesDiscount: totalAdvances,
-            totalDeductions,
-            netSalary,
+            base_salary: selectedPerson.base_salary,
+            gross_salary: grossSalary,
+            worked_days: workedDaysFromReports,
+            adjusted_worked_days: manualWorkedDays !== null ? manualWorkedDays : undefined,
+            health_discount: deductions.health,
+            pension_discount: deductions.pension,
+            apv_discount: deductions.apv,
+            insurance_discount: deductions.insurance,
+            advances_discount: totalAdvances,
+            total_deductions: totalDeductions,
+            net_salary: netSalary,
         });
 
         // Registrar Egreso de Sueldo en Gastos Comunes
         await addCommunityExpense({
-            description: `Sueldo Líquido ${selectedPerson.names} ${selectedPerson.lastNames} (${monthNames[month - 1]} ${year})`,
+            description: `Sueldo Líquido ${selectedPerson.names} ${selectedPerson.last_names} (${monthNames[month - 1]} ${year})`,
             category: 'Sueldos',
             amount: netSalary,
             date: new Date().toISOString().split('T')[0]
@@ -158,7 +158,7 @@ export const PayslipsPage: React.FC = () => {
 
         // Mark advances as deducted
         advances
-            .filter(a => a.personnelId === selectedPersonId && a.status === 'pending')
+            .filter(a => a.personnel_id === selectedPersonId && a.status === 'pending')
             .forEach(a => updateAdvanceStatus(a.id, 'deducted', newPayslip.id));
 
         setViewingPayslip(newPayslip);
@@ -168,7 +168,7 @@ export const PayslipsPage: React.FC = () => {
     const handleAddAdvance = async () => {
         if (!advanceData.personId || advanceData.amount <= 0) return;
         const newAdvance = {
-            personnelId: advanceData.personId,
+            personnel_id: advanceData.personId,
             amount: advanceData.amount,
             date: new Date().toISOString(),
             description: advanceData.description
@@ -178,7 +178,7 @@ export const PayslipsPage: React.FC = () => {
         const thePerson = personnel.find(p => p.id === advanceData.personId);
         if (thePerson) {
             await addCommunityExpense({
-                description: `Adelanto de Sueldo: ${thePerson.names} ${thePerson.lastNames} - ${advanceData.description}`,
+                description: `Adelanto de Sueldo: ${thePerson.names} ${thePerson.last_names} - ${advanceData.description}`,
                 category: 'Sueldos',
                 amount: advanceData.amount,
                 date: new Date().toISOString().split('T')[0]
@@ -204,8 +204,8 @@ export const PayslipsPage: React.FC = () => {
 
     const filteredHistory = useMemo(() => {
         return payslips.filter(p => {
-            const person = personnel.find(pers => pers.id === p.personnelId);
-            const nameMatch = person ? (person.names + ' ' + person.lastNames).toLowerCase().includes(searchTerm.toLowerCase()) : false;
+            const person = personnel.find(pers => pers.id === p.personnel_id);
+            const nameMatch = person ? (person.names + ' ' + person.last_names).toLowerCase().includes(searchTerm.toLowerCase()) : false;
             const folioMatch = p.folio.includes(searchTerm);
             return nameMatch || folioMatch;
         });
@@ -267,7 +267,7 @@ export const PayslipsPage: React.FC = () => {
                                         ) : personnel.filter(p => p.status === 'active').length === 0 ? (
                                             <option disabled>No hay trabajadores activos</option>
                                         ) : personnel.filter(p => p.status === 'active').map(p => (
-                                            <option key={p.id} value={p.id}>{p.names} {p.lastNames}</option>
+                                            <option key={p.id} value={p.id}>{p.names} {p.last_names}</option>
                                         ))}
                                     </select>
                                     {personnel.length === 0 && (
@@ -331,7 +331,7 @@ export const PayslipsPage: React.FC = () => {
                                         <div className="h-px bg-indigo-100 dark:bg-indigo-900/30 mb-4"></div>
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-xs font-black text-indigo-600 uppercase">Sueldo Base</span>
-                                            <span className="text-sm font-bold text-gray-500">{formatCurrency(selectedPerson.baseSalary)}</span>
+                                            <span className="text-sm font-bold text-gray-500">{formatCurrency(selectedPerson.base_salary)}</span>
                                         </div>
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-xs font-black text-indigo-600 uppercase">Sueldo Proporcional ({finalWorkedDays} d.)</span>
@@ -386,7 +386,7 @@ export const PayslipsPage: React.FC = () => {
                                     >
                                         <option value="">Seleccione...</option>
                                         {personnel.filter(p => p.status === 'active').map(p => (
-                                            <option key={p.id} value={p.id}>{p.names} {p.lastNames}</option>
+                                            <option key={p.id} value={p.id}>{p.names} {p.last_names}</option>
                                         ))}
                                     </select>
                                     {personnel.length === 0 && (
@@ -436,7 +436,7 @@ export const PayslipsPage: React.FC = () => {
                     <div className="lg:col-span-8 space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {advances.map(adv => {
-                                const person = personnel.find(p => p.id === adv.personnelId);
+                                const person = personnel.find(p => p.id === adv.personnel_id);
                                 return (
                                     <div key={adv.id} className="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all group">
                                         <div className="flex justify-between items-start mb-4">
@@ -445,7 +445,7 @@ export const PayslipsPage: React.FC = () => {
                                                     <DollarSign className="w-5 h-5" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-gray-900 dark:text-white uppercase leading-none">{person?.names} {person?.lastNames}</p>
+                                                    <p className="text-sm font-black text-gray-900 dark:text-white uppercase leading-none">{person?.names} {person?.last_names}</p>
                                                     <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-tighter">{new Date(adv.date).toLocaleDateString()}</p>
                                                 </div>
                                             </div>
@@ -516,13 +516,13 @@ export const PayslipsPage: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {historyType === 'payslips' ? (
                                 filteredHistory.map(payslip => {
-                                    const person = personnel.find(p => p.id === payslip.personnelId);
+                                    const person = personnel.find(p => p.id === payslip.personnel_id);
                                     return (
                                         <div key={payslip.id} className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col justify-between group hover:border-indigo-500 transition-all">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div>
                                                     <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest pl-1 mb-1">Folio #{payslip.folio}</p>
-                                                    <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase leading-tight">{person?.names} {person?.lastNames}</h3>
+                                                    <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase leading-tight">{person?.names} {person?.last_names}</h3>
                                                     <p className="text-[10px] text-gray-400 font-bold uppercase">{monthNames[payslip.month - 1]} {payslip.year}</p>
                                                 </div>
                                                 <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl text-indigo-600">
@@ -533,7 +533,7 @@ export const PayslipsPage: React.FC = () => {
                                             <div className="flex justify-between items-end">
                                                 <div>
                                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Monto Líquido</p>
-                                                    <p className="text-lg font-black text-gray-900 dark:text-white">{formatCurrency(payslip.netSalary)}</p>
+                                                    <p className="text-lg font-black text-gray-900 dark:text-white">{formatCurrency(payslip.net_salary)}</p>
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <button
@@ -564,10 +564,10 @@ export const PayslipsPage: React.FC = () => {
                             ) : (
                                 advances.filter(a => {
                                     if (!searchTerm) return true;
-                                    const person = personnel.find(p => p.id === a.personnelId);
-                                    return `${person?.names} ${person?.lastNames}`.toLowerCase().includes(searchTerm.toLowerCase());
+                                    const person = personnel.find(p => p.id === a.personnel_id);
+                                    return `${person?.names} ${person?.last_names}`.toLowerCase().includes(searchTerm.toLowerCase());
                                 }).map(adv => {
-                                    const person = personnel.find(p => p.id === adv.personnelId);
+                                    const person = personnel.find(p => p.id === adv.personnel_id);
                                     return (
                                         <div key={adv.id} className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col justify-between group hover:border-emerald-500 transition-all">
                                             <div className="flex justify-between items-start mb-4">
@@ -578,7 +578,7 @@ export const PayslipsPage: React.FC = () => {
                                                         </span>
                                                         <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{new Date(adv.date).toLocaleDateString()}</p>
                                                     </div>
-                                                    <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase leading-tight">{person?.names} {person?.lastNames}</h3>
+                                                    <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase leading-tight">{person?.names} {person?.last_names}</h3>
                                                     <p className="text-[10px] text-gray-400 font-bold max-w-[150px] truncate">{adv.description}</p>
                                                 </div>
                                                 <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl text-emerald-600">
@@ -659,16 +659,16 @@ export const PayslipsPage: React.FC = () => {
                             {viewingPayslip && (
                                 <PayslipDocument
                                     payslip={viewingPayslip}
-                                    person={personnel.find(p => p.id === viewingPayslip.personnelId)}
-                                    health={providers.find(p => p.id === personnel.find(px => px.id === viewingPayslip.personnelId)?.healthProviderId)}
-                                    fund={funds.find(f => f.id === personnel.find(px => px.id === viewingPayslip.personnelId)?.pensionFundId)}
+                                    person={personnel.find(p => p.id === viewingPayslip.personnel_id)}
+                                    health={providers.find(p => p.id === personnel.find(px => px.id === viewingPayslip.personnel_id)?.health_provider_id)}
+                                    fund={funds.find(f => f.id === personnel.find(px => px.id === viewingPayslip.personnel_id)?.pension_fund_id)}
                                     settings={settings}
                                 />
                             )}
                             {viewingAdvance && (
                                 <AdvanceReceipt
                                     advance={viewingAdvance as any}
-                                    person={personnel.find(p => p.id === viewingAdvance.personnelId)}
+                                    person={personnel.find(p => p.id === viewingAdvance.personnel_id)}
                                     settings={settings}
                                 />
                             )}

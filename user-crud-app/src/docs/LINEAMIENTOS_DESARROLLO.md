@@ -11,11 +11,11 @@ Este documento establece los estándares y patrones de diseño obligatorios para
 ### Patrón: "Soft Delete" (Eliminado Lógico)
 Cada vez que se requiera "eliminar" un registro (Personal, Artículos, Bancos, Fondos, Residentes, etc.), se debe:
 
-1.  **Actualizar el Registro:** Cambiar el estado del objeto agregando la propiedad `isArchived: true`.
+1.  **Actualizar el Registro:** Cambiar el estado del objeto agregando la propiedad `is_archived: true`.
 2.  **Preservar Relaciones:** Mantener el objeto en el arreglo del Contexto para que los IDs sigan siendo válidos en registros históricos (ej: entregas de EPP, pagos de gastos comunes).
 3.  **Filtrado en Vistas:** En las páginas de gestión (Maestros), se debe filtrar el arreglo para ocultar los elementos archivados:
     ```typescript
-    const filteredItems = items.filter(item => !item.isArchived);
+    const filteredItems = items.filter(item => !item.is_archived);
     ```
 
 ---

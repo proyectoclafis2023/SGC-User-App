@@ -25,7 +25,7 @@ export const FixedAssetProvider: React.FC<{ children: ReactNode }> = ({ children
         fetchAssets();
     }, []);
 
-    const addAsset = async (asset: Omit<FixedAsset, 'id' | 'createdAt'>) => {
+    const addAsset = async (asset: Omit<FixedAsset, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

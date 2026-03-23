@@ -273,7 +273,7 @@ export const Layout: React.FC = () => {
                             label="Mi Hogar"
                             isCollapsed={isCollapsed}
                             children={[
-                                { label: 'Mis Pagos', path: '/gastos-comunes', icon: Wallet },
+                                { label: 'Mis Pagos', path: '/mis-pagos', icon: Wallet },
                             ]}
                         />
                     )}

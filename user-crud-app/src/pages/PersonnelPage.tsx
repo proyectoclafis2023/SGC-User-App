@@ -62,7 +62,7 @@ export const PersonnelPage: React.FC = () => {
         }
     };
 
-    const handleSubmit = async (data: Omit<Personnel, 'id' | 'createdAt' | 'status'>, id?: string) => {
+    const handleSubmit = async (data: Omit<Personnel, 'id' | 'created_at' | 'status'>, id?: string) => {
         let finalPersonnelId = id;
 
         // Determinar qué artículos son nuevos o incrementados para el historial
@@ -70,33 +70,33 @@ export const PersonnelPage: React.FC = () => {
 
         if (id && editingPerson) {
             // Caso edición: comparar con lo que tenía antes
-            (data.assignedArticles || []).forEach((newItem: AssignedArticle) => {
-                const oldItem = editingPerson.assignedArticles?.find((a: AssignedArticle) => a.articleId === newItem.articleId);
+            (data.assigned_articles || []).forEach((newItem: AssignedArticle) => {
+                const oldItem = editingPerson.assigned_articles?.find((a: AssignedArticle) => a.article_id === newItem.article_id);
                 if (!oldItem) {
                     // Completamente nuevo
                     newArticlesForHistory.push({
-                        articleId: newItem.articleId,
+                        articleId: newItem.article_id,
                         quantity: newItem.quantity,
                         size: newItem.size
                     });
                 } else if (newItem.quantity > oldItem.quantity) {
                     // Cantidad incrementada
                     newArticlesForHistory.push({
-                        articleId: newItem.articleId,
+                        articleId: newItem.article_id,
                         quantity: newItem.quantity - oldItem.quantity,
                         size: newItem.size
                     });
                 }
             });
-            await updatePersonnel({ ...data, id, createdAt: editingPerson.createdAt, status: editingPerson.status });
+            await updatePersonnel({ ...data, id, created_at: editingPerson.created_at, status: editingPerson.status });
         } else {
             // Caso nuevo: todos los artículos asignados van al historial
             const newPerson = await addPersonnel(data);
             if (newPerson) finalPersonnelId = newPerson.id;
-            if (data.assignedArticles && data.assignedArticles.length > 0) {
-                data.assignedArticles.forEach((item: AssignedArticle) => {
+            if (data.assigned_articles && data.assigned_articles.length > 0) {
+                data.assigned_articles.forEach((item: AssignedArticle) => {
                     newArticlesForHistory.push({
-                        articleId: item.articleId,
+                        articleId: item.article_id,
                         quantity: item.quantity,
                         size: item.size
                     });
@@ -107,9 +107,13 @@ export const PersonnelPage: React.FC = () => {
         // Si hay artículos nuevos, registrar la entrega en el historial
         if (newArticlesForHistory.length > 0 && finalPersonnelId) {
             await addDelivery({
-                personnelId: finalPersonnelId,
-                deliveryDate: new Date().toISOString(),
-                articles: newArticlesForHistory,
+                personnel_id: finalPersonnelId,
+                delivery_date: new Date().toISOString(),
+                articles: newArticlesForHistory.map(a => ({ 
+                    article_id: a.articleId, 
+                    quantity: a.quantity, 
+                    size: a.size 
+                })),
                 status: 'active',
                 notes: id ? 'Actualización desde ficha de personal' : 'Entrega inicial al registrar personal'
             });
@@ -128,12 +132,12 @@ export const PersonnelPage: React.FC = () => {
     };
 
     const filteredPersonnel = personnel.filter((p: Personnel) => {
-        if (p.isArchived) return false;
+        if (p.is_archived) return false;
 
         const cleanSearch = searchTerm.toLowerCase().trim();
         const cleanDniSearch = searchTerm.replace(/[^0-9kK]/g, '').toLowerCase();
 
-        const matchName = `${p.names} ${p.lastNames}`.toLowerCase().includes(cleanSearch);
+        const matchName = `${p.names} ${p.last_names}`.toLowerCase().includes(cleanSearch);
         const matchDni = p.dni.replace(/[^0-9kK]/g, '').toLowerCase().includes(cleanDniSearch);
 
         return matchName || (cleanDniSearch.length > 0 && matchDni);
@@ -269,7 +273,7 @@ export const PersonnelPage: React.FC = () => {
                 onConfirm={confirmDelete}
                 title="Eliminar Personal"
                 description="¿Está seguro de eliminar la ficha de"
-                itemName={personToDelete ? `${personToDelete.names} ${personToDelete.lastNames}` : ''}
+                itemName={personToDelete ? `${personToDelete.names} ${personToDelete.last_names}` : ''}
                 actionLabel="Eliminar Ficha"
             />
         </div>

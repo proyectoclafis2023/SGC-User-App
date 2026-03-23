@@ -22,10 +22,10 @@ export interface User {
     profileId?: string;
     relatedId?: string; // ID of resident or personnel
     status: 'active' | 'inactive' | 'setting_up' | 'pending_approval';
-    isArchived?: boolean;
+    is_archived?: boolean;
     mustChangePassword?: boolean;
     password?: string;
-    createdAt: string;
+    created_at: string;
 }
 
 export interface AuthState {
@@ -45,8 +45,8 @@ export interface AuthState {
 
 export interface UserContextType {
     users: User[];
-    addUser: (user: Omit<User, 'id' | 'createdAt'>) => Promise<void>;
-    updateUser: (id: string, user: Omit<User, 'id' | 'createdAt'>) => Promise<void>;
+    addUser: (user: Omit<User, 'id' | 'created_at'>) => Promise<void>;
+    updateUser: (id: string, user: Omit<User, 'id' | 'created_at'>) => Promise<void>;
     deleteUser: (id: string) => Promise<void>;
     resetPassword: (id: string, newPassword: string) => Promise<void>;
 }
@@ -111,44 +111,44 @@ export interface SettingsContextType {
 
 export interface EmergencyContact {
     names: string;
-    lastNames: string;
+    last_names: string;
     phone: string;
 }
 
 export interface Personnel {
     id: string;
     names: string;
-    lastNames: string;
+    last_names: string;
     dni: string;
     phone?: string;
     email?: string;
     photo?: string; // Base64
-    isHonorary: boolean;
-    bankId?: string;
-    accountNumber?: string;
-    baseSalary: number;
-    vacationDays: number;
-    healthProviderId?: string;
-    hasComplementaryInsurance?: boolean;
-    complementaryInsuranceType?: 'percentage' | 'amount';
-    complementaryInsuranceValue?: number;
-    pensionFundId?: string;
-    hasAPV?: boolean;
-    apvType?: 'percentage' | 'amount';
-    apvValue?: number;
+    is_honorary: boolean;
+    bank_id?: string;
+    account_number?: string;
+    base_salary: number;
+    vacation_days: number;
+    health_provider_id?: string;
+    has_complementary_insurance?: boolean;
+    complementary_insurance_type?: 'percentage' | 'amount';
+    complementary_insurance_value?: number;
+    pension_fund_id?: string;
+    has_apv?: boolean;
+    apv_type?: 'percentage' | 'amount';
+    apv_value?: number;
     address: string;
-    hasEmergencyContact: boolean;
-    emergencyContact?: EmergencyContact;
-    medicalInfo?: string;
-    position?: string;
-    contractType?: 'honorarios' | 'plazo' | 'indefinido';
-    assignedShift?: 'Manana' | 'Tarde' | 'Noche';
-    vacationLastUpdate?: string;
-    assignedArticles?: AssignedArticle[];
+    has_emergency_contact: boolean;
+    emergency_contact?: EmergencyContact;
+    medical_info?: string;
+    role?: string;
+    contract_type?: 'honorarios' | 'plazo' | 'indefinido';
+    assigned_shift?: 'Manana' | 'Tarde' | 'Noche';
+    vacation_last_update?: string;
+    assigned_articles?: AssignedArticle[];
     status: 'active' | 'inactive';
-    isArchived?: boolean;
-    createdAt: string;
-    jornadaGroupId?: string;
+    is_archived?: boolean;
+    created_at: string;
+    jornada_group_id?: string;
 }
 
 export interface Bank {
@@ -175,15 +175,15 @@ export interface Article {
     minStock: number;
     isActive: boolean;
     allowPersonnelRequest: boolean;
-    isArchived?: boolean;
+    is_archived?: boolean;
 }
 
 export interface AssignedArticle {
     id: string;
-    articleId: string;
+    article_id: string;
     size?: string; // Talla o número
     quantity: number;
-    assignedAt: string;
+    assigned_at: string;
     notes?: string;
 }
 
@@ -287,6 +287,8 @@ export interface Department {
     last_census_date?: string; // Fecha del último censo
     is_archived?: boolean;
     history?: HistoryLog[];
+    tower?: { name: string };
+    unit_type?: { nombre: string };
 }
 
 export interface Tower {
@@ -350,7 +352,7 @@ export interface Resident {
 
 export interface ParkingContextType {
     parkings: Parking[];
-    addParking: (parking: Omit<Parking, 'id' | 'createdAt'>) => Promise<void>;
+    addParking: (parking: Omit<Parking, 'id' | 'created_at'>) => Promise<void>;
     updateParking: (parking: Parking) => Promise<void>;
     deleteParking: (id: string) => Promise<void>;
 }
@@ -371,14 +373,14 @@ export interface UnitTypeContextType {
 
 export interface OwnerContextType {
     owners: Owner[];
-    addOwner: (owner: Omit<Owner, 'id' | 'createdAt' | 'status'>) => Promise<string>;
+    addOwner: (owner: Omit<Owner, 'id' | 'created_at' | 'status'>) => Promise<string>;
     updateOwner: (owner: Owner) => Promise<void>;
     deleteOwner: (id: string) => Promise<void>;
 }
 
 export interface ResidentContextType {
     residents: Resident[];
-    addResident: (resident: Omit<Resident, 'id' | 'createdAt' | 'status'>) => Promise<Resident | undefined>;
+    addResident: (resident: Omit<Resident, 'id' | 'created_at' | 'status'>) => Promise<Resident | undefined>;
     updateResident: (resident: Resident) => Promise<void>;
     deleteResident: (id: string) => Promise<void>;
     uploadResidents: (file: File) => Promise<{ message: string }>;
@@ -394,7 +396,7 @@ export interface CommonSpaceContextType {
 export interface ReservationContextType {
     reservations: Reservation[];
     reservationLogs: ReservationLog[];
-    addReservation: (reservation: Omit<Reservation, 'id' | 'folio' | 'createdAt' | 'status' | 'paymentStatus'>) => Promise<void>;
+    addReservation: (reservation: Omit<Reservation, 'id' | 'folio' | 'created_at' | 'status' | 'paymentStatus'>) => Promise<void>;
     updateReservation: (reservation: Reservation) => Promise<void>;
     deleteReservation: (id: string) => Promise<void>;
     approveReservation: (id: string, adminId: string) => Promise<void>;
@@ -464,13 +466,13 @@ export interface CameraRequest {
     endTime: string;
     reason: string;
     status: 'pending' | 'attended' | 'rejected';
-    createdAt: string;
+    created_at: string;
     adminNotes?: string;
 }
 
 export interface CameraRequestContextType {
     requests: CameraRequest[];
-    addRequest: (request: Omit<CameraRequest, 'id' | 'folio' | 'status' | 'createdAt'>) => Promise<void>;
+    addRequest: (request: Omit<CameraRequest, 'id' | 'folio' | 'status' | 'created_at'>) => Promise<void>;
     updateRequestStatus: (id: string, status: CameraRequest['status'], adminNotes?: string) => Promise<void>;
     deleteRequest: (id: string) => Promise<void>;
 }
@@ -516,8 +518,8 @@ export interface Holiday {
     id: string;
     date: string;
     description: string;
-    isArchived?: boolean;
-    createdAt: string;
+    is_archived?: boolean;
+    created_at: string;
 }
 
 export interface HealthProviderContextType {
@@ -536,14 +538,14 @@ export interface PensionFundContextType {
 
 export interface AFCContextType {
     afcs: AFC[];
-    addAFC: (afc: Omit<AFC, 'id' | 'createdAt'>) => Promise<void>;
+    addAFC: (afc: Omit<AFC, 'id' | 'created_at'>) => Promise<void>;
     updateAFC: (afc: AFC) => Promise<void>;
     deleteAFC: (id: string) => Promise<void>;
 }
 
 export interface HolidayContextType {
     holidays: Holiday[];
-    addHoliday: (holiday: Omit<Holiday, 'id' | 'createdAt'>) => Promise<void>;
+    addHoliday: (holiday: Omit<Holiday, 'id' | 'created_at'>) => Promise<void>;
     updateHoliday: (holiday: Holiday) => Promise<void>;
     deleteHoliday: (id: string) => Promise<void>;
 }
@@ -614,7 +616,7 @@ export interface Profile {
     id: string;
     name: string;
     permissions: ProfilePermissions;
-    isArchived?: boolean;
+    is_archived?: boolean;
 }
 
 export interface ProfileContextType {
@@ -626,7 +628,7 @@ export interface ProfileContextType {
 
 export interface PersonnelContextType {
     personnel: Personnel[];
-    addPersonnel: (person: Omit<Personnel, 'id' | 'createdAt' | 'status'>) => Promise<Personnel | undefined>;
+    addPersonnel: (person: Omit<Personnel, 'id' | 'created_at' | 'status'>) => Promise<Personnel | undefined>;
     updatePersonnel: (person: Personnel) => Promise<void>;
     deletePersonnel: (id: string) => Promise<void>;
     uploadPersonnel: (file: File) => Promise<{ message: string }>;
@@ -649,7 +651,7 @@ export interface SystemMessage {
 
 export interface SystemMessageContextType {
     messages: SystemMessage[];
-    addMessage: (message: Omit<SystemMessage, 'id' | 'createdAt'>) => Promise<void>;
+    addMessage: (message: Omit<SystemMessage, 'id' | 'created_at'>) => Promise<void>;
     updateMessage: (message: SystemMessage) => Promise<void>;
     deleteMessage: (id: string) => Promise<void>;
     toggleMessageStatus: (id: string) => Promise<void>;
@@ -661,12 +663,12 @@ export interface DirectedMessage {
     text: string;
     type: 'info' | 'warning' | 'danger' | 'success';
     isActive: boolean;
-    createdAt: string;
+    created_at: string;
 }
 
 export interface DirectedMessageContextType {
     messages: DirectedMessage[];
-    addMessage: (message: Omit<DirectedMessage, 'id' | 'createdAt'>) => Promise<void>;
+    addMessage: (message: Omit<DirectedMessage, 'id' | 'created_at'>) => Promise<void>;
     updateMessage: (message: DirectedMessage) => Promise<void>;
     deleteMessage: (id: string) => Promise<void>;
 }
@@ -674,22 +676,22 @@ export interface DirectedMessageContextType {
 export interface ArticleDelivery {
     id: string;
     folio: string;
-    personnelId: string;
-    deliveryDate: string; // Fecha en que se entregó físicamente
-    createdAt: string;    // Fecha en que se registró en sistema
+    personnel_id: string;
+    delivery_date: string; // Fecha en que se entregó físicamente
+    created_at: string;    // Fecha en que se registró en sistema
     articles: {
-        articleId: string;
+        article_id: string;
         quantity: number;
         size?: string;
     }[];
     notes?: string;
     status: 'active' | 'voided';
-    signedDocument?: string; // Base64 of signed document
+    signed_document?: string; // Base64 of signed document
 }
 
 export interface ArticleDeliveryContextType {
     deliveries: ArticleDelivery[];
-    addDelivery: (delivery: Omit<ArticleDelivery, 'id' | 'folio' | 'createdAt'>) => Promise<string>;
+    addDelivery: (delivery: Omit<ArticleDelivery, 'id' | 'folio' | 'created_at'>) => Promise<string>;
     updateDelivery: (delivery: ArticleDelivery) => Promise<void>;
     deleteDelivery: (id: string) => Promise<void>;
     setDeliveries: React.Dispatch<React.SetStateAction<ArticleDelivery[]>>;
@@ -702,7 +704,7 @@ export interface ExtraordinaryQuota {
 }
 
 export interface FundUnitTypeConfig {
-    unitTypeId: string;
+    unit_type_id: string;
     calculationType: 'fixed' | 'percentage';
     value: number; // Fixed amount or % of Base Common Expense
     isExempt: boolean;
@@ -722,7 +724,7 @@ export interface JornadaGroup {
     startTime?: string;
     endTime?: string;
     isActive: boolean;
-    isArchived?: boolean;
+    is_archived?: boolean;
     schedules?: JornadaSchedule[];
     breakMinutes?: number;
 }
@@ -739,60 +741,90 @@ export interface SpecialFund {
     type: 'reserve' | 'extraordinary';
     name: string;
     description: string;
-    totalAmountPerUnit: number; // Default amount per unit
-    totalProjectAmount?: number; // Total amount to be collected (for proration)
-    isActive: boolean;
+    total_amount_per_unit: number; 
+    total_project_amount?: number; 
+    is_active: boolean;
     deadline?: string;
-    unitConfigs?: FundUnitTypeConfig[];
+    unit_configs?: FundUnitTypeConfig[];
     expenses?: FundExpense[];
-    fundCode: number; // 0 for Gasto Común, 1+ for other funds
-    isArchived?: boolean;
-    createdAt: string;
+    fund_code: number;
+    is_archived: boolean;
+    created_at: string;
 }
 
 export interface CommonExpenseRule {
     id: string;
-    unitTypeId?: string;
+    unit_type_id?: string;
     amount: number;
-    effectiveFrom: string;
+    effective_from: string;
     description?: string;
-    isArchived?: boolean;
-    createdAt: string;
+    is_archived: boolean;
+    created_at: string;
+}
+
+export interface ChargeRule {
+    id: string;
+    name: string;
+    rule_type: 'fixed' | 'percentage' | 'interest' | 'penalty';
+    value: number;
+    applies_to: 'global' | 'unit_type' | 'department';
+    target_id?: string;
+    is_active: boolean;
+    is_archived: boolean;
+    created_at: string;
+}
+
+export interface Payment {
+    id: string;
+    amount: number;
+    payment_date: string;
+    payment_method: string;
+    reference?: string;
+    resident_id?: string;
+    department_id?: string;
+    common_expense_payment_id: string;
+    is_archived: boolean;
+    created_at: string;
 }
 
 export interface FundContribution {
-    fundId: string;
+    fund_id: string;
     amount: number;
 }
 
 export interface CommonExpensePayment {
     id: string;
-    departmentId: string;
-    periodMonth: number;
-    periodYear: number;
-    amountPaid: number;
-    paymentDate: string;
-    status: 'paid' | 'pending' | 'mora';
-    paymentMethod?: string;
-    receiptFolio?: string;
-    evidenceImage?: string; // Captura manual
+    department_id: string;
+    common_expense_id?: string;
+    period_month: number;
+    period_year: number;
+    amount_paid: number;
+    payment_date: string;
+    status: 'paid' | 'unpaid' | 'mora';
+    payment_method?: string;
+    receipt_folio?: string;
+    evidence_image?: string;
     notes?: string;
-    isElectronic: boolean;
-    fundContributions?: FundContribution[];
-    createdAt: string;
+    is_electronic: boolean;
+    fund_contributions?: FundContribution[];
+    is_archived: boolean;
+    created_at: string;
 }
 
 export interface CommunityExpense {
     id: string;
     description: string;
     amount: number;
-    category: 'Sueldos' | 'Mantención' | 'Seguros' | 'Servicios Básicos' | 'Administración' | 'Otros' | 'Reparaciones';
-    date: string;
-    receiptUrl?: string;
+    category_id?: string;
+    category_name: 'Sueldos' | 'Mantención' | 'Seguros' | 'Servicios Básicos' | 'Administración' | 'Otros' | 'Reparaciones';
+    expense_date: string;
+    receipt_url?: string;
     receiptImages?: string[];
-    isArchived?: boolean;
-    isProjected?: boolean;
-    createdAt: string;
+    payment_method?: string;
+    reference?: string;
+    is_archived: boolean;
+    is_projected: boolean;
+    created_at: string;
 }
 
 export interface CommonExpenseContextType {
@@ -803,17 +835,25 @@ export interface CommonExpenseContextType {
     fetchPayments: () => Promise<void>;
     fetchFunds: (includeArchived?: boolean) => Promise<void>;
     fetchCommunityExpenses: (includeArchived?: boolean) => Promise<void>;
-    addPayment: (payment: Omit<CommonExpensePayment, 'id' | 'createdAt'>) => Promise<void>;
+    addPayment: (payment: Omit<CommonExpensePayment, 'id' | 'created_at'>) => Promise<void>;
     updatePayment: (payment: CommonExpensePayment) => Promise<void>;
     deletePayment: (id: string) => Promise<void>;
-    addFund: (fund: Omit<SpecialFund, 'id' | 'createdAt'>) => Promise<void>;
+    addFund: (fund: Omit<SpecialFund, 'id' | 'created_at'>) => Promise<void>;
     updateFund: (fund: SpecialFund) => Promise<void>;
     deleteFund: (id: string) => Promise<void>;
     restoreFund: (id: string) => Promise<void>;
-    addRule: (rule: Omit<CommonExpenseRule, 'id' | 'createdAt'>) => Promise<void>;
-    calculateAmount: (deptId: string) => Promise<{ suggestedAmount: number, ruleUsed: any }>;
-    addCommunityExpense: (expense: Omit<CommunityExpense, 'id' | 'createdAt'>) => Promise<void>;
+    addRule: (rule: Omit<CommonExpenseRule, 'id' | 'created_at'>) => Promise<void>;
+    calculateAmount: (deptId: string) => Promise<{ suggestedAmount: number, ruleUsed: string }>;
+    addCommunityExpense: (expense: Omit<CommunityExpense, 'id' | 'created_at'>) => Promise<void>;
     deleteCommunityExpense: (id: string) => Promise<void>;
+    chargeRules: ChargeRule[];
+    fetchChargeRules: () => Promise<void>;
+    addChargeRule: (rule: Omit<ChargeRule, 'id' | 'created_at'>) => Promise<void>;
+    deleteChargeRule: (id: string) => Promise<void>;
+    actualPayments: Payment[];
+    fetchActualPayments: () => Promise<void>;
+    addActualPayment: (transaction: Omit<Payment, 'id' | 'created_at'>) => Promise<void>;
+    deleteActualPayment: (id: string) => Promise<void>;
 }
 
 export interface MaintenanceRecord {
@@ -840,13 +880,13 @@ export interface FixedAsset {
     requiresMaintenance?: boolean;
     nextMaintenanceDate?: string;
     maintenanceHistory?: MaintenanceRecord[];
-    isArchived?: boolean;
-    createdAt: string;
+    is_archived?: boolean;
+    created_at: string;
 }
 
 export interface FixedAssetContextType {
     assets: FixedAsset[];
-    addAsset: (asset: Omit<FixedAsset, 'id' | 'createdAt'>) => Promise<void>;
+    addAsset: (asset: Omit<FixedAsset, 'id' | 'created_at'>) => Promise<void>;
     updateAsset: (asset: FixedAsset) => Promise<void>;
     deleteAsset: (id: string) => Promise<void>;
 }
@@ -881,7 +921,7 @@ export interface Correspondence {
 
 export interface CorrespondenceContextType {
     items: Correspondence[];
-    addItem: (item: Omit<Correspondence, 'id' | 'folio' | 'createdAt'>) => Promise<void>;
+    addItem: (item: Omit<Correspondence, 'id' | 'folio' | 'created_at'>) => Promise<void>;
     updateItemStatus: (id: string, status: Correspondence['status'], deliveredAt?: string) => Promise<void>;
     deleteItem: (id: string) => Promise<void>;
 }
@@ -902,12 +942,12 @@ export interface Contractor {
     maintenanceFrequency?: 'monthly' | 'half-yearly' | 'annual' | 'none';
     lastMaintenanceDate?: string;
     showToResidents?: boolean;
-    createdAt: string;
+    created_at: string;
 }
 
 export interface ContractorContextType {
     contractors: Contractor[];
-    addContractor: (contractor: Omit<Contractor, 'id' | 'folio' | 'createdAt'>) => Promise<void>;
+    addContractor: (contractor: Omit<Contractor, 'id' | 'folio' | 'created_at'>) => Promise<void>;
     updateContractor: (contractor: Contractor) => Promise<void>;
     deleteContractor: (id: string) => Promise<void>;
 }
@@ -931,7 +971,7 @@ export interface ContractorVisit {
 
 export interface ContractorVisitContextType {
     visits: ContractorVisit[];
-    addVisit: (visit: Omit<ContractorVisit, 'id' | 'folio' | 'createdAt' | 'status'>) => Promise<void>;
+    addVisit: (visit: Omit<ContractorVisit, 'id' | 'folio' | 'created_at' | 'status'>) => Promise<void>;
     updateVisitStatus: (id: string, status: ContractorVisit['status']) => Promise<void>;
 }
 
@@ -957,7 +997,7 @@ export interface Visitor {
 
 export interface VisitorContextType {
     visitors: Visitor[];
-    addVisitor: (visitor: Omit<Visitor, 'id' | 'folio' | 'createdAt'>) => Promise<void>;
+    addVisitor: (visitor: Omit<Visitor, 'id' | 'folio' | 'created_at'>) => Promise<void>;
     updateVisitorStatus: (id: string, status: Visitor['status'], time?: string) => Promise<void>;
     deleteVisitor: (id: string) => Promise<void>;
 }
@@ -966,28 +1006,28 @@ export interface InfrastructureItem {
     id: string;
     name: string;
     isMandatory?: boolean;
-    isArchived?: boolean;
-    createdAt: string;
+    is_archived?: boolean;
+    created_at: string;
 }
 
 export interface EquipmentItem {
     id: string;
     name: string;
     isMandatory?: boolean;
-    isArchived?: boolean;
-    createdAt: string;
+    is_archived?: boolean;
+    created_at: string;
 }
 
 export interface InfrastructureItemContextType {
     items: InfrastructureItem[];
-    addItem: (item: Omit<InfrastructureItem, 'id' | 'createdAt'>) => Promise<void>;
+    addItem: (item: Omit<InfrastructureItem, 'id' | 'created_at'>) => Promise<void>;
     updateItem: (item: InfrastructureItem) => Promise<void>;
     deleteItem: (id: string) => Promise<void>;
 }
 
 export interface EquipmentItemContextType {
     items: EquipmentItem[];
-    addItem: (item: Omit<EquipmentItem, 'id' | 'createdAt'>) => Promise<void>;
+    addItem: (item: Omit<EquipmentItem, 'id' | 'created_at'>) => Promise<void>;
     updateItem: (item: EquipmentItem) => Promise<void>;
     deleteItem: (id: string) => Promise<void>;
 }
@@ -1003,7 +1043,7 @@ export interface Camera {
 
 export interface CameraContextType {
     cameras: Camera[];
-    addCamera: (camera: Omit<Camera, 'id' | 'createdAt'>) => Promise<void>;
+    addCamera: (camera: Omit<Camera, 'id' | 'created_at'>) => Promise<void>;
     updateCamera: (camera: Camera) => Promise<void>;
     deleteCamera: (id: string) => Promise<void>;
 }
@@ -1075,8 +1115,8 @@ export interface EmergencyNumber {
 
 export interface EmergencyNumberContextType {
     numbers: EmergencyNumber[];
-    addNumber: (number: Omit<EmergencyNumber, 'id' | 'createdAt'>) => Promise<void>;
-    updateNumber: (id: string, number: Omit<EmergencyNumber, 'id' | 'createdAt'>) => Promise<void>;
+    addNumber: (number: Omit<EmergencyNumber, 'id' | 'created_at'>) => Promise<void>;
+    updateNumber: (id: string, number: Omit<EmergencyNumber, 'id' | 'created_at'>) => Promise<void>;
     deleteNumber: (id: string) => Promise<void>;
 }
 
@@ -1084,68 +1124,68 @@ export interface Certificate {
     id: string;
     folio: string;
     type: 'residencia' | 'gastos' | 'estado_cuenta' | 'liquidacion';
-    residentName: string;
-    residentRut: string;
-    residentAddress: string;
-    generatedAt: string;
-    adminName: string;
-    adminRut: string;
-    condoName: string;
-    condoRut: string;
-    condoAddress: string;
-    financialData?: {
-        commonExpenseDebt: number;
-        extraordinaryDebt: number;
-        reserveDebt: number;
-        totalDebt: number;
-        lastPaymentDate?: string;
+    resident_name: string;
+    resident_rut: string;
+    resident_address: string;
+    generated_at: string;
+    admin_name: string;
+    admin_rut: string;
+    condo_name: string;
+    condo_rut: string;
+    condo_address: string;
+    financial_data?: {
+        common_expense_debt: number;
+        extraordinary_debt: number;
+        reserve_debt: number;
+        total_debt: number;
+        last_payment_date?: string;
     };
 }
 
 export interface CertificateContextType {
     certificates: Certificate[];
-    addCertificate: (certificate: Omit<Certificate, 'id' | 'folio' | 'generatedAt'>) => Promise<Certificate>;
+    addCertificate: (certificate: Omit<Certificate, 'id' | 'folio' | 'generated_at'>) => Promise<Certificate>;
     deleteCertificate: (id: string) => Promise<void>;
 }
 
 export interface Advance {
     id: string;
-    personnelId: string;
+    personnel_id: string;
     amount: number;
     date: string;
     description: string;
     status: 'pending' | 'deducted' | 'cancelled';
-    payslipId?: string;
+    payslip_id?: string;
 }
 
 export interface Payslip {
     id: string;
     folio: string;
-    personnelId: string;
+    personnel_id: string;
     month: number;
     year: number;
-    baseSalary: number;
-    grossSalary: number;
-    workedDays: number;
-    adjustedWorkedDays?: number;
-    healthDiscount: number;
-    pensionDiscount: number;
-    apvDiscount: number;
-    insuranceDiscount: number;
-    advancesDiscount: number;
-    totalDeductions: number;
-    netSalary: number;
-    generatedAt: string;
-    bonusPoints?: number; // Optional extras
+    base_salary: number;
+    gross_salary: number;
+    worked_days: number;
+    adjusted_worked_days?: number;
+    health_discount: number;
+    pension_discount: number;
+    apv_discount: number;
+    insurance_discount: number;
+    advances_discount: number;
+    total_deductions: number;
+    net_salary: number;
+    generated_at: string;
+    bonus_points?: number; // Optional extras
 }
 
 export interface PayslipContextType {
     payslips: Payslip[];
     advances: Advance[];
-    addPayslip: (payslip: Omit<Payslip, 'id' | 'folio' | 'generatedAt'>) => Promise<Payslip>;
+    addPayslip: (payslip: Omit<Payslip, 'id' | 'folio' | 'generated_at'>) => Promise<Payslip>;
     deletePayslip: (id: string) => Promise<void>;
     addAdvance: (advance: Omit<Advance, 'id' | 'status'>) => Promise<string>;
-    updateAdvanceStatus: (id: string, status: Advance['status'], payslipId?: string) => Promise<void>;
+    updateAdvanceStatus: (id: string, status: Advance['status'], payslip_id?: string) => Promise<void>;
     deleteAdvance: (id: string) => Promise<void>;
 }
 
@@ -1174,10 +1214,10 @@ export interface CommunicationHistory {
 export interface CommunicationContextType {
     templates: CommunicationTemplate[];
     history: CommunicationHistory[];
-    addTemplate: (template: Omit<CommunicationTemplate, 'id' | 'createdAt'>) => Promise<void>;
+    addTemplate: (template: Omit<CommunicationTemplate, 'id' | 'created_at'>) => Promise<void>;
     updateTemplate: (template: CommunicationTemplate) => Promise<void>;
     deleteTemplate: (id: string) => Promise<void>;
-    addHistory: (item: Omit<CommunicationHistory, 'id' | 'createdAt'>) => Promise<void>;
+    addHistory: (item: Omit<CommunicationHistory, 'id' | 'created_at'>) => Promise<void>;
 }
 
 export interface SupplyRequest {

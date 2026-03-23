@@ -31,13 +31,13 @@ export const ContractorProvider: React.FC<{ children: ReactNode }> = ({ children
         return `${prefix}-${dateStr}-${rand}`;
     };
 
-    const addContractor = async (contractor: Omit<Contractor, 'id' | 'folio' | 'createdAt'>) => {
+    const addContractor = async (contractor: Omit<Contractor, 'id' | 'folio' | 'created_at'>) => {
         const id = Math.random().toString(36).substr(2, 9);
         const newRecord: Contractor = {
             ...contractor,
             id,
             folio: generateFolio('CON'),
-            createdAt: new Date().toISOString()
+            created_at: new Date().toISOString()
         };
 
         try {

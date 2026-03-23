@@ -241,7 +241,7 @@ export const FixedAssetsPage: React.FC = () => {
     };
 
     const filteredAssets = assets.filter(a => {
-        if (a.isArchived) return false;
+        if (a.is_archived) return false;
         return a.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
             a.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
             a.model.toLowerCase().includes(searchTerm.toLowerCase())

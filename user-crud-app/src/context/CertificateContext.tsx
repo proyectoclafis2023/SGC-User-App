@@ -25,14 +25,14 @@ export const CertificateProvider: React.FC<{ children: ReactNode }> = ({ childre
         fetchCertificates();
     }, []);
 
-    const addCertificate = async (certificate: Omit<Certificate, 'id' | 'folio' | 'generatedAt'>) => {
+    const addCertificate = async (certificate: Omit<Certificate, 'id' | 'folio' | 'generated_at'>) => {
         try {
             const folio = `CERT-${Date.now()}`;
-            const generatedAt = new Date().toISOString();
+            const generated_at = new Date().toISOString();
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...certificate, folio, generatedAt })
+                body: JSON.stringify({ ...certificate, folio, generated_at })
             });
             if (response.ok) {
                 const newCert = await response.json();

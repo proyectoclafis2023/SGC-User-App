@@ -18,7 +18,7 @@ export const StaffArticleRequestsPage: React.FC = () => {
 
     // Filter articles that can be requested by staff and deduplicate by name
     const requestableArticles = articles.filter((a: any) => 
-        a.allowPersonnelRequest && !a.isArchived && a.isActive
+        a.allowPersonnelRequest && !a.is_archived && a.isActive
     );
 
     // Deduplicate by normalized name to avoid visual "saturation" and duplicates like "café" vs "café" (normalization) or "Cafe"
@@ -62,24 +62,24 @@ export const StaffArticleRequestsPage: React.FC = () => {
     const handleRequest = async (articleId: string, articleName: string) => {
         try {
             await addDelivery({
-                personnelId: user?.relatedId || 'staff-request',
-                deliveryDate: new Date().toISOString().split('T')[0],
+                personnel_id: user?.relatedId || 'staff-request',
+                delivery_date: new Date().toISOString(),
                 articles: [{
-                    articleId,
+                    article_id: articleId,
                     quantity: 1
                 }],
                 notes: `Solicitud directa de personal: ${user?.name || 'Usuario'}`,
                 status: 'active',
-                signedDocument: ''
+                signed_document: ''
             });
 
             // Generar correlativo tipo ticket
             await addTicket({
-                userId: user?.id || 'staff-request',
+                resident_id: user?.relatedId || 'staff-request',
                 type: 'provision_request',
                 subject: `Solicitud de Insumo: ${articleName}`,
                 description: `El funcionario ${user?.name || 'Personal'} ha solicitado ${articleName}.`,
-                status: 'pending'
+                status: 'open'
             });
 
             setSuccessMessage(`Solicitud de ${articleName} enviada con éxito.`);

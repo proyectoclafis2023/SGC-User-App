@@ -69,13 +69,13 @@ export const ResidentDashboard: React.FC = () => {
 
         const allDepts = towers.flatMap(t => t.departments).filter(d => !d.is_archived);
         const gcTarget = allDepts.reduce((acc, dept) => {
-            const ut = unitTypes.find(u => u.id === dept.unitTypeId);
+            const ut = unitTypes.find(u => u.id === dept.unit_type_id);
             return acc + (ut?.base_common_expense || 0);
         }, 0);
 
         const gcCollected = payments
-            .filter(p => p.periodMonth === currentMonthNum && p.periodYear === currentYearNum)
-            .reduce((acc, p) => acc + p.amountPaid, 0);
+            .filter(p => p.period_month === currentMonthNum && p.period_year === currentYearNum)
+            .reduce((acc, p) => acc + p.amount_paid, 0);
 
         const gcPending = Math.max(0, gcTarget - gcCollected);
 
@@ -114,14 +114,14 @@ export const ResidentDashboard: React.FC = () => {
             id: m.id,
             text: m.text,
             type: m.type as any,
-            createdAt: m.createdAt,
+            created_at: m.created_at,
             isActive: true,
             isDirected: true,
             tags: [`unit:${myUnits.find(u => u.id === m.unitId)?.number || ''}`]
         }));
 
         return [...systemMsg, ...myDirected].sort((a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
     }, [systemMessages, myUnits, directedMessages]);
 
@@ -218,7 +218,7 @@ export const ResidentDashboard: React.FC = () => {
                                             {msg.tags?.some(t => t.startsWith('unit:')) ? 'Mensaje Unitario' : 'Comunicado General'}
                                         </span>
                                         <span className="text-[10px] opacity-40">•</span>
-                                        <span className="text-[10px] font-bold opacity-60">{new Date(msg.createdAt).toLocaleDateString()}</span>
+                                        <span className="text-[10px] font-bold opacity-60">{new Date(msg.created_at).toLocaleDateString()}</span>
                                     </div>
                                 </div>
                             </div>

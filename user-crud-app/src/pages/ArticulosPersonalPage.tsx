@@ -74,7 +74,7 @@ export const ArticulosPersonalPage: React.FC = () => {
             a.minStock,
             a.price,
             a.isActive ? 'SI' : 'NO',
-            a.isArchived ? 'SI' : 'NO'
+            a.is_archived ? 'SI' : 'NO'
         ]);
 
         const csvContent = "data:text/csv;charset=utf-8,"
@@ -91,7 +91,7 @@ export const ArticulosPersonalPage: React.FC = () => {
     };
 
     const filteredArticles = (articles || []).filter(a => {
-        if (a.isArchived) return false;
+        if (a.is_archived) return false;
         const matchesSearch = a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             a.description?.toLowerCase().includes(searchTerm.toLowerCase());
         const isLowStock = a.minStock > 0 && a.stock <= a.minStock;

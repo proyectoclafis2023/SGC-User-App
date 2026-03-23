@@ -105,7 +105,7 @@ export const ProfilesPage: React.FC = () => {
     };
 
     const filteredProfiles = (profiles || []).filter(p =>
-        !p.isArchived && p.name.toLowerCase().includes(searchTerm.toLowerCase())
+        !p.is_archived && p.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const togglePermission = (key: keyof ProfilePermissions) => {

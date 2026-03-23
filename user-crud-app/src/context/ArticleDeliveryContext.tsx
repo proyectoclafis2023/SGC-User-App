@@ -31,13 +31,13 @@ export const ArticleDeliveryProvider: React.FC<{ children: ReactNode }> = ({ chi
         return `${prefix}-${date}-${rand}`;
     };
 
-    const addDelivery = async (delivery: Omit<ArticleDelivery, 'id' | 'folio' | 'createdAt'>) => {
+    const addDelivery = async (delivery: Omit<ArticleDelivery, 'id' | 'folio' | 'created_at'>) => {
         const id = Math.random().toString(36).substr(2, 9);
         const newRecord: ArticleDelivery = {
             ...delivery,
             id,
             folio: generateFolio('DEL'),
-            createdAt: new Date().toISOString()
+            created_at: new Date().toISOString()
         };
 
         const response = await fetch(API_URL, {
@@ -51,7 +51,6 @@ export const ArticleDeliveryProvider: React.FC<{ children: ReactNode }> = ({ chi
         }
         await fetchDeliveries();
         return newRecord.id;
-        return id;
     };
 
     const updateDelivery = async (delivery: ArticleDelivery) => {

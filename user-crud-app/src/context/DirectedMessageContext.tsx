@@ -25,12 +25,12 @@ export const DirectedMessageProvider: React.FC<{ children: ReactNode }> = ({ chi
         fetchMessages();
     }, []);
 
-    const addMessage = async (message: Omit<DirectedMessage, 'id' | 'createdAt'>) => {
+    const addMessage = async (message: Omit<DirectedMessage, 'id' | 'created_at'>) => {
         try {
             await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...message, id: crypto.randomUUID(), createdAt: new Date().toISOString() })
+                body: JSON.stringify({ ...message, id: crypto.randomUUID(), created_at: new Date().toISOString() })
             });
             await fetchMessages();
         } catch (error) {

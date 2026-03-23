@@ -94,7 +94,7 @@ export const TicketsPage: React.FC = () => {
                     {getTypeText(ticket.type)}
                 </span>
                 <span className="text-[10px] text-gray-400 font-bold">
-                    {new Date(ticket.createdAt).toLocaleDateString()}
+                    {new Date(ticket.created_at).toLocaleDateString()}
                 </span>
             </div>
             

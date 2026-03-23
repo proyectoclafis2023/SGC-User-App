@@ -86,7 +86,7 @@ export const Dashboard: React.FC = () => {
         }
     };
 
-    const handleSubmit = (userData: Omit<User, 'id' | 'createdAt'>, id?: string) => {
+    const handleSubmit = (userData: Omit<User, 'id' | 'created_at'>, id?: string) => {
         if (id) {
             updateUser(id, userData);
         } else {
@@ -150,12 +150,12 @@ export const Dashboard: React.FC = () => {
                 const deadline = settings.paymentDeadlineDay || 5;
                 
                 const paymentsForDept = payments.filter((p: CommonExpensePayment) => p.departmentId === d.id);
-                const ut = unitTypes.find((u: UnitType) => u.id === d.unitTypeId);
+                const ut = unitTypes.find((u: UnitType) => u.id === d.unit_type_id);
                 const targetAmount = (ut?.base_common_expense || 0);
                 
                 const paidThisMonth = paymentsForDept
-                    .filter((p: CommonExpensePayment) => p.periodMonth === currentMonth && p.periodYear === currentYear)
-                    .reduce((acc: number, p: CommonExpensePayment) => acc + p.amountPaid, 0);
+                    .filter((p: CommonExpensePayment) => p.period_month === currentMonth && p.period_year === currentYear)
+                    .reduce((acc: number, p: CommonExpensePayment) => acc + p.amount_paid, 0);
                 
                 const isLate = now.getDate() > deadline;
                 return paidThisMonth < targetAmount && isLate;
@@ -199,7 +199,7 @@ export const Dashboard: React.FC = () => {
 
     const today = new Date().toISOString().split('T')[0];
     const todayReservations = reservations.filter((r: Reservation) => r.status === 'approved' && r.date === today).length;
-    const todayContractors = contractorVisits.filter((c: ContractorVisit) => c.createdAt && c.createdAt.startsWith(today) && c.status !== 'exited').length;
+    const todayContractors = contractorVisits.filter((c: ContractorVisit) => c.created_at && c.created_at.startsWith(today) && c.status !== 'exited').length;
     const currentMonth = new Date().getMonth(); // 0-indexed
     const currentYear = new Date().getFullYear();
 
@@ -248,14 +248,14 @@ export const Dashboard: React.FC = () => {
 
         const allDepts = (departments || []).filter((d: Department) => !d.is_archived);
         const gcTarget = allDepts.reduce((acc: number, dept: Department) => {
-            const ut = unitTypes.find((u: UnitType) => u.id === dept.unitTypeId);
+            const ut = unitTypes.find((u: UnitType) => u.id === dept.unit_type_id);
             return acc + (ut?.base_common_expense || 0);
         }, 0);
 
         const currentMonthNum = now.getMonth() + 1;
         const gcCollected = payments
-            .filter((p: CommonExpensePayment) => p.periodMonth === currentMonthNum && p.periodYear === currentYearNum)
-            .reduce((acc: number, p: CommonExpensePayment) => acc + p.amountPaid, 0);
+            .filter((p: CommonExpensePayment) => p.period_month === currentMonthNum && p.period_year === currentYearNum)
+            .reduce((acc: number, p: CommonExpensePayment) => acc + p.amount_paid, 0);
 
         const gcPending = Math.max(0, gcTarget - gcCollected);
 
@@ -350,7 +350,7 @@ export const Dashboard: React.FC = () => {
                                         <Landmark className="w-3 h-3 text-indigo-500" />
                                     </div>
                                     <p className="text-xl font-black text-indigo-700 dark:text-indigo-400">
-                                        ${(funds?.reduce((acc: number, f: any) => acc + (f.totalAmountPerUnit || 0), 0) || 0).toLocaleString()}
+                                        ${(funds?.reduce((acc: number, f: any) => acc + (f.total_amount_per_unit || 0), 0) || 0).toLocaleString()}
                                     </p>
                                 </div>
                             </div>

@@ -107,7 +107,7 @@ export const CertificatesPage: React.FC = () => {
     // Helper logic to find resident name and rut by unit
     const handleUnitSelect = (uId: string) => {
         setSelectedUnit(uId);
-        const residentFound = residents.find(r => r.unitId === uId && !r.isArchived);
+        const residentFound = residents.find(r => r.unit_id === uId && !r.is_archived);
         const tower = towers.find(t => t.id === selectedTower);
         const unit = tower?.departments.find(d => d.id === uId);
 
@@ -116,7 +116,7 @@ export const CertificatesPage: React.FC = () => {
         if (selectedType === 'estado_cuenta') {
             if (residentFound) {
                 setResident({
-                    name: `${residentFound.names} ${residentFound.lastNames}`,
+                    name: `${residentFound.names} ${residentFound.last_names}`,
                     rut: residentFound.dni,
                     address: newAddress
                 });
@@ -144,21 +144,21 @@ export const CertificatesPage: React.FC = () => {
                 extraordinaryDebt: extraDebt,
                 reserveDebt: resDebt,
                 totalDebt: unitTypeDebt + extraDebt + resDebt,
-                lastPaymentDate: payments.filter(p => p.departmentId === selectedUnit).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.paymentDate
+                last_payment_date: payments.filter(p => p.departmentId === selectedUnit).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.paymentDate
             };
         }
 
         const cert = await addCertificate({
             type: selectedType,
-            residentName: resident.name,
-            residentRut: resident.rut,
-            residentAddress: resident.address,
-            adminName: settings.adminName || '',
-            adminRut: settings.adminRut || '',
-            condoName: settings.systemName || '',
-            condoRut: settings.condoRut || '',
-            condoAddress: settings.condoAddress || '',
-            financialData
+            resident_name: resident.name,
+            resident_rut: resident.rut,
+            resident_address: resident.address,
+            admin_name: settings.adminName || '',
+            admin_rut: settings.adminRut || '',
+            condo_name: settings.systemName || '',
+            condo_rut: settings.condoRut || '',
+            condo_address: settings.condoAddress || '',
+            financial_data: financialData
         });
 
         setViewingCertificate(cert);
@@ -171,16 +171,16 @@ export const CertificatesPage: React.FC = () => {
 
     const CertificatePreview = ({ cert, previewData }: { cert?: Certificate, previewData?: ResidentData }) => {
         const data = cert ? {
-            name: cert.residentName,
-            rut: cert.residentRut,
-            address: cert.residentAddress,
-            date: new Date(cert.generatedAt),
+            name: cert.resident_name,
+            rut: cert.resident_rut,
+            address: cert.resident_address,
+            date: new Date(cert.generated_at),
             folio: cert.folio,
-            admin: cert.adminName,
-            adminRut: cert.adminRut,
-            condo: cert.condoName,
-            condoRut: cert.condoRut,
-            condoAddress: cert.condoAddress
+            admin: cert.admin_name,
+            adminRut: cert.admin_rut,
+            condo: cert.condo_name,
+            condoRut: cert.condo_rut,
+            condoAddress: cert.condo_address
         } : {
             name: previewData?.name || '',
             rut: previewData?.rut || '',
@@ -287,24 +287,24 @@ export const CertificatesPage: React.FC = () => {
                         <div className="font-sans space-y-4">
                             <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-100 italic">
                                 <span>Gastos Comunes Pendientes:</span>
-                                <span className="font-black text-red-600">${cert.financialData?.commonExpenseDebt.toLocaleString() || '0'}</span>
+                                <span className="font-black text-red-600">${cert.financial_data?.common_expense_debt.toLocaleString() || '0'}</span>
                             </div>
                             <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-100 italic">
                                 <span>Cuotas Extraordinarias Vigentes:</span>
-                                <span className="font-black text-red-600">${cert.financialData?.extraordinaryDebt.toLocaleString() || '0'}</span>
+                                <span className="font-black text-red-600">${cert.financial_data?.extraordinary_debt.toLocaleString() || '0'}</span>
                             </div>
                             <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-100 italic">
                                 <span>Contribución Fondos de Reserva:</span>
-                                <span className="font-black text-red-600">${cert.financialData?.reserveDebt.toLocaleString() || '0'}</span>
+                                <span className="font-black text-red-600">${cert.financial_data?.reserve_debt.toLocaleString() || '0'}</span>
                             </div>
                             <div className="flex justify-between items-center p-6 bg-emerald-50 rounded-2xl border-2 border-emerald-200">
                                 <span className="text-xl font-black uppercase text-emerald-900">Total Deuda a la Fecha:</span>
-                                <span className="text-2xl font-black text-emerald-900">${cert.financialData?.totalDebt.toLocaleString() || '0'}</span>
+                                <span className="text-2xl font-black text-emerald-900">${cert.financial_data?.total_debt.toLocaleString() || '0'}</span>
                             </div>
                         </div>
 
                         <p className="text-sm font-medium text-gray-600">
-                            * Último pago registrado: {cert.financialData?.lastPaymentDate ? new Date(cert.financialData.lastPaymentDate).toLocaleDateString() : 'Sin registros previos'}.
+                            * Último pago registrado: {cert.financial_data?.last_payment_date ? new Date(cert.financial_data.last_payment_date).toLocaleDateString() : 'Sin registros previos'}.
                         </p>
 
                         <p className="text-xs text-gray-500 italic">
@@ -419,16 +419,16 @@ export const CertificatesPage: React.FC = () => {
                                                             const p = personnel.find(per => per.id === e.target.value);
                                                             if (p) {
                                                                 setResident({
-                                                                    name: `${p.names} ${p.lastNames}`,
+                                                                    name: `${p.names} ${p.last_names}`,
                                                                     rut: p.dni,
-                                                                    address: p.position || ''
+                                                                    address: p.role || ''
                                                                 });
                                                             }
                                                         }}
                                                         className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm transition-all focus:ring-4 focus:ring-indigo-500/10"
                                                     >
                                                         <option value="">-- Elige un funcionario --</option>
-                                                        {personnel.map(p => <option key={p.id} value={p.id}>{p.names} {p.lastNames} ({p.dni})</option>)}
+                                                        {personnel.map(p => <option key={p.id} value={p.id}>{p.names} {p.last_names} ({p.dni})</option>)}
                                                     </select>
                                                 </div>
                                             </>
@@ -574,15 +574,15 @@ export const CertificatesPage: React.FC = () => {
                                     <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-tighter bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">FOLIO #{cert.folio}</p>
                                 </div>
 
-                                <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase leading-tight mb-1 truncate">{cert.residentName}</h4>
-                                <p className="text-xs font-bold text-indigo-600 mb-4">{cert.residentRut}</p>
+                                <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase leading-tight mb-1 truncate">{cert.resident_name}</h4>
+                                <p className="text-xs font-bold text-indigo-600 mb-4">{cert.resident_rut}</p>
 
                                 <div className="space-y-3 mb-6">
                                     <div className="flex items-center gap-2 text-[11px] text-gray-500 font-bold uppercase">
-                                        <Building className="w-3.5 h-3.5" /> {cert.residentAddress}
+                                        <Building className="w-3.5 h-3.5" /> {cert.resident_address}
                                     </div>
                                     <div className="flex items-center gap-2 text-[11px] text-gray-400 font-medium">
-                                        <History className="w-3.5 h-3.5" /> {new Date(cert.generatedAt).toLocaleDateString()} {new Date(cert.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        <History className="w-3.5 h-3.5" /> {new Date(cert.generated_at).toLocaleDateString()} {new Date(cert.generated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </div>
                                 </div>
 

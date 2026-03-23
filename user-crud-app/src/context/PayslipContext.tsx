@@ -28,15 +28,15 @@ export const PayslipProvider: React.FC<{ children: ReactNode }> = ({ children })
         fetchAll();
     }, []);
 
-    const addPayslip = async (data: Omit<Payslip, 'id' | 'folio' | 'generatedAt'>): Promise<Payslip> => {
+    const addPayslip = async (data: Omit<Payslip, 'id' | 'folio' | 'generated_at'>): Promise<Payslip> => {
         const lastFolio = payslips.length > 0 ? parseInt(payslips[0].folio) : 5000;
         const folio = (lastFolio + 1).toString();
-        const generatedAt = new Date().toISOString();
+        const generated_at = new Date().toISOString();
 
         const response = await fetch(PAYSLIPS_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...data, folio, generatedAt })
+            body: JSON.stringify({ ...data, folio, generated_at })
         });
 
         if (response.ok) {
@@ -65,13 +65,13 @@ export const PayslipProvider: React.FC<{ children: ReactNode }> = ({ children })
         }
     };
 
-    const updateAdvanceStatus = async (id: string, status: Advance['status'], payslipId?: string) => {
+    const updateAdvanceStatus = async (id: string, status: Advance['status'], payslip_id?: string) => {
         const advance = advances.find(a => a.id === id);
         if (advance) {
             const response = await fetch(`${ADVANCES_API}/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...advance, status, payslipId })
+                body: JSON.stringify({ ...advance, status, payslip_id })
             });
             if (response.ok) fetchAll();
         }

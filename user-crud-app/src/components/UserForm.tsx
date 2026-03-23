@@ -8,7 +8,7 @@ import { useProfiles } from '../context/ProfileContext';
 interface UserFormProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (user: Omit<User, 'id' | 'createdAt'>, id?: string) => void;
+    onSubmit: (user: Omit<User, 'id' | 'created_at'>, id?: string) => void;
     initialData?: User | null;
 }
 

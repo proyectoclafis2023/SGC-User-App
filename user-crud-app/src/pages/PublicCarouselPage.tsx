@@ -24,7 +24,7 @@ export const PublicCarouselPage: React.FC = () => {
         return resDate >= today && resDate <= nextWeek;
     }).sort((a, b) => new Date(`${a.date}T${a.startTime}`).getTime() - new Date(`${b.date}T${b.startTime}`).getTime());
 
-    const activeMessages = messages.filter(m => m.isActive && !m.isArchived);
+    const activeMessages = messages.filter(m => m.isActive && !m.is_archived);
     if (upcomingReservations.length > 0) {
         activeMessages.push({
             id: 'virtual-reservations',
@@ -32,7 +32,7 @@ export const PublicCarouselPage: React.FC = () => {
             type: 'info',
             durationSeconds: 12,
             isActive: true,
-            createdAt: new Date().toISOString()
+            created_at: new Date().toISOString()
         } as SystemMessage);
     }
 

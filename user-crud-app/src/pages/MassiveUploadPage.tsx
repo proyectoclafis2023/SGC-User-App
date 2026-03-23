@@ -48,7 +48,7 @@ interface BulkUploadLog {
     status: string;
     dryRun: boolean;
     errors: any[];
-    createdAt: string;
+    created_at: string;
 }
 
 const LOAD_HIERARCHY = [
@@ -246,7 +246,7 @@ export const MassiveUploadPage: React.FC = () => {
                 headers = ['numero', 'piso', 'torre', 'tipo_unidad', 'm2', 'm2_terreno', 'valor', 'dormitorios', 'banos', 'estacionamientos', 'ano_construccion', 'disponible', 'tipo_publicacion', 'rol_sii'];
                 departments?.forEach((d: any) => {
                     const towerName = towers?.find((t: any) => t.id === d.towerId)?.name || '';
-                    const unitTypeName = unitTypes?.find((u: any) => u.id === d.unitTypeId)?.name || '';
+                    const unitTypeName = unitTypes?.find((u: any) => u.id === d.unit_type_id)?.name || '';
                     data.push([ d.number, d.floor, towerName, unitTypeName, d.m2, d.terrainM2, d.value, d.dormitorios, d.banos, d.estacionamientos, d.yearBuilt, d.isAvailable ? 'SI' : 'NO', d.publishType, d.propertyRole ]);
                 });
                 break;
@@ -518,7 +518,7 @@ export const MassiveUploadPage: React.FC = () => {
                                                         <span className="text-[10px] font-black text-indigo-600 uppercase italic">{log.module}</span>
                                                     </div>
                                                     <p className="text-xs font-black text-gray-900 dark:text-white">
-                                                        {new Date(log.createdAt).toLocaleString('es-CL')}
+                                                        {new Date(log.created_at).toLocaleString('es-CL')}
                                                     </p>
                                                 </div>
                                                 <div className="text-right">

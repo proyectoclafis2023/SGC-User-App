@@ -25,12 +25,12 @@ export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ chi
         fetchNumbers();
     }, []);
 
-    const addNumber = async (number: Omit<EmergencyNumber, 'id' | 'createdAt'>) => {
+    const addNumber = async (number: Omit<EmergencyNumber, 'id' | 'created_at'>) => {
         const id = Math.random().toString(36).substr(2, 9);
         const newRecord: EmergencyNumber = {
             ...number,
             id,
-            createdAt: new Date().toISOString()
+            created_at: new Date().toISOString()
         };
 
         const resp = await fetch(BACKEND_URL, {
@@ -45,7 +45,7 @@ export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ chi
         fetchNumbers();
     };
 
-    const updateNumber = async (id: string, number: Omit<EmergencyNumber, 'id' | 'createdAt'>) => {
+    const updateNumber = async (id: string, number: Omit<EmergencyNumber, 'id' | 'created_at'>) => {
         const existing = numbers.find(n => n.id === id);
         if (!existing) return;
 

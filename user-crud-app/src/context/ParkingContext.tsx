@@ -25,7 +25,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
         fetchParkings();
     }, []);
 
-    const addParking = async (parking: Omit<Parking, 'id' | 'createdAt'>) => {
+    const addParking = async (parking: Omit<Parking, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

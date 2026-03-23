@@ -66,13 +66,13 @@ export const ManagementKPICenter: React.FC = () => {
     const currentYearNum = now.getFullYear();
 
     const gcCollected = payments
-        .filter((p: CommonExpensePayment) => p.periodMonth === currentMonthNum && p.periodYear === currentYearNum)
-        .reduce((acc: number, p: CommonExpensePayment) => acc + p.amountPaid, 0);
+        .filter((p: CommonExpensePayment) => p.period_month === currentMonthNum && p.period_year === currentYearNum)
+        .reduce((acc: number, p: CommonExpensePayment) => acc + p.amount_paid, 0);
 
     const totalExpenses = communityExpenses
         .filter((e: CommunityExpense) => {
             const d = new Date(e.date);
-            return (d.getMonth() + 1) === currentMonthNum && d.getFullYear() === currentYearNum && !e.isArchived && !e.isProjected;
+            return (d.getMonth() + 1) === currentMonthNum && d.getFullYear() === currentYearNum && !e.is_archived && !e.isProjected;
         })
         .reduce((acc: number, e: CommunityExpense) => acc + e.amount, 0);
 

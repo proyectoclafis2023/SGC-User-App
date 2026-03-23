@@ -17,11 +17,11 @@ export const PersonnelDashboard: React.FC = () => {
 
     const currentPerson = personnel.find(p => p.id === user?.relatedId);
 
-    const myPayslips = payslips.filter(p => p.personnelId === currentPerson?.id);
-    const myReports = (reports as ShiftReport[]).filter(r => r.workerId === currentPerson?.id);
+    const myPayslips = payslips.filter(p => p.personnel_id === currentPerson?.id);
+    const myReports = (reports as ShiftReport[]).filter(r => r.worker_id === currentPerson?.id);
     const completedShifts = myReports.filter(r => r.status === 'closed').length;
 
-    const latestPayslip = myPayslips.sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime())[0];
+    const latestPayslip = myPayslips.sort((a, b) => new Date(b.generated_at).getTime() - new Date(a.generated_at).getTime())[0];
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
@@ -42,7 +42,7 @@ export const PersonnelDashboard: React.FC = () => {
                 <div className="relative z-10 bg-white/10 p-6 rounded-3xl backdrop-blur-md border border-white/20 shadow-inner flex flex-col items-center justify-center min-w-[200px]">
                     <Clock className="w-10 h-10 text-emerald-200 mb-2" />
                     <p className="text-xs font-black uppercase tracking-widest text-emerald-100 mb-1 opacity-80">Turno Asignado</p>
-                    <p className="text-2xl font-black">{currentPerson?.assignedShift || 'No asignado'}</p>
+                    <p className="text-2xl font-black">{currentPerson?.assigned_shift || 'No asignado'}</p>
                 </div>
             </div>
 
@@ -53,7 +53,7 @@ export const PersonnelDashboard: React.FC = () => {
                     </div>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Días de Vacaciones</p>
                     <p className="text-3xl font-black text-gray-900 dark:text-white">
-                        {currentPerson?.vacationDays?.toFixed(2) || '0'}
+                        {currentPerson?.vacation_days?.toFixed(2) || '0'}
                     </p>
                 </div>
 
@@ -63,7 +63,7 @@ export const PersonnelDashboard: React.FC = () => {
                     </div>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Sueldo Base Mensual</p>
                     <p className="text-2xl font-black text-gray-900 dark:text-white">
-                        ${currentPerson?.baseSalary?.toLocaleString() || '0'}
+                        ${currentPerson?.base_salary?.toLocaleString() || '0'}
                     </p>
                 </div>
 
@@ -73,7 +73,7 @@ export const PersonnelDashboard: React.FC = () => {
                     </div>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Última Liquidación</p>
                     <p className="text-2xl font-black text-gray-900 dark:text-white">
-                        {latestPayslip ? `$${latestPayslip.netSalary.toLocaleString()}` : 'N/A'}
+                        {latestPayslip ? `$${latestPayslip.net_salary.toLocaleString()}` : 'N/A'}
                     </p>
                 </div>
 
@@ -135,11 +135,11 @@ export const PersonnelDashboard: React.FC = () => {
                                     <div>
                                         <p className="font-black text-indigo-900 dark:text-indigo-100 text-sm">Liquidación Folio #{p.folio}</p>
                                         <p className="text-xs text-indigo-600/70 dark:text-indigo-400/70 font-bold mt-1">
-                                            Emitida: {new Date(p.generatedAt).toLocaleDateString()}
+                                            Emitida: {new Date(p.generated_at).toLocaleDateString()}
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="font-black text-indigo-600 dark:text-indigo-400 text-lg">${p.netSalary.toLocaleString()}</p>
+                                        <p className="font-black text-indigo-600 dark:text-indigo-400 text-lg">${p.net_salary.toLocaleString()}</p>
                                     </div>
                                 </div>
                             ))
@@ -169,9 +169,9 @@ export const PersonnelDashboard: React.FC = () => {
                                             <Clock className="w-4 h-4" />
                                         </div>
                                         <div>
-                                            <p className="font-black text-gray-900 dark:text-white text-sm">Turno {r.shiftType}</p>
+                                            <p className="font-black text-gray-900 dark:text-white text-sm">Turno {r.shift_type}</p>
                                             <p className="text-xs text-gray-500 font-bold">
-                                                {new Date(r.shiftDate).toLocaleDateString()}
+                                                {new Date(r.shift_date).toLocaleDateString()}
                                             </p>
                                         </div>
                                     </div>

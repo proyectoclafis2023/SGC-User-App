@@ -8,6 +8,9 @@ const { requestMapper } = require('./core/mapping/middleware');
 const { mapResponse } = require('./core/mapping/response');
 const { PrismaClient } = require('@prisma/client');
 require('dotenv').config();
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
 const bulkMapping = require('./config/bulk-mapping');
 
 const prisma = new PrismaClient();
@@ -27,6 +30,111 @@ const transporter = nodemailer.createTransport({
 
 app.use(cors());
 app.use(express.json());
+
+// --- PRODUCTION SECURITY (Phase 1, 3, 4) ---
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, 
+    max: 100, 
+    message: { error: 'Límite de peticiones excedido, intente en 15 minutos' }
+});
+app.use('/api/', apiLimiter);
+
+const authenticate = async (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).json({ error: 'Autenticación requerida' });
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'sgc_prod_secret');
+        const user = await prisma.personnel.findUnique({
+            where: { id: decoded.userId },
+            include: { roleRef: { include: { permissions: { include: { permission: true } } } } }
+        });
+
+        if (!user || user.isArchived) return res.status(401).json({ error: 'Acceso denegado' });
+
+        req.user = user;
+        req.isAdmin = (user.roleRef?.name === 'Administrador');
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: 'Sesión inválida o expirada' });
+    }
+};
+
+// Audit Helper (Phase 2)
+const audit = async (req, action, entity, details = null) => {
+    try {
+        await prisma.auditLog.create({
+            data: {
+                userId: req.user?.id,
+                action,
+                entity,
+                endpoint: req.originalUrl,
+                method: req.method,
+                status: req.res?.statusCode || 200,
+                details: details ? JSON.stringify(details) : null
+            }
+        });
+    } catch (e) { console.error('[AUDIT]', e); }
+};
+
+// --- Login Endpoint (Phase 1) ---
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body; 
+    console.log(`[LOGIN] Attempt: ${username}`);
+    try {
+        const user = await prisma.personnel.findFirst({
+            where: { email: username, isArchived: false }
+        });
+        console.log(`[LOGIN] Found user:`, user ? user.id : 'NONE');
+
+        if (!user || !user.password) {
+            return res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) {
+            return res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+
+        const token = jwt.sign(
+            { userId: user.id }, 
+            process.env.JWT_SECRET || 'sgc_prod_secret', 
+            { expiresIn: '8h' }
+        );
+
+        req.user = user; // Temporary attach for audit log
+        await audit(req, 'LOGIN_SUCCESS', 'System', { email: username });
+
+        res.json({
+            token,
+            user: { id: user.id, names: user.names, role: user.role }
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- RBAC Middleware (Production v3.0) ---
+const authorize = (permissions) => {
+    return async (req, res, next) => {
+        // Authenticate first
+        await authenticate(req, res, async () => {
+            if (req.isAdmin) return next();
+            if (!permissions) return next();
+
+            const perms = Array.isArray(permissions) ? permissions : [permissions];
+            const userPerms = req.user.roleRef?.permissions.map(rp => rp.permission.slug) || [];
+            const hasPermission = perms.every(p => userPerms.includes(p));
+
+            if (!hasPermission) {
+                console.warn(`[SECURITY] Forbidden: User ${req.user.id} lacks ${permissions}`);
+                await audit(req, 'UNAUTHORIZED_ACCESS', 'System', { requestedPerms: permissions });
+                return res.status(403).json({ error: 'Acceso restringido: Permisos insuficientes' });
+            }
+            next();
+        });
+    };
+};
 
 // --- Root Route for confirmation ---
 app.all('/api/test-bancos/:id', (req, res) => res.send('OK ALL'));
@@ -191,41 +299,29 @@ app.post('/api/residents/upload', async (req, res) => {
 
 // --- Personal ---
 app.get('/api/personnel', async (req, res) => {
-    const data = await prisma.personnel.findMany({ where: { isArchived: false } });
-    const parsedData = data.map(p => ({
-        ...p,
-        emergencyContact: p.emergencyContactJson ? JSON.parse(p.emergencyContactJson) : undefined,
-        assignedArticles: p.assignedArticlesJson ? JSON.parse(p.assignedArticlesJson) : []
-    }));
-    res.json(parsedData);
+    try {
+        const data = await prisma.personnel.findMany({ 
+            where: { isArchived: false },
+            include: { bank: true, pensionFund: true, healthProvider: true, articleDeliveries: true }
+        });
+        res.json(mapResponse('personnel', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/personnel', async (req, res) => {
+app.post('/api/personnel', requestMapper('personnel'), async (req, res) => {
     try {
-        const { emergencyContact, assignedArticles, ...rest } = req.body;
-        const data = await prisma.personnel.create({
-            data: {
-                ...rest,
-                emergencyContactJson: emergencyContact ? JSON.stringify(emergencyContact) : null,
-                assignedArticlesJson: assignedArticles ? JSON.stringify(assignedArticles) : null
-            }
-        });
-        res.status(201).json(data);
+        const data = await prisma.personnel.create({ data: req.body });
+        res.status(201).json(mapResponse('personnel', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/personnel/:id', async (req, res) => {
+app.put('/api/personnel/:id', requestMapper('personnel'), async (req, res) => {
     try {
-        const { id, createdAt, emergencyContact, assignedArticles, ...updateData } = req.body;
         const data = await prisma.personnel.update({
             where: { id: req.params.id },
-            data: {
-                ...updateData,
-                emergencyContactJson: emergencyContact ? JSON.stringify(emergencyContact) : (emergencyContact === null ? null : undefined),
-                assignedArticlesJson: assignedArticles ? JSON.stringify(assignedArticles) : (assignedArticles === null ? null : undefined)
-            }
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('personnel', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
@@ -274,15 +370,16 @@ app.post('/api/personnel/upload', upload.single('file'), (req, res) => {
  * @apiDescription Retorna la lista de artículos en bodega.
  */
 app.get('/api/articulos_personal', async (req, res) => {
-    const data = await prisma.articulo.findMany({ where: { isArchived: false } });
-    res.json(data);
+    try {
+        const data = await prisma.articulo.findMany({ where: { isArchived: false } });
+        res.json(mapResponse('article', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/articulos_personal', async (req, res) => {
+app.post('/api/articulos_personal', requestMapper('article'), async (req, res) => {
     try {
-        const { name, ...rest } = req.body;
-        const data = await prisma.articulo.create({ data: { nombre: name || req.body.nombre, ...rest } });
-        res.status(201).json(data);
+        const data = await prisma.articulo.create({ data: req.body });
+        res.status(201).json(mapResponse('article', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
@@ -293,14 +390,13 @@ app.post('/api/articulos_personal/upload', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.put('/api/articulos_personal/:id', async (req, res) => {
+app.put('/api/articulos_personal/:id', requestMapper('article'), async (req, res) => {
     try {
-        const { id, createdAt, name, ...updateData } = req.body;
         const data = await prisma.articulo.update({
             where: { id: req.params.id },
-            data: { nombre: name || req.body.nombre, ...updateData }
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('article', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
@@ -515,55 +611,119 @@ app.post('/api/assets/upload', async (req, res) => {
 
 /**
  * @api {get} /api/common-expenses/payments Obtener Pagos de GGCC
- * @apiDescription Filtra pagos por año, mes o departamento.
- */
-app.get('/api/common-expenses/payments', async (req, res) => {
-    const { year, month, deptId } = req.query;
-    const where = {};
-    if (year) where.periodYear = parseInt(year);
-    if (month) where.periodMonth = parseInt(month);
-    if (deptId) where.departmentId = deptId;
+ * @apiDescription Filtra pagos por año, mes o // --- Gastos Comunes (Debts) ---
+app.get('/api/common_expense_payments', authorize('common_expenses:view'), async (req, res) => {
+    let { year, month, dept_id } = req.query;
+    const where = { isArchived: false };
+
+    // Phase 2: Ownership filter for Residents
+    if (!req.isAdmin) {
+        // Find units where this user is resident
+        const myUnits = await prisma.department.findMany({
+            where: { OR: [{ residentId: req.user.id }, { ownerId: req.user.id }] },
+            select: { id: true }
+        });
+        const myUnitIds = myUnits.map(u => u.id);
+        where.departmentId = { in: myUnitIds };
+    } else {
+        if (year) where.periodYear = parseInt(year);
+        if (month) where.periodMonth = parseInt(month);
+        if (dept_id) where.departmentId = dept_id;
+    }
 
     try {
         const data = await prisma.commonExpensePayment.findMany({
             where,
             include: { department: { include: { tower: true } } },
-            orderBy: { createdAt: 'desc' }
+            orderBy: [{ periodYear: 'desc' }, { periodMonth: 'desc' }]
         });
-        const parsedData = data.map(p => ({
-            ...p,
-            fundContributions: p.fundContributionsJson ? JSON.parse(p.fundContributionsJson) : []
-        }));
-        res.json(parsedData);
+        res.json(mapResponse('common_expense_payment', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/common-expenses/payments', async (req, res) => {
+app.post('/api/common_expense_payments', requestMapper('common_expense_payment'), async (req, res) => {
     try {
-        const { departmentId, periodMonth, periodYear, amountPaid, paymentMethod, evidenceImage, notes, isElectronic, fundContributions } = req.body;
+        const data = await prisma.commonExpensePayment.create({ data: req.body });
+        res.status(201).json(mapResponse('common_expense_payment', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
 
-        // Generar folio si es electrónico
-        let receiptFolio = req.body.receiptFolio;
-        if (isElectronic && !receiptFolio) {
-            receiptFolio = `GC-${periodYear}${String(periodMonth).padStart(2, '0')}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-        }
+// Master Generation Logic
+app.get('/api/common_expenses', async (req, res) => {
+    try {
+        const data = await prisma.commonExpense.findMany({
+            where: { isArchived: false },
+            include: { payments: true },
+            orderBy: { period: 'desc' }
+        });
+        res.json(mapResponse('common_expense', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
-        const data = await prisma.commonExpensePayment.create({
+app.post('/api/common_expenses', requestMapper('common_expense'), async (req, res) => {
+    const { period, totalAmount } = req.body;
+    try {
+        // 1. Check if period already exists
+        const existing = await prisma.commonExpense.findUnique({ where: { period } });
+        if (existing) return res.status(400).json({ error: 'El periodo ya ha sido procesado y bloqueado.' });
+
+        // 2. Get all active departments and types
+        const [departments, chargeRules] = await Promise.all([
+            prisma.department.findMany({ where: { isArchived: false }, include: { unitType: true } }),
+            prisma.chargeRule.findMany({ where: { isActive: true, isArchived: false } })
+        ]);
+
+        const totalM2 = departments.reduce((acc, d) => acc + (d.m2 || 0), 0);
+        if (totalM2 === 0) throw new Error('No se pueden calcular por m2: total m2 es 0');
+
+        // 3. Create Master Record
+        const master = await prisma.commonExpense.create({
             data: {
-                departmentId,
-                periodMonth,
-                periodYear,
-                amountPaid: parseFloat(amountPaid),
-                paymentMethod,
-                evidenceImage,
-                notes,
-                isElectronic: !!isElectronic,
-                receiptFolio,
-                fundContributionsJson: JSON.stringify(fundContributions || []),
-                status: 'paid'
+                period,
+                totalAmount: totalAmount,
+                calculatedAt: new Date()
             }
         });
-        res.status(201).json(data);
+
+        // 4. Create Payments (Debt) for each department
+        const [year, month] = period.split('-').map(Number);
+        const paymentsData = departments.map(d => {
+            let amount = Math.round((totalAmount / totalM2) * (d.m2 || 0));
+            
+            // Apply Charge Rules
+            chargeRules.forEach(rule => {
+                let applies = false;
+                if (rule.appliesTo === 'global') applies = true;
+                else if (rule.appliesTo === 'unit_type' && rule.targetId === d.unitTypeId) applies = true;
+                else if (rule.appliesTo === 'department' && rule.targetId === d.id) applies = true;
+                
+                if (applies) {
+                    if (rule.ruleType === 'fixed' || rule.ruleType === 'penalty' || rule.ruleType === 'interest') {
+                        amount += rule.value;
+                    } else if (rule.ruleType === 'percentage') {
+                        amount += Math.round(amount * (rule.value / 100));
+                    }
+                }
+            });
+
+            return {
+                departmentId: d.id,
+                commonExpenseId: master.id,
+                periodMonth: month,
+                periodYear: year,
+                amountPaid: amount,
+                status: 'unpaid',
+                notes: `Generado automáticamente por periodo ${period}${chargeRules.length > 0 ? ' (Reglas aplicadas)' : ''}`,
+                isElectronic: true
+            };
+        });
+
+        const result = await prisma.commonExpensePayment.createMany({ data: paymentsData });
+
+        res.status(201).json({
+            ...mapResponse('common_expense', master),
+            generation_result: result
+        });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
@@ -1431,41 +1591,165 @@ app.delete('/api/residents/:id', async (req, res) => {
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-// --- Community Expenses (Egresos GC) - full CRUD missing ---
-app.get('/api/community_expenses', async (req, res) => {
+// --- Expenses (Egresos) ---
+app.get('/api/expenses', authorize('expenses:manage'), async (req, res) => {
     try {
         const data = await prisma.communityExpense.findMany({
             where: { isArchived: false },
             orderBy: { date: 'desc' }
         });
-        res.json(data);
+        res.json(mapResponse('expense', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/community_expenses', async (req, res) => {
+app.post('/api/expenses', authorize('expenses:manage'), requestMapper('expense'), async (req, res) => {
     try {
+        if ((req.body.amount || 0) <= 0) {
+            return res.status(400).json({ error: 'El monto del egreso debe ser mayor a 0' });
+        }
         const data = await prisma.communityExpense.create({ data: req.body });
-        res.status(201).json(data);
+        res.status(201).json(mapResponse('expense', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/community_expenses/:id', async (req, res) => {
+app.put('/api/expenses/:id', requestMapper('expense'), async (req, res) => {
     try {
-        const { id, createdAt, isArchived, receiptImages, ...updateData } = req.body;
         const data = await prisma.communityExpense.update({
             where: { id: req.params.id },
-            data: updateData
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('expense', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/community_expenses/:id', async (req, res) => {
+app.delete('/api/expenses/:id', async (req, res) => {
     try {
         await prisma.communityExpense.update({
             where: { id: req.params.id },
             data: { isArchived: true }
         });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// Alias para compatibilidad temporal
+app.get('/api/community_expenses', (req, res) => res.redirect(307, '/api/expenses'));
+app.post('/api/community_expenses', (req, res) => res.redirect(307, '/api/expenses'));
+
+// --- Charge Rules (5.5.3) ---
+app.get('/api/charge_rules', async (req, res) => {
+    try {
+        const data = await prisma.chargeRule.findMany({
+            where: { isArchived: false }
+        });
+        res.json(mapResponse('charge_rule', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/charge_rules', requestMapper('charge_rule'), async (req, res) => {
+    try {
+        const data = await prisma.chargeRule.create({ data: req.body });
+        res.status(201).json(mapResponse('charge_rule', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/charge_rules/:id', requestMapper('charge_rule'), async (req, res) => {
+    try {
+        const data = await prisma.chargeRule.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(mapResponse('charge_rule', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/charge_rules/:id', async (req, res) => {
+    try {
+        await prisma.chargeRule.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Payments (Abonos) ---
+app.get('/api/payments', authorize('payments:view'), async (req, res) => {
+    const where = { isArchived: false };
+    if (!req.isAdmin) {
+        // Resident only sees their payments
+        where.residentId = req.user.id;
+    }
+    try {
+        const data = await prisma.payment.findMany({
+            where,
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(mapResponse('payment', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/payments', authorize('payments:create'), requestMapper('payment'), async (req, res) => {
+    try {
+        const { commonExpensePaymentId, amount } = req.body;
+        if (!amount || amount <= 0) throw new Error('El monto del pago debe ser mayor a 0');
+
+        // Security: Ownership check for the associated debt
+        const debt = await prisma.commonExpensePayment.findUnique({
+            where: { id: commonExpensePaymentId },
+            include: { department: true }
+        });
+
+        if (!debt) throw new Error('Deuda no encontrada');
+
+        if (!req.isAdmin) {
+            // Check if this debt belongs to the resident
+            if (debt.department.residentId !== req.user.id && debt.department.ownerId !== req.user.id) {
+                console.warn(`[SECURITY] [${new Date().toISOString()}] FRAUD ATTEMPT: User ${req.user.id} tried to pay debt ${debt.id} of another user.`);
+                return res.status(403).json({ error: 'No tienes permiso para pagar esta deuda' });
+            }
+        }
+        
+        req.body.residentId = req.user.id; 
+        req.body.departmentId = debt.departmentId;
+
+        const prevPayments = await prisma.payment.findMany({
+            where: { commonExpensePaymentId, isArchived: false }
+        });
+        const totalPaidSoFar = prevPayments.reduce((acc, p) => acc + p.amount, 0);
+        const newTotalPaid = totalPaidSoFar + amount;
+
+        let newStatus = 'partial';
+        if (newTotalPaid >= debt.amountPaid) {
+            newStatus = 'paid';
+        }
+
+        const [paymentRecord] = await prisma.$transaction([
+            prisma.payment.create({ data: req.body }),
+            prisma.commonExpensePayment.update({
+                where: { id: commonExpensePaymentId },
+                data: { status: newStatus }
+            })
+        ]);
+
+        await audit(req, 'CREATE_PAYMENT', 'Payment', { paymentId: paymentRecord.id, amount: amount });
+
+        res.status(201).json(mapResponse('payment', paymentRecord));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/payments/:id', async (req, res) => {
+    try {
+        const payment = await prisma.payment.findUnique({ where: { id: req.params.id } });
+        if (!payment) throw new Error('Pago no encontrado');
+
+        await prisma.$transaction([
+            prisma.payment.update({
+                where: { id: req.params.id },
+                data: { isArchived: true }
+            }),
+            // Restore partial/paid status might be complex, for now we just archive.
+        ]);
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -1628,48 +1912,38 @@ app.delete('/api/cameras/:id', async (req, res) => {
 // --- Article Deliveries (Vales de Entrega) ---
 app.get('/api/article_deliveries', async (req, res) => {
     try {
-        const data = await prisma.articuloDelivery.findMany({
+        const data = await prisma.entregaArticulo.findMany({
+            where: { status: { not: 'archived' } },
             include: { personnel: true },
             orderBy: { createdAt: 'desc' }
         });
-        const parsedData = data.map(d => ({
-            ...d,
-            articles: d.articlesJson ? JSON.parse(d.articlesJson) : []
-        }));
-        res.json(parsedData);
+        res.json(mapResponse('inventory_item', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/article_deliveries', async (req, res) => {
+app.post('/api/article_deliveries', requestMapper('inventory_item'), async (req, res) => {
     try {
-        const { articles, ...rest } = req.body;
-        const data = await prisma.articuloDelivery.create({
-            data: {
-                ...rest,
-                articlesJson: JSON.stringify(articles || [])
-            }
-        });
-        res.status(201).json(data);
+        const data = await prisma.entregaArticulo.create({ data: req.body });
+        res.status(201).json(mapResponse('inventory_item', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/article_deliveries/:id', async (req, res) => {
+app.put('/api/article_deliveries/:id', requestMapper('inventory_item'), async (req, res) => {
     try {
-        const { id, createdAt, personnel, articles, ...updateData } = req.body;
-        const data = await prisma.articuloDelivery.update({
+        const data = await prisma.entregaArticulo.update({
             where: { id: req.params.id },
-            data: {
-                ...updateData,
-                articlesJson: articles ? JSON.stringify(articles) : undefined
-            }
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('inventory_item', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 app.delete('/api/article_deliveries/:id', async (req, res) => {
     try {
-        await prisma.articuloDelivery.delete({ where: { id: req.params.id } });
+        await prisma.entregaArticulo.update({
+            where: { id: req.params.id },
+            data: { status: 'archived' }
+        });
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });

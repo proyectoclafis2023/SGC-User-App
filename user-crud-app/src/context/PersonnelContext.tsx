@@ -37,9 +37,9 @@ export const PersonnelProvider: React.FC<{ children: ReactNode }> = ({ children 
 
         let requiresUpdate = false;
         const updatedPersonnel = personnel.map(p => {
-            if (p.status === 'inactive' || p.isArchived) return p;
+            if (p.status === 'inactive' || p.is_archived) return p;
 
-            const lastUpdateStr = p.vacationLastUpdate || p.createdAt || now.toISOString();
+            const lastUpdateStr = p.vacation_last_update || p.created_at || now.toISOString();
             const lastUpdate = new Date(lastUpdateStr);
             const diffMonths = (now.getFullYear() - lastUpdate.getFullYear()) * 12 + (now.getMonth() - lastUpdate.getMonth());
 
@@ -51,8 +51,8 @@ export const PersonnelProvider: React.FC<{ children: ReactNode }> = ({ children 
 
                 return {
                     ...p,
-                    vacationDays: (Number(p.vacationDays) || 0) + addedDays,
-                    vacationLastUpdate: newUpdateDate.toISOString()
+                    vacation_days: (Number(p.vacation_days) || 0) + addedDays,
+                    vacation_last_update: newUpdateDate.toISOString()
                 };
             }
             return p;
@@ -80,7 +80,7 @@ export const PersonnelProvider: React.FC<{ children: ReactNode }> = ({ children 
         return result;
     };
 
-    const addPersonnel = async (person: Omit<Personnel, 'id' | 'createdAt' | 'status'>) => {
+    const addPersonnel = async (person: Omit<Personnel, 'id' | 'created_at' | 'status'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

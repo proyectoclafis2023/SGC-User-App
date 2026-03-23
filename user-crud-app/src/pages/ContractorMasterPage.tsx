@@ -88,7 +88,7 @@ export const ContractorMasterPage: React.FC = () => {
             maintenanceFrequency,
             lastMaintenanceDate,
             showToResidents
-        } as Omit<Contractor, 'id' | 'folio' | 'createdAt'>;
+        } as Omit<Contractor, 'id' | 'folio' | 'created_at'>;
 
         if (editingContractor) {
             await updateContractor({ ...editingContractor, ...contractorData });

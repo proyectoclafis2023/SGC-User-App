@@ -25,12 +25,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         fetchUsers();
     }, []);
 
-    const addUser = async (user: Omit<User, 'id' | 'createdAt'>) => {
+    const addUser = async (user: Omit<User, 'id' | 'created_at'>) => {
         try {
             await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...user, createdAt: new Date().toISOString() })
+                body: JSON.stringify({ ...user, created_at: new Date().toISOString() })
             });
             await fetchUsers();
         } catch (error) {
@@ -38,7 +38,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const updateUser = async (id: string, user: Omit<User, 'id' | 'createdAt'>) => {
+    const updateUser = async (id: string, user: Omit<User, 'id' | 'created_at'>) => {
         try {
             await fetch(`${API_URL}/${id}`, {
                 method: 'PUT',

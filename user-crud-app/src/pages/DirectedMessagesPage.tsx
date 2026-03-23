@@ -75,7 +75,7 @@ export const DirectedMessagesPage: React.FC = () => {
                             <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-6 italic">"{msg.text}"</p>
                             <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-gray-800">
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                                    {new Date(msg.createdAt).toLocaleDateString()}
+                                    {new Date(msg.created_at).toLocaleDateString()}
                                 </span>
                                 <button
                                     onClick={() => deleteMessage(msg.id)}

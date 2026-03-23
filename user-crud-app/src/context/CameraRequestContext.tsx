@@ -31,7 +31,7 @@ export const CameraRequestProvider: React.FC<{ children: ReactNode }> = ({ child
         return `${prefix}-${date}-${rand}`;
     };
 
-    const addRequest = async (request: Omit<CameraRequest, 'id' | 'folio' | 'status' | 'createdAt'>) => {
+    const addRequest = async (request: Omit<CameraRequest, 'id' | 'folio' | 'status' | 'created_at'>) => {
         try {
             await fetch(API_URL, {
                 method: 'POST',
@@ -40,7 +40,7 @@ export const CameraRequestProvider: React.FC<{ children: ReactNode }> = ({ child
                     ...request,
                     folio: generateFolio('CAM'),
                     status: 'pending',
-                    createdAt: new Date().toISOString()
+                    created_at: new Date().toISOString()
                 })
             });
             await fetchRequests();

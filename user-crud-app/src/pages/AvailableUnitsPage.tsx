@@ -27,7 +27,7 @@ export const AvailableUnitsPage: React.FC = () => {
                     units.push({
                         ...dept,
                         towerName: tower.name,
-                        unitTypeName: unitTypes.find((t) => t.id === dept.unitTypeId)?.name || 'Unidad'
+                        unitTypeName: unitTypes.find((t) => t.id === dept.unit_type_id)?.name || 'Unidad'
                     });
                 }
             });

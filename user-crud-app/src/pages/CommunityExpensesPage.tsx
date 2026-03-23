@@ -23,17 +23,17 @@ export const CommunityExpensesPage: React.FC = () => {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [fundId, setFundId] = useState<string>(''); // Vacio = Gasto Común
     const [receiptImages, setReceiptImages] = useState<string[]>([]);
-    const [isProjected, setIsProjected] = useState(false);
+    const [is_projected, setIsProjected] = useState(false);
 
     const filteredExpenses = communityExpenses.filter(e => {
         const search = searchTerm.toLowerCase();
-        return !e.isArchived && (
+        return !e.is_archived && (
             e.description.toLowerCase().includes(search) ||
-            e.category.toLowerCase().includes(search)
+            e.category_name.toLowerCase().includes(search)
         );
     });
 
-    const pendingFunds = funds?.filter(f => !f.isArchived) || [];
+    const pendingFunds = funds?.filter(f => !f.is_archived) || [];
 
     const handleOpenModal = () => {
         setDescription('');
@@ -51,11 +51,11 @@ export const CommunityExpensesPage: React.FC = () => {
         await addCommunityExpense({
             description: fundId ? `[Pago ${funds.find(f => f.id === fundId)?.name}] ${description}` : description,
             amount: Number(amount),
-            category,
-            date,
-            receiptImages: receiptImages.length > 0 ? receiptImages : undefined,
-            isArchived: false,
-            isProjected,
+            category_name: category,
+            expense_date: date,
+            receipt_url: receiptImages.length > 0 ? receiptImages[0] : undefined,
+            is_archived: false,
+            is_projected,
         });
 
         setIsModalOpen(false);
@@ -69,7 +69,7 @@ export const CommunityExpensesPage: React.FC = () => {
         }
     };
 
-    const totalExpenses = filteredExpenses.filter(e => !e.isProjected).reduce((acc, curr) => acc + curr.amount, 0);
+    const totalExpenses = filteredExpenses.filter(e => !e.is_projected).reduce((acc, curr) => acc + curr.amount, 0);
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -141,7 +141,7 @@ export const CommunityExpensesPage: React.FC = () => {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="w-4 h-4 text-gray-400" />
-                                                <span className="text-gray-900 dark:text-white uppercase text-[11px] tracking-widest">{new Date(expense.date).toLocaleDateString()}</span>
+                                                <span className="text-gray-900 dark:text-white uppercase text-[11px] tracking-widest">{new Date(expense.expense_date).toLocaleDateString()}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -160,15 +160,15 @@ export const CommunityExpensesPage: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-lg text-[10px] uppercase tracking-widest font-black border border-indigo-100 dark:border-indigo-800">
-                                                {expense.category}
+                                                {expense.category_name_name}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex flex-col items-end">
-                                                <span className={`${expense.isProjected ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'} font-black`}>
+                                                <span className={`${expense.is_projected ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'} font-black`}>
                                                     -${expense.amount.toLocaleString()}
                                                 </span>
-                                                {expense.isProjected && (
+                                                {expense.is_projected && (
                                                     <span className="text-[10px] uppercase tracking-widest text-amber-500 font-black bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full mt-1 border border-amber-200 dark:border-amber-800">
                                                         Proyectivo
                                                     </span>
@@ -320,10 +320,10 @@ export const CommunityExpensesPage: React.FC = () => {
                                     </div>
                                     <button
                                         type="button"
-                                        onClick={() => setIsProjected(!isProjected)}
-                                        className={`w-14 h-8 rounded-full transition-all duration-300 relative ${isProjected ? 'bg-amber-500 shadow-lg shadow-amber-500/30' : 'bg-gray-200 dark:bg-gray-700'}`}
+                                        onClick={() => setIsProjected(!is_projected)}
+                                        className={`w-14 h-8 rounded-full transition-all duration-300 relative ${is_projected ? 'bg-amber-500 shadow-lg shadow-amber-500/30' : 'bg-gray-200 dark:bg-gray-700'}`}
                                     >
-                                        <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-sm ${isProjected ? 'translate-x-6' : ''}`} />
+                                        <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-sm ${is_projected ? 'translate-x-6' : ''}`} />
                                     </button>
                                 </div>
                             </div>

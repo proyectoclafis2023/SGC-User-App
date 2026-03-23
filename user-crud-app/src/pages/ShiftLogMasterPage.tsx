@@ -24,9 +24,9 @@ export const OperationalMastersPage: React.FC = () => {
     const [newItemName, setNewItemName] = useState('');
     const [newCameraDays, setNewCameraDays] = useState('30');
 
-    const filteredInfra = infraItems.filter(i => !i.isArchived && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    const filteredEquip = equipItems.filter(i => !i.isArchived && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    const filteredCameras = cameras.filter(c => !c.isArchived && c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredInfra = infraItems.filter(i => !i.is_archived && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredEquip = equipItems.filter(i => !i.is_archived && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredCameras = cameras.filter(c => !c.is_archived && c.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const handleAddItem = async () => {
         if (!newItemName.trim()) return;

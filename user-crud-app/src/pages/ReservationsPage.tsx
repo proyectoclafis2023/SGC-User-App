@@ -398,7 +398,7 @@ export const ReservationsPage: React.FC = () => {
                                         required
                                     >
                                         <option value="">Seleccione un espacio...</option>
-                                        {spaces.filter(s => !s.isArchived).map(s => (
+                                        {spaces.filter(s => !s.is_archived).map(s => (
                                             <option key={s.id} value={s.id}>{s.name} ({s.location})</option>
                                         ))}
                                     </select>
@@ -421,7 +421,7 @@ export const ReservationsPage: React.FC = () => {
                                             className="w-full rounded-2xl border border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/30 dark:bg-indigo-900/10 p-4 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
                                         >
                                             <option value="">Buscar residente...</option>
-                                            {residents.filter(r => !r.isArchived).map(r => (
+                                            {residents.filter(r => !r.is_archived).map(r => (
                                                 <option key={r.id} value={r.id}>{r.names} {r.lastNames} ({r.tower_id} - {r.unit_id})</option>
                                             ))}
                                         </select>

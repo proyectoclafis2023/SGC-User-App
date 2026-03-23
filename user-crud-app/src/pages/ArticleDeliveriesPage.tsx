@@ -54,14 +54,14 @@ export const ArticleDeliveriesPage: React.FC = () => {
 
         try {
             const mappedArticles = validArticles.map(a => ({
-                articleId: a.articleId,
+                article_id: a.articleId,
                 quantity: a.quantity,
-                size: personnel.find(p => p.id === selectedPersonId)?.assignedArticles?.find(aa => aa.articleId === a.articleId)?.size || ''
+                size: personnel.find(p => p.id === selectedPersonId)?.assigned_articles?.find((aa: any) => aa.article_id === a.articleId)?.size || ''
             }));
 
             const deliveryId = await addDelivery({
-                personnelId: selectedPersonId,
-                deliveryDate,
+                personnel_id: selectedPersonId,
+                delivery_date: deliveryDate,
                 articles: mappedArticles,
                 notes,
                 status: 'active'
@@ -69,7 +69,7 @@ export const ArticleDeliveriesPage: React.FC = () => {
 
             // Deduct stock
             for (const art of mappedArticles) {
-                await decreaseStock(art.articleId, art.quantity);
+                await decreaseStock(art.article_id, art.quantity);
             }
 
             // Redirect and show history
@@ -82,12 +82,12 @@ export const ArticleDeliveriesPage: React.FC = () => {
             const immediateDelivery: ArticleDelivery = {
                 id: deliveryId,
                 folio: `DEL-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${deliveryId.slice(-4).toUpperCase()}`,
-                personnelId: selectedPersonId,
-                deliveryDate,
+                personnel_id: selectedPersonId,
+                delivery_date: deliveryDate,
                 articles: mappedArticles,
                 notes,
                 status: 'active',
-                createdAt: new Date().toISOString()
+                created_at: new Date().toISOString()
             };
             handlePrint(immediateDelivery);
 
@@ -117,7 +117,7 @@ export const ArticleDeliveriesPage: React.FC = () => {
         reader.onloadend = () => {
             const dataUrl = reader.result as string;
             setDeliveries((prev: ArticleDelivery[]) => prev.map(d =>
-                d.id === deliveryId ? { ...d, signedDocument: dataUrl } : d
+                d.id === deliveryId ? { ...d, signed_document: dataUrl } : d
             ));
             alert('Respaldo guardado exitosamente.');
         };
@@ -132,14 +132,14 @@ export const ArticleDeliveriesPage: React.FC = () => {
     };
 
     const filteredPersonnel = personnel.filter(p => {
-        const isNotArchived = !p.isArchived;
-        const hasAssigned = p.assignedArticles && p.assignedArticles.length > 0;
-        const nameMatch = `${p.names} ${p.lastNames}`.toLowerCase().includes(searchTerm.toLowerCase());
+        const isNotArchived = !p.is_archived;
+        const hasAssigned = p.assigned_articles && p.assigned_articles.length > 0;
+        const nameMatch = `${p.names} ${p.last_names}`.toLowerCase().includes(searchTerm.toLowerCase());
         return isNotArchived && hasAssigned && nameMatch;
     });
 
     const getPersonDeliveries = (personId: string) => {
-        return deliveries.filter(d => d.personnelId === personId);
+        return deliveries.filter(d => d.personnel_id === personId);
     };
 
     return (
@@ -181,14 +181,14 @@ export const ArticleDeliveriesPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                         <AlertCircle className="w-5 h-5 text-amber-500" />
                         <p className="text-3xl font-black text-amber-600 dark:text-amber-500">
-                            {deliveries.filter(d => !d.signedDocument && d.status === 'active').length}
+                            {deliveries.filter(d => !d.signed_document && d.status === 'active').length}
                         </p>
                     </div>
                 </div>
                 <div className="bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center text-center">
                     <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Respaldadas</p>
                     <p className="text-3xl font-black text-emerald-600 dark:text-emerald-500">
-                        {deliveries.filter(d => d.signedDocument && d.status === 'active').length}
+                        {deliveries.filter(d => d.signed_document && d.status === 'active').length}
                     </p>
                 </div>
             </div>
@@ -211,7 +211,7 @@ export const ArticleDeliveriesPage: React.FC = () => {
                         onClick={() => setViewMode('pending')}
                         className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'pending' ? 'bg-amber-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                        Pendientes ({deliveries.filter(d => !d.signedDocument && d.status === 'active').length})
+                        Pendientes ({deliveries.filter(d => !d.signed_document && d.status === 'active').length})
                     </button>
                 </div>
                 <div className="relative flex-1 w-full">
@@ -243,15 +243,15 @@ export const ArticleDeliveriesPage: React.FC = () => {
                             <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
                                 {deliveries
                                     .filter(d => {
-                                        const p = personnel.find(per => per.id === d.personnelId);
-                                        const fullName = `${p?.names} ${p?.lastNames}`.toLowerCase();
+                                        const p = personnel.find(per => per.id === d.personnel_id);
+                                        const fullName = `${p?.names} ${p?.last_names}`.toLowerCase();
                                         const searchMatch = fullName.includes(searchTerm.toLowerCase()) || d.id.toLowerCase().includes(searchTerm.toLowerCase());
-                                        const pendingFilter = viewMode === 'pending' ? !d.signedDocument && d.status === 'active' : true;
+                                        const pendingFilter = viewMode === 'pending' ? !d.signed_document && d.status === 'active' : true;
                                         return searchMatch && pendingFilter;
                                     })
-                                    .sort((a, b) => new Date(b.deliveryDate).getTime() - new Date(a.deliveryDate).getTime())
+                                    .sort((a, b) => new Date(b.delivery_date).getTime() - new Date(a.delivery_date).getTime())
                                     .map(delivery => {
-                                        const person = personnel.find(p => p.id === delivery.personnelId);
+                                        const person = personnel.find(p => p.id === delivery.personnel_id);
                                         return (
                                             <tr key={delivery.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/20 transition-colors">
                                                 <td className="px-6 py-4">
@@ -261,7 +261,7 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                                     <div className="flex items-center gap-2">
                                                         <Calendar className="w-4 h-4 text-gray-400" />
                                                         <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                                                            {new Date(delivery.deliveryDate).toLocaleDateString()}
+                                                            {new Date(delivery.delivery_date).toLocaleDateString()}
                                                         </span>
                                                     </div>
                                                 </td>
@@ -271,7 +271,7 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                                             {person?.photo ? <img src={person.photo} className="w-full h-full object-cover" /> : <User className="w-4 h-4 m-2 text-gray-300" />}
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-bold text-gray-900 dark:text-white capitalize">{person?.names} {person?.lastNames}</p>
+                                                            <p className="text-sm font-bold text-gray-900 dark:text-white capitalize">{person?.names} {person?.last_names}</p>
                                                             <p className="text-[10px] text-gray-400 font-bold">{person?.dni}</p>
                                                         </div>
                                                     </div>
@@ -279,7 +279,7 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                                 <td className="px-6 py-4">
                                                     <div className="flex flex-wrap gap-1 max-w-xs">
                                                         {delivery.articles.map((a, i) => {
-                                                            const art = articles.find(ar => ar.id === a.articleId);
+                                                            const art = articles.find(ar => ar.id === a.article_id);
                                                             return (
                                                                 <span key={i} className="text-[9px] bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-bold">
                                                                     {art?.name || 'Art.'} x{a.quantity}
@@ -362,7 +362,7 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                             </div>
                                             <div>
                                                 <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight">
-                                                    {person.names} <br /> {person.lastNames}
+                                                    {person.names} <br /> {person.last_names}
                                                 </h3>
                                                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-2">DNI: {person.dni}</p>
                                             </div>
@@ -372,14 +372,14 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                             <div className="space-y-1">
                                                 <p className="text-[10px] text-gray-400 font-bold uppercase">Artículos Requeridos</p>
                                                 <div className="flex -space-x-2">
-                                                    {(person.assignedArticles || []).slice(0, 3).map((a, i) => (
+                                                    {(person.assigned_articles || []).slice(0, 3).map((a: any, i: number) => (
                                                         <div key={i} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-white dark:border-gray-900 flex items-center justify-center text-[10px] font-black text-gray-600 dark:text-gray-300">
-                                                            {articles.find(ar => ar.id === a.articleId)?.name.charAt(0)}
+                                                            {articles.find(ar => ar.id === a.article_id)?.name.charAt(0)}
                                                         </div>
                                                     ))}
-                                                    {(person.assignedArticles || []).length > 3 && (
+                                                    {(person.assigned_articles || []).length > 3 && (
                                                         <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 border-2 border-white dark:border-gray-900 flex items-center justify-center text-[8px] font-black text-indigo-600 dark:text-indigo-400">
-                                                            +{(person.assignedArticles || []).length - 3}
+                                                            +{(person.assigned_articles || []).length - 3}
                                                         </div>
                                                     )}
                                                 </div>
@@ -413,10 +413,10 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                                 {person?.photo ? <img src={person.photo} className="w-full h-full object-cover" alt="" /> : <User className="w-12 h-12 m-6 text-gray-300" />}
                                             </div>
                                             <div>
-                                                <h2 className="text-3xl font-black text-gray-900 dark:text-white">{person?.names} {person?.lastNames}</h2>
+                                                <h2 className="text-3xl font-black text-gray-900 dark:text-white">{person?.names} {person?.last_names}</h2>
                                                 <div className="flex gap-4 mt-2">
                                                     <span className="text-xs font-bold text-gray-500 uppercase tracking-widest px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">DNI: {person?.dni}</span>
-                                                    <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 rounded-full">{person?.position}</span>
+                                                    <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 rounded-full">{person?.role}</span>
                                                 </div>
                                             </div>
                                         </>
@@ -452,9 +452,9 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                                 <div>
                                                     <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1 flex items-center gap-1">
                                                         <Calendar className="w-3 h-3" />
-                                                        Entregado: {new Date(delivery.deliveryDate).toLocaleDateString()}
+                                                        Entregado: {new Date(delivery.delivery_date).toLocaleDateString()}
                                                     </p>
-                                                    <p className="text-[8px] font-bold text-gray-400">REG: {new Date(delivery.createdAt).toLocaleDateString()} {new Date(delivery.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                    <p className="text-[8px] font-bold text-gray-400">REG: {new Date(delivery.created_at).toLocaleDateString()} {new Date(delivery.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                                 </div>
                                                 {delivery.status === 'voided' && (
                                                     <span className="text-[8px] px-2 py-1 bg-red-500 text-white rounded-lg font-black uppercase">ANULADA</span>
@@ -463,7 +463,7 @@ export const ArticleDeliveriesPage: React.FC = () => {
 
                                             <div className="space-y-1.5 mb-6">
                                                 {delivery.articles.map((a, idx) => {
-                                                    const art = articles.find(ar => ar.id === a.articleId);
+                                                    const art = articles.find(ar => ar.id === a.article_id);
                                                     return (
                                                         <div key={idx} className="flex justify-between text-[11px] font-bold text-gray-700 dark:text-gray-300">
                                                             <span>{art?.name} {a.size && `(${a.size})`}</span>
@@ -480,9 +480,9 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                                 >
                                                     Ver Comprobante
                                                 </button>
-                                                {delivery.signedDocument && (
+                                                {delivery.signed_document && (
                                                     <button
-                                                        onClick={() => handleViewDocument(delivery.signedDocument!)}
+                                                        onClick={() => handleViewDocument(delivery.signed_document!)}
                                                         className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all"
                                                         title="Ver respaldo firmado"
                                                     >
@@ -535,8 +535,8 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                         required
                                     >
                                         <option value="">Seleccionar funcionario...</option>
-                                        {personnel.filter(p => !p.isArchived && p.assignedArticles && p.assignedArticles.length > 0).map(p => (
-                                            <option key={p.id} value={p.id}>{p.names} {p.lastNames}</option>
+                                        {personnel.filter(p => !p.is_archived && p.assigned_articles && p.assigned_articles.length > 0).map(p => (
+                                            <option key={p.id} value={p.id}>{p.names} {p.last_names}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -572,7 +572,7 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                             required
                                         >
                                             <option value="">Artículo...</option>
-                                            {articles.filter(a => a.isActive && !a.isArchived).map(a => (
+                                            {articles.filter(a => a.isActive && !a.is_archived).map(a => (
                                                 <option key={a.id} value={a.id}>
                                                     [{a.category.toUpperCase()}] {a.name}
                                                 </option>
@@ -653,8 +653,8 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                 </div>
                                 <div className="text-right">
                                     <p className="text-sm font-bold text-gray-400 tracking-widest">FECHA DE ENTREGA</p>
-                                    <p className="text-xl font-black">{new Date(selectedDelivery.deliveryDate).toLocaleDateString('es-CL')}</p>
-                                    <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase">REGISTRO: {new Date(selectedDelivery.createdAt).toLocaleDateString('es-CL')}</p>
+                                    <p className="text-xl font-black">{new Date(selectedDelivery.delivery_date).toLocaleDateString('es-CL')}</p>
+                                    <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase">REGISTRO: {new Date(selectedDelivery.created_at).toLocaleDateString('es-CL')}</p>
                                     <p className="text-xs font-bold text-indigo-600 mt-1">Ref: #{selectedDelivery.id.toUpperCase()}</p>
                                 </div>
                             </div>
@@ -663,12 +663,12 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                 <div className="space-y-4">
                                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Funcionario Receptor</p>
                                     {(() => {
-                                        const p = personnel.find(per => per.id === selectedDelivery.personnelId);
+                                        const p = personnel.find(per => per.id === selectedDelivery.personnel_id);
                                         return (
                                             <div className="space-y-1">
-                                                <p className="text-2xl font-black">{p?.names} {p?.lastNames}</p>
+                                                <p className="text-2xl font-black">{p?.names} {p?.last_names}</p>
                                                 <p className="text-sm font-bold text-gray-600">{p?.dni}</p>
-                                                <p className="text-sm font-medium text-gray-500 capitalize">{p?.position}</p>
+                                                <p className="text-sm font-medium text-gray-500 capitalize">{p?.role}</p>
                                             </div>
                                         );
                                     })()}
@@ -706,7 +706,7 @@ export const ArticleDeliveriesPage: React.FC = () => {
                                 </thead>
                                 <tbody>
                                     {selectedDelivery.articles.map((a: any, idx: number) => {
-                                        const art = articles.find(ar => ar.id === a.articleId);
+                                        const art = articles.find(ar => ar.id === a.article_id);
                                         return (
                                             <tr key={idx} className="border-b border-gray-100">
                                                 <td className="py-5 font-black text-lg">{art?.name || 'Artículo'}</td>

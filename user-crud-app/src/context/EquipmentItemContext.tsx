@@ -25,11 +25,11 @@ export const EquipmentItemProvider: React.FC<{ children: ReactNode }> = ({ child
         fetchItems();
     }, []);
 
-    const addItem = async (item: Omit<EquipmentItem, 'id' | 'createdAt'>) => {
+    const addItem = async (item: Omit<EquipmentItem, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...item, createdAt: new Date().toISOString() })
+            body: JSON.stringify({ ...item, created_at: new Date().toISOString() })
         });
         if (!response.ok) {
             const err = await response.json();
