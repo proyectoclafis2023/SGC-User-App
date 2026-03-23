@@ -4,8 +4,11 @@ const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
+const { requestMapper } = require('./core/mapping/middleware');
+const { mapResponse } = require('./core/mapping/response');
 const { PrismaClient } = require('@prisma/client');
 require('dotenv').config();
+const bulkMapping = require('./config/bulk-mapping');
 
 const prisma = new PrismaClient();
 const app = express();
@@ -26,17 +29,125 @@ app.use(cors());
 app.use(express.json());
 
 // --- Root Route for confirmation ---
+app.all('/api/test-bancos/:id', (req, res) => res.send('OK ALL'));
 app.get('/', (req, res) => {
     res.send('<h1>🚀 Servidor SGC funcionando correctamente</h1><p>Prueba los endpoints en /api/...</p>');
 });
 
-// --- Helper for CSV Processing ---
-const processCSV = (filePath, callback) => {
-    const results = [];
-    fs.createReadStream(filePath)
-        .pipe(csv({ separator: ';' }))
-        .on('data', (data) => results.push(data))
-        .on('end', () => callback(results));
+// --- Helper for Bulk Upload (Standard v1.0 - Architectural decision) ---
+const runBulkImport = async (entityKey, items, dryRun = false) => {
+    const config = bulkMapping[entityKey];
+    if (!config) throw new Error(`Sin configuración para entidad: ${entityKey}`);
+
+    let created = 0, updated = 0;
+    const errors = [];
+
+    for (let i = 0; i < items.length; i++) {
+        const row = items[i];
+        const rowNumber = i + 2; 
+        try {
+            const mappedData = {};
+            // 0. Campos fijos
+            if (config.fixedFields) {
+                Object.assign(mappedData, config.fixedFields);
+            }
+            // 1. Mapeo
+            for (const [excelKey, dbKey] of Object.entries(config.mapping)) {
+                let value = row[excelKey];
+                
+                if (typeof value === 'string') {
+                    const upper = value.toUpperCase().trim();
+                    if (upper === 'SI' || upper === 'TRUE') value = true;
+                    if (upper === 'NO' || upper === 'FALSE') value = false;
+                }
+                
+                mappedData[dbKey] = value;
+            }
+
+            // 2. Resolución de relaciones (Política B: Rechazo)
+            if (config.relations) {
+                for (const [excelKey, relConfig] of Object.entries(config.relations)) {
+                    const searchValue = row[excelKey];
+                    if (!searchValue) continue;
+
+                    const relatedRecord = await prisma[relConfig.model].findFirst({
+                        where: { [relConfig.field]: { equals: String(searchValue).trim(), mode: 'insensitive' } }
+                    });
+
+                    if (!relatedRecord) {
+                        throw new Error(`Relación no encontrada: ${relConfig.model} no cuenta con '${searchValue}' en campo '${relConfig.field}'`);
+                    }
+                    mappedData[relConfig.target] = relatedRecord.id;
+                }
+            }
+
+            // 3. Normalización de uniqueKey para UPSERT (trim + toLowerCase)
+            let whereClause = {};
+            if (Array.isArray(config.uniqueKey)) {
+                config.uniqueKey.forEach(key => {
+                    let val = mappedData[key];
+                    if (val === undefined) throw new Error(`Campo requerido faltante para clave única: ${key}`);
+                    if (typeof val === 'string') val = val.trim().toLowerCase();
+                    whereClause[key] = val;
+                });
+            } else {
+                let uniqueVal = mappedData[config.uniqueKey];
+                if (uniqueVal === undefined) throw new Error(`Campo requerido faltante para clave única: ${config.uniqueKey}`);
+                
+                if (config.uniqueKey === 'dni') {
+                    uniqueVal = String(uniqueVal).replace(/[^a-zA-Z0-9]/g, '').toUpperCase().trim();
+                    mappedData[config.uniqueKey] = uniqueVal;
+                } else if (typeof uniqueVal === 'string') {
+                    uniqueVal = uniqueVal.trim().toLowerCase();
+                }
+                
+                whereClause[config.uniqueKey] = uniqueVal;
+            }
+
+            // 4. PERSISTENCIA (Sólo si NO es dryRun)
+            const exists = await prisma[config.model].findUnique({ where: whereClause });
+            if (exists) {
+                if (!dryRun) await prisma[config.model].update({ where: { id: exists.id }, data: mappedData });
+                updated++;
+            } else {
+                if (!dryRun) await prisma[config.model].create({ data: mappedData });
+                created++;
+            }
+
+        } catch (err) {
+            errors.push({
+                row: rowNumber,
+                module: config.model,
+                field: 'Multiple',
+                value: JSON.stringify(row),
+                error: err.message
+            });
+        }
+    }
+
+    // 5. Registro en Log de Auditoría (Solo si NO es dryRun)
+    if (!dryRun) {
+        await prisma.bulkUploadLog.create({
+            data: {
+                module: entityKey,
+                processed: items.length,
+                created,
+                updated,
+                status: errors.length === 0 ? 'success' : (errors.length < items.length ? 'warning' : 'error'),
+                dryRun: false,
+                errorsJson: JSON.stringify(errors)
+            }
+        });
+    }
+
+    return { 
+        success: errors.length === 0, 
+        processed: items.length, 
+        created, 
+        updated, 
+        errors,
+        dryRun
+    };
 };
 
 // --- Health Check ---
@@ -49,61 +160,33 @@ app.get('/api/health', (req, res) => {
  * @apiDescription Retorna la lista de residentes activos (no archivados).
  */
 app.get('/api/residents', async (req, res) => {
-    const data = await prisma.resident.findMany({ where: { isArchived: false } });
-    const parsedData = data.map(r => ({
-        ...r,
-        parkingIds: r.parkingIds ? JSON.parse(r.parkingIds) : [],
-        conditionIds: r.conditionIds ? JSON.parse(r.conditionIds) : []
-    }));
-    res.json(parsedData);
-});
-
-app.post('/api/residents', async (req, res) => {
     try {
-        const { parkingIds, conditionIds, ...rest } = req.body;
-        const data = await prisma.resident.create({
-            data: {
-                ...rest,
-                parkingIds: parkingIds ? JSON.stringify(parkingIds) : null,
-                conditionIds: conditionIds ? JSON.stringify(conditionIds) : null
+        const data = await prisma.residente.findMany({ 
+            where: { isArchived: false },
+            include: {
+                departments: {
+                    include: {
+                        tower: true
+                    }
+                }
             }
         });
-        res.status(201).json(data);
+        res.json(mapResponse('resident', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/residents', requestMapper('resident'), async (req, res) => {
+    try {
+        const data = await prisma.residente.create({ data: req.body });
+        res.status(201).json(mapResponse('resident', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.post('/api/residents/upload', upload.single('file'), (req, res) => {
-    if (!req.file) return res.status(400).json({ error: 'No file' });
-    processCSV(req.file.path, async (results) => {
-        try {
-            for (const row of results) {
-                await prisma.resident.upsert({
-                    where: { dni: row.dni || row.rut },
-                    update: {
-                        names: row.names || row.nombres,
-                        lastNames: row.lastNames || row.apellidos,
-                        phone: row.phone || row.telefono,
-                        email: row.email,
-                        familyCount: parseInt(row.familyCount) || 1,
-                        isTenant: row.isTenant === 'true' || row.es_arrendatario === 'true',
-                        rentAmount: parseFloat(row.rentAmount) || 0
-                    },
-                    create: {
-                        names: row.names || row.nombres,
-                        lastNames: row.lastNames || row.apellidos,
-                        dni: row.dni || row.rut,
-                        phone: row.phone || row.telefono,
-                        email: row.email,
-                        familyCount: parseInt(row.familyCount) || 1,
-                        isTenant: row.isTenant === 'true' || row.es_arrendatario === 'true',
-                        rentAmount: parseFloat(row.rentAmount) || 0
-                    }
-                });
-            }
-            fs.unlinkSync(req.file.path);
-            res.json({ message: `Cargados ${results.length} residentes.` });
-        } catch (err) { res.status(500).json({ error: err.message }); }
-    });
+app.post('/api/residents/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('residents', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // --- Personal ---
@@ -190,56 +273,40 @@ app.post('/api/personnel/upload', upload.single('file'), (req, res) => {
  * @api {get} /api/articles Obtener Inventario
  * @apiDescription Retorna la lista de artículos en bodega.
  */
-app.get('/api/articles', async (req, res) => {
-    const data = await prisma.article.findMany({ where: { isArchived: false } });
+app.get('/api/articulos_personal', async (req, res) => {
+    const data = await prisma.articulo.findMany({ where: { isArchived: false } });
     res.json(data);
 });
 
-app.post('/api/articles', async (req, res) => {
+app.post('/api/articulos_personal', async (req, res) => {
     try {
-        const data = await prisma.article.create({ data: req.body });
+        const { name, ...rest } = req.body;
+        const data = await prisma.articulo.create({ data: { nombre: name || req.body.nombre, ...rest } });
         res.status(201).json(data);
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.post('/api/articles/upload', upload.single('file'), (req, res) => {
-    if (!req.file) return res.status(400).json({ error: 'No file' });
-    processCSV(req.file.path, async (results) => {
-        try {
-            for (const row of results) {
-                await prisma.article.create({
-                    data: {
-                        name: row.name || row.nombre,
-                        description: row.description || row.descripcion,
-                        category: row.category || row.categoria || 'otro',
-                        unit: row.unit || row.unidad || 'unidades',
-                        stock: parseInt(row.stock) || 0,
-                        minStock: parseInt(row.minStock || row.stock_minimo) || 0,
-                        price: parseFloat(row.price || row.precio) || 0,
-                        allowPersonnelRequest: row.allowPersonnelRequest === 'true' || row.solicitar_personal === 'SI' || false
-                    }
-                });
-            }
-            fs.unlinkSync(req.file.path);
-            res.json({ message: `Cargado inventario: ${results.length} artículos.` });
-        } catch (err) { res.status(500).json({ error: err.message }); }
-    });
+app.post('/api/articulos_personal/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('articles', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.put('/api/articles/:id', async (req, res) => {
+app.put('/api/articulos_personal/:id', async (req, res) => {
     try {
-        const { id, createdAt, ...updateData } = req.body;
-        const data = await prisma.article.update({
+        const { id, createdAt, name, ...updateData } = req.body;
+        const data = await prisma.articulo.update({
             where: { id: req.params.id },
-            data: updateData
+            data: { nombre: name || req.body.nombre, ...updateData }
         });
         res.json(data);
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/articles/:id', async (req, res) => {
+app.delete('/api/articulos_personal/:id', async (req, res) => {
     try {
-        await prisma.article.update({
+        await prisma.articulo.update({
             where: { id: req.params.id },
             data: { isArchived: true }
         });
@@ -249,48 +316,76 @@ app.delete('/api/articles/:id', async (req, res) => {
 
 // --- Correspondencia ---
 app.get('/api/correspondence', async (req, res) => {
-    const data = await prisma.correspondence.findMany({ include: { department: true } });
-    res.json(data);
+    try {
+        const data = await prisma.correspondence.findMany({ 
+            where: { isArchived: false },
+            include: { department: true } 
+        });
+        res.json(mapResponse('package', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/correspondence', async (req, res) => {
+app.post('/api/correspondence', requestMapper('package'), async (req, res) => {
     try {
         const data = await prisma.correspondence.create({ data: req.body });
-        res.status(201).json(data);
+        res.status(201).json(mapResponse('package', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/correspondence/:id', requestMapper('package'), async (req, res) => {
+    try {
+        const data = await prisma.correspondence.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(mapResponse('package', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/correspondence/:id', async (req, res) => {
+    try {
+        await prisma.correspondence.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 // --- Bancos, AFPs, Salud ---
-app.get('/api/banks', async (req, res) => {
-    res.json(await prisma.bank.findMany({ where: { isArchived: false } }));
+app.get('/api/bancos', async (req, res) => {
+    const data = await prisma.banco.findMany({ where: { isArchived: false } });
+    res.json(mapResponse('bank', data));
 });
 
-app.post('/api/banks', async (req, res) => {
+app.post('/api/bancos', requestMapper('bank'), async (req, res) => {
     try {
-        const data = await prisma.bank.create({ data: req.body });
-        res.status(201).json(data);
+        const data = await prisma.banco.create({ data: req.body });
+        res.status(201).json(mapResponse('bank', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.get('/api/pension-funds', async (req, res) => {
-    res.json(await prisma.pensionFund.findMany({ where: { isArchived: false } }));
+app.get('/api/afps', async (req, res) => {
+    const data = await prisma.pensionFund.findMany({ where: { isArchived: false } });
+    res.json(mapResponse('pension_fund', data));
 });
 
-app.post('/api/pension-funds', async (req, res) => {
+app.post('/api/afps', requestMapper('pension_fund'), async (req, res) => {
     try {
         const data = await prisma.pensionFund.create({ data: req.body });
-        res.status(201).json(data);
+        res.status(201).json(mapResponse('pension_fund', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.get('/api/health-providers', async (req, res) => {
-    res.json(await prisma.healthProvider.findMany({ where: { isArchived: false } }));
+app.get('/api/previsiones', async (req, res) => {
+    const data = await prisma.healthProvider.findMany({ where: { isArchived: false } });
+    res.json(mapResponse('health_provider', data));
 });
 
-app.post('/api/health-providers', async (req, res) => {
+app.post('/api/previsiones', requestMapper('health_provider'), async (req, res) => {
     try {
         const data = await prisma.healthProvider.create({ data: req.body });
-        res.status(201).json(data);
+        res.status(201).json(mapResponse('health_provider', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
@@ -299,13 +394,16 @@ app.post('/api/health-providers', async (req, res) => {
  * @apiDescription Retorna torres con sus respectivos departamentos.
  */
 app.get('/api/towers', async (req, res) => {
-    res.json(await prisma.tower.findMany({
-        where: { isArchived: false },
-        include: { departments: { where: { isArchived: false } } }
-    }));
+    try {
+        const data = await prisma.tower.findMany({
+            where: { isArchived: false },
+            include: { departments: { where: { isArchived: false } } }
+        });
+        res.json(mapResponse('tower', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/towers', async (req, res) => {
+app.post('/api/towers', requestMapper('tower'), async (req, res) => {
     try {
         const { name, departments } = req.body;
         const data = await prisma.tower.create({
@@ -314,13 +412,13 @@ app.post('/api/towers', async (req, res) => {
                 departments: {
                     create: departments?.map(d => ({
                         number: d.number,
-                        unitTypeId: d.unitTypeId
+                        unitTypeId: d.unit_type_id
                     }))
                 }
             },
             include: { departments: true }
         });
-        res.status(201).json(data);
+        res.status(201).json(mapResponse('tower', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
@@ -331,34 +429,88 @@ app.delete('/api/towers/:id', async (req, res) => {
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.post('/api/infrastructure/upload', upload.single('file'), (req, res) => {
-    if (!req.file) return res.status(400).json({ error: 'No file' });
-    processCSV(req.file.path, async (results) => {
-        try {
-            for (const row of results) {
-                // row: torre; depto; tipo_unidad
-                let tower = await prisma.tower.findFirst({ where: { name: row.torre, isArchived: false } });
-                if (!tower) {
-                    tower = await prisma.tower.create({ data: { name: row.torre } });
-                }
+app.post('/api/towers/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('towers', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
-                let unitType = await prisma.unitType.findFirst({ where: { name: row.tipo_unidad } });
-                if (!unitType && row.tipo_unidad) {
-                    unitType = await prisma.unitType.create({ data: { name: row.tipo_unidad, baseCommonExpense: 0 } });
-                }
+app.post('/api/departments/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('departments', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
-                await prisma.department.create({
-                    data: {
-                        number: row.depto,
-                        towerId: tower.id,
-                        unitTypeId: unitType?.id
-                    }
-                });
-            }
-            fs.unlinkSync(req.file.path);
-            res.json({ message: `Cargada infraestructura: ${results.length} departamentos.` });
-        } catch (err) { res.status(500).json({ error: err.message }); }
-    });
+app.post('/api/bancos/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('banks', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/tipos_unidad/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('unit_types', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/afps/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('pension_funds', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/previsiones/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('health_providers', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/owners/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('owners', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/personnel/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('personnel', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/estacionamientos/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('parking', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/maestro_categorias_articulos/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('article_categories', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/maestro_emergencias/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('emergency_numbers', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/assets/upload', async (req, res) => {
+    try {
+        const result = await runBulkImport('assets', req.body.items || [], req.query.dryRun === 'true');
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 /**
@@ -611,33 +763,36 @@ app.delete('/api/special_funds/:id', async (req, res) => {
 });
 
 // --- Números de Emergencia ---
-app.get('/api/emergency_numbers', async (req, res) => {
+app.get('/api/maestro_emergencias', async (req, res) => {
     try {
-        const data = await prisma.emergencyNumber.findMany({ where: { isArchived: false } });
-        res.json(data);
+        const data = await prisma.numeroEmergencia.findMany({ 
+            where: { isArchived: false },
+            orderBy: { createdAt: 'desc' } 
+        });
+        res.json(mapResponse('emergency_number', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/emergency_numbers', async (req, res) => {
+app.post('/api/maestro_emergencias', requestMapper('emergency_number'), async (req, res) => {
     try {
-        const data = await prisma.emergencyNumber.create({ data: req.body });
-        res.status(201).json(data);
+        const data = await prisma.numeroEmergencia.create({ data: req.body });
+        res.status(201).json(mapResponse('emergency_number', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/emergency_numbers/:id', async (req, res) => {
+app.put('/api/maestro_emergencias/:id', requestMapper('emergency_number'), async (req, res) => {
     try {
-        const data = await prisma.emergencyNumber.update({
+        const data = await prisma.numeroEmergencia.update({
             where: { id: req.params.id },
             data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('emergency_number', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/emergency_numbers/:id', async (req, res) => {
+app.delete('/api/maestro_emergencias/:id', async (req, res) => {
     try {
-        await prisma.emergencyNumber.update({
+        await prisma.numeroEmergencia.update({
             where: { id: req.params.id },
             data: { isArchived: true }
         });
@@ -646,38 +801,57 @@ app.delete('/api/emergency_numbers/:id', async (req, res) => {
 });
 
 // --- Comunicaciones y Plantillas ---
-app.get('/api/communication_templates', async (req, res) => {
+app.get('/api/maestro_mensajes', async (req, res) => {
     try {
-        const data = await prisma.communicationTemplate.findMany({ orderBy: { createdAt: 'desc' } });
-        res.json(data);
+        const data = await prisma.plantillaComunicacion.findMany({ 
+            where: { isArchived: false },
+            orderBy: { createdAt: 'desc' } 
+        });
+        res.json(mapResponse('communication_template', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/communication_templates', async (req, res) => {
+app.post('/api/maestro_mensajes', requestMapper('communication_template'), async (req, res) => {
     try {
-        const data = await prisma.communicationTemplate.create({ data: req.body });
-        res.status(201).json(data);
+        const data = await prisma.plantillaComunicacion.create({ data: req.body });
+        res.status(201).json(mapResponse('communication_template', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/communication_templates/:id', async (req, res) => {
+app.put('/api/maestro_mensajes/:id', requestMapper('communication_template'), async (req, res) => {
     try {
-        await prisma.communicationTemplate.delete({ where: { id: req.params.id } });
+        const data = await prisma.plantillaComunicacion.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(mapResponse('communication_template', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/maestro_mensajes/:id', async (req, res) => {
+    try {
+        await prisma.plantillaComunicacion.update({ 
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 app.get('/api/communication_history', async (req, res) => {
     try {
-        const data = await prisma.communicationHistory.findMany({ orderBy: { createdAt: 'desc' } });
-        res.json(data);
+        const data = await prisma.communicationHistory.findMany({ 
+            where: { isArchived: false },
+            orderBy: { createdAt: 'desc' } 
+        });
+        res.json(mapResponse('communication', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/communication_history', async (req, res) => {
+app.post('/api/communication_history', requestMapper('communication'), async (req, res) => {
     try {
         const data = await prisma.communicationHistory.create({ data: req.body });
-        res.status(201).json(data);
+        res.status(201).json(mapResponse('communication', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
@@ -766,189 +940,196 @@ app.delete('/api/jornada_groups/:id', async (req, res) => {
 });
 
 // IPC Projections
-app.get('/api/ipc_projections', async (req, res) => {
+app.get('/api/maestro_ipc', async (req, res) => {
     try {
-        res.json(await prisma.iPCProjection.findMany());
+        const data = await prisma.proyeccionIPC.findMany({ where: { isActive: true } });
+        res.json(mapResponse('ipc_projection', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/ipc_projections', async (req, res) => {
+app.post('/api/maestro_ipc', requestMapper('ipc_projection'), async (req, res) => {
     try {
-        const { name, ipcRate, ponderadoRate, description, isActive } = req.body;
-        const data = await prisma.iPCProjection.create({ 
-            data: { name, ipcRate, ponderadoRate: ponderadoRate || 0, description, isActive } 
-        });
-        res.status(201).json(data);
+        const data = await prisma.proyeccionIPC.create({ data: req.body });
+        res.status(201).json(mapResponse('ipc_projection', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/ipc_projections/:id', async (req, res) => {
+app.put('/api/maestro_ipc/:id', requestMapper('ipc_projection'), async (req, res) => {
     try {
-        const { name, ipcRate, ponderadoRate, description, isActive } = req.body;
-        const data = await prisma.iPCProjection.update({ 
+        const data = await prisma.proyeccionIPC.update({ 
             where: { id: req.params.id }, 
-            data: { name, ipcRate, ponderadoRate, description, isActive } 
+            data: req.body 
         });
-        res.json(data);
+        res.json(mapResponse('ipc_projection', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/ipc_projections/:id', async (req, res) => {
+app.delete('/api/maestro_ipc/:id', async (req, res) => {
     try {
-        await prisma.iPCProjection.delete({ where: { id: req.params.id } });
+        await prisma.proyeccionIPC.update({ 
+            where: { id: req.params.id }, 
+            data: { isActive: false } 
+        });
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 // Infrastructure Items
-app.get('/api/infrastructure_items', async (req, res) => {
+app.get('/api/infraestructura', async (req, res) => {
     try {
-        res.json(await prisma.infrastructureItem.findMany({ where: { isArchived: false } }));
+        res.json(await prisma.itemInfraestructura.findMany({ where: { isArchived: false } }));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/infrastructure_items', async (req, res) => {
+app.post('/api/infraestructura', async (req, res) => {
     try {
         const { name, description, isMandatory } = req.body;
-        const data = await prisma.infrastructureItem.create({ 
-            data: { name, description, isMandatory } 
+        const data = await prisma.itemInfraestructura.create({ 
+            data: { nombre: name || req.body.nombre, description, isMandatory } 
         });
         res.status(201).json(data);
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/infrastructure_items/:id', async (req, res) => {
+app.put('/api/infraestructura/:id', async (req, res) => {
     try {
         const { name, description, isMandatory, isActive } = req.body;
-        const data = await prisma.infrastructureItem.update({ 
+        const data = await prisma.itemInfraestructura.update({ 
             where: { id: req.params.id }, 
-            data: { name, description, isMandatory, isActive } 
+            data: { nombre: name || req.body.nombre, description, isMandatory, isActive } 
         });
         res.json(data);
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/infrastructure_items/:id', async (req, res) => {
+app.delete('/api/infraestructura/:id', async (req, res) => {
     try {
-        await prisma.infrastructureItem.update({ where: { id: req.params.id }, data: { isArchived: true } });
+        await prisma.itemInfraestructura.update({ where: { id: req.params.id }, data: { isArchived: true } });
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 // Equipment Items
-app.get('/api/equipment_items', async (req, res) => {
+app.get('/api/equipamiento', async (req, res) => {
     try {
-        res.json(await prisma.equipmentItem.findMany({ where: { isArchived: false } }));
+        res.json(await prisma.itemEquipamiento.findMany({ where: { isArchived: false } }));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/equipment_items', async (req, res) => {
+app.post('/api/equipamiento', async (req, res) => {
     try {
         const { name, description, isMandatory } = req.body;
-        const data = await prisma.equipmentItem.create({ 
-            data: { name, description, isMandatory } 
+        const data = await prisma.itemEquipamiento.create({ 
+            data: { nombre: name || req.body.nombre, description, isMandatory } 
         });
         res.status(201).json(data);
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/equipment_items/:id', async (req, res) => {
+app.put('/api/equipamiento/:id', async (req, res) => {
     try {
         const { name, description, isMandatory, isActive } = req.body;
-        const data = await prisma.equipmentItem.update({ 
+        const data = await prisma.itemEquipamiento.update({ 
             where: { id: req.params.id }, 
-            data: { name, description, isMandatory, isActive } 
+            data: { nombre: name || req.body.nombre, description, isMandatory, isActive } 
         });
         res.json(data);
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/equipment_items/:id', async (req, res) => {
+app.delete('/api/equipamiento/:id', async (req, res) => {
     try {
-        await prisma.equipmentItem.update({ where: { id: req.params.id }, data: { isArchived: true } });
+        await prisma.itemEquipamiento.update({ where: { id: req.params.id }, data: { isArchived: true } });
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 
 // System Parameters (Maestros Varias)
-app.get('/api/system_parameters', async (req, res) => {
+app.get('/api/maestros_operativos', async (req, res) => {
     try {
-        const data = await prisma.systemParameter.findMany({ orderBy: { createdAt: 'desc' } });
-        res.json(data);
+        const data = await prisma.parametroSistema.findMany({ 
+            where: { isActive: true },
+            orderBy: { createdAt: 'desc' } 
+        });
+        res.json(mapResponse('system_parameter', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/system_parameters', async (req, res) => {
+app.post('/api/maestros_operativos', requestMapper('system_parameter'), async (req, res) => {
     try {
-        const data = await prisma.systemParameter.create({ data: req.body });
-        res.status(201).json(data);
+        const data = await prisma.parametroSistema.create({ data: req.body });
+        res.status(201).json(mapResponse('system_parameter', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/system_parameters/:id', async (req, res) => {
+app.put('/api/maestros_operativos/:id', requestMapper('system_parameter'), async (req, res) => {
     try {
-        const { id, createdAt, ...updateData } = req.body;
-        const data = await prisma.systemParameter.update({
+        const data = await prisma.parametroSistema.update({
             where: { id: req.params.id },
-            data: updateData
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('system_parameter', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/system_parameters/:id', async (req, res) => {
+app.delete('/api/maestros_operativos/:id', async (req, res) => {
     try {
-        await prisma.systemParameter.delete({ where: { id: req.params.id } });
+        await prisma.parametroSistema.update({ 
+            where: { id: req.params.id },
+            data: { isActive: false }
+        });
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 
 // AFC
-app.get('/api/afcs', async (req, res) => {
+app.get('/api/afc', async (req, res) => {
     try {
-        const data = await prisma.afc.findMany();
-        res.json(data);
+        const data = await prisma.afc.findMany({ where: { isArchived: false } });
+        res.json(mapResponse('afc', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/afcs', async (req, res) => {
+app.post('/api/afc', requestMapper('afc'), async (req, res) => {
     try {
         const data = await prisma.afc.create({ data: req.body });
-        res.status(201).json(data);
+        res.status(201).json(mapResponse('afc', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/afcs/:id', async (req, res) => {
+app.put('/api/afc/:id', requestMapper('afc'), async (req, res) => {
     try {
-        const { id, createdAt, ...updateData } = req.body;
         const data = await prisma.afc.update({
             where: { id: req.params.id },
-            data: updateData
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('afc', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/afcs/:id', async (req, res) => {
+app.delete('/api/afc/:id', async (req, res) => {
     try {
-        await prisma.afc.delete({ where: { id: req.params.id } });
+        await prisma.afc.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 // Holidays
-app.get('/api/holidays', async (req, res) => {
+app.get('/api/feriados', async (req, res) => {
     try {
-        const data = await prisma.holiday.findMany({ where: { isArchived: false }, orderBy: { date: 'asc' } });
+        const data = await prisma.feriado.findMany({ where: { isArchived: false }, orderBy: { date: 'asc' } });
         res.json(data);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/holidays', async (req, res) => {
+app.post('/api/feriados', async (req, res) => {
     try {
-        const data = await prisma.holiday.create({ 
+        const data = await prisma.feriado.create({ 
             data: {
                 ...req.body,
                 date: new Date(req.body.date)
@@ -958,11 +1139,11 @@ app.post('/api/holidays', async (req, res) => {
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/holidays/:id', async (req, res) => {
+app.put('/api/feriados/:id', async (req, res) => {
     try {
         const { id, createdAt, ...updateData } = req.body;
         if (updateData.date) updateData.date = new Date(updateData.date);
-        const data = await prisma.holiday.update({
+        const data = await prisma.feriado.update({
             where: { id: req.params.id },
             data: updateData
         });
@@ -970,9 +1151,9 @@ app.put('/api/holidays/:id', async (req, res) => {
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/holidays/:id', async (req, res) => {
+app.delete('/api/feriados/:id', async (req, res) => {
     try {
-        await prisma.holiday.update({
+        await prisma.feriado.update({
             where: { id: req.params.id },
             data: { isArchived: true }
         });
@@ -1020,18 +1201,17 @@ app.put('/api/system_settings/:id', async (req, res) => {
 });
 
 // --- Health Providers (Previsiones / Salud) - PUT & DELETE missing ---
-app.put('/api/health-providers/:id', async (req, res) => {
+app.put('/api/previsiones/:id', requestMapper('health_provider'), async (req, res) => {
     try {
-        const { id, createdAt, isArchived, personnel, ...updateData } = req.body;
         const data = await prisma.healthProvider.update({
             where: { id: req.params.id },
-            data: updateData
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('health_provider', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/health-providers/:id', async (req, res) => {
+app.delete('/api/previsiones/:id', async (req, res) => {
     try {
         await prisma.healthProvider.update({
             where: { id: req.params.id },
@@ -1042,20 +1222,19 @@ app.delete('/api/health-providers/:id', async (req, res) => {
 });
 
 // --- Banks - PUT & DELETE missing ---
-app.put('/api/banks/:id', async (req, res) => {
+app.put('/api/bancos/:id', requestMapper('bank'), async (req, res) => {
     try {
-        const { id, createdAt, isArchived, personnel, ...updateData } = req.body;
-        const data = await prisma.bank.update({
+        const data = await prisma.banco.update({
             where: { id: req.params.id },
-            data: updateData
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('bank', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/banks/:id', async (req, res) => {
+app.delete('/api/bancos/:id', async (req, res) => {
     try {
-        await prisma.bank.update({
+        await prisma.banco.update({
             where: { id: req.params.id },
             data: { isArchived: true }
         });
@@ -1064,18 +1243,17 @@ app.delete('/api/banks/:id', async (req, res) => {
 });
 
 // --- Pension Funds (AFPs) - PUT & DELETE missing ---
-app.put('/api/pension-funds/:id', async (req, res) => {
+app.put('/api/afps/:id', requestMapper('pension_fund'), async (req, res) => {
     try {
-        const { id, createdAt, isArchived, personnel, ...updateData } = req.body;
         const data = await prisma.pensionFund.update({
             where: { id: req.params.id },
-            data: updateData
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('pension_fund', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/pension-funds/:id', async (req, res) => {
+app.delete('/api/afps/:id', async (req, res) => {
     try {
         await prisma.pensionFund.update({
             where: { id: req.params.id },
@@ -1086,34 +1264,36 @@ app.delete('/api/pension-funds/:id', async (req, res) => {
 });
 
 // --- Special Conditions (Condiciones Especiales) - full CRUD missing ---
-app.get('/api/special_conditions', async (req, res) => {
+app.get('/api/condiciones_especiales', async (req, res) => {
     try {
-        const data = await prisma.specialCondition.findMany({ where: { isArchived: false } });
-        res.json(data);
+        const data = await prisma.condicionEspecial.findMany({ 
+            where: { isArchived: false },
+            orderBy: { createdAt: 'desc' } 
+        });
+        res.json(mapResponse('special_condition', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/special_conditions', async (req, res) => {
+app.post('/api/condiciones_especiales', requestMapper('special_condition'), async (req, res) => {
     try {
-        const data = await prisma.specialCondition.create({ data: req.body });
-        res.status(201).json(data);
+        const data = await prisma.condicionEspecial.create({ data: req.body });
+        res.status(201).json(mapResponse('special_condition', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/special_conditions/:id', async (req, res) => {
+app.put('/api/condiciones_especiales/:id', requestMapper('special_condition'), async (req, res) => {
     try {
-        const { id, createdAt, ...updateData } = req.body;
-        const data = await prisma.specialCondition.update({
+        const data = await prisma.condicionEspecial.update({
             where: { id: req.params.id },
-            data: updateData
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('special_condition', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/special_conditions/:id', async (req, res) => {
+app.delete('/api/condiciones_especiales/:id', async (req, res) => {
     try {
-        await prisma.specialCondition.update({
+        await prisma.condicionEspecial.update({
             where: { id: req.params.id },
             data: { isArchived: true }
         });
@@ -1121,37 +1301,35 @@ app.delete('/api/special_conditions/:id', async (req, res) => {
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-// --- Unit Types (Tipos de Unidad) - full CRUD missing ---
-app.get('/api/unit_types', async (req, res) => {
+// --- Unit Types (Tipos de Unidad) - Migrado a Mapper v1.0 ---
+app.get('/api/tipos_unidad', async (req, res) => {
     try {
-        const data = await prisma.unitType.findMany({ where: { isArchived: false } });
-        res.json(data);
+        const data = await prisma.tipoUnidad.findMany({ where: { isArchived: false } });
+        res.json(mapResponse('unit_type', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/unit_types', async (req, res) => {
+app.post('/api/tipos_unidad', requestMapper('unit_type'), async (req, res) => {
     try {
-        const { defaultM2, ...rest } = req.body;
-        // defaultM2 is a frontend-only field – store it if the schema has it, otherwise ignore safely
-        const data = await prisma.unitType.create({ data: rest });
-        res.status(201).json(data);
+        // req.body YA llega en camelCase (nombre, baseCommonExpense) y serializado
+        const data = await prisma.tipoUnidad.create({ data: req.body });
+        res.status(201).json(mapResponse('unit_type', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/unit_types/:id', async (req, res) => {
+app.put('/api/tipos_unidad/:id', requestMapper('unit_type'), async (req, res) => {
     try {
-        const { id, createdAt, isArchived, departments, commonExpenseRules, defaultM2, ...updateData } = req.body;
-        const data = await prisma.unitType.update({
+        const data = await prisma.tipoUnidad.update({
             where: { id: req.params.id },
-            data: updateData
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('unit_type', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/unit_types/:id', async (req, res) => {
+app.delete('/api/tipos_unidad/:id', async (req, res) => {
     try {
-        await prisma.unitType.update({
+        await prisma.tipoUnidad.update({
             where: { id: req.params.id },
             data: { isArchived: true }
         });
@@ -1159,35 +1337,34 @@ app.delete('/api/unit_types/:id', async (req, res) => {
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-// --- Common Spaces (Espacios Comunes) - full CRUD missing ---
-app.get('/api/common_spaces', async (req, res) => {
+// --- Common Spaces (Espacios Comunes) ---
+app.get('/api/espacios', async (req, res) => {
     try {
-        const data = await prisma.commonSpace.findMany({ where: { isArchived: false } });
-        res.json(data);
+        const data = await prisma.espacioComun.findMany({ where: { isArchived: false } });
+        res.json(mapResponse('common_space', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/common_spaces', async (req, res) => {
+app.post('/api/espacios', requestMapper('common_space'), async (req, res) => {
     try {
-        const data = await prisma.commonSpace.create({ data: req.body });
-        res.status(201).json(data);
+        const data = await prisma.espacioComun.create({ data: req.body });
+        res.status(201).json(mapResponse('common_space', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/common_spaces/:id', async (req, res) => {
+app.put('/api/espacios/:id', requestMapper('common_space'), async (req, res) => {
     try {
-        const { id, createdAt, isArchived, ...updateData } = req.body;
-        const data = await prisma.commonSpace.update({
+        const data = await prisma.espacioComun.update({
             where: { id: req.params.id },
-            data: updateData
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('common_space', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/common_spaces/:id', async (req, res) => {
+app.delete('/api/espacios/:id', async (req, res) => {
     try {
-        await prisma.commonSpace.update({
+        await prisma.espacioComun.update({
             where: { id: req.params.id },
             data: { isArchived: true }
         });
@@ -1196,34 +1373,36 @@ app.delete('/api/common_spaces/:id', async (req, res) => {
 });
 
 // --- Parking (Estacionamientos) - full CRUD missing ---
-app.get('/api/parking', async (req, res) => {
+app.get('/api/estacionamientos', async (req, res) => {
     try {
-        const data = await prisma.parking.findMany({ where: { isArchived: false } });
-        res.json(data);
+        const data = await prisma.estacionamiento.findMany({ 
+            where: { isArchived: false },
+            include: { department: true }
+        });
+        res.json(mapResponse('parking', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/parking', async (req, res) => {
+app.post('/api/estacionamientos', requestMapper('parking'), async (req, res) => {
     try {
-        const data = await prisma.parking.create({ data: req.body });
-        res.status(201).json(data);
+        const data = await prisma.estacionamiento.create({ data: req.body });
+        res.status(201).json(mapResponse('parking', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/parking/:id', async (req, res) => {
+app.put('/api/estacionamientos/:id', requestMapper('parking'), async (req, res) => {
     try {
-        const { id, createdAt, isArchived, department, ...updateData } = req.body;
-        const data = await prisma.parking.update({
+        const data = await prisma.estacionamiento.update({
             where: { id: req.params.id },
-            data: updateData
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('parking', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.delete('/api/parking/:id', async (req, res) => {
+app.delete('/api/estacionamientos/:id', async (req, res) => {
     try {
-        await prisma.parking.update({
+        await prisma.estacionamiento.update({
             where: { id: req.params.id },
             data: { isArchived: true }
         });
@@ -1232,24 +1411,19 @@ app.delete('/api/parking/:id', async (req, res) => {
 });
 
 // --- Residents - PUT & DELETE missing ---
-app.put('/api/residents/:id', async (req, res) => {
+app.put('/api/residents/:id', requestMapper('resident'), async (req, res) => {
     try {
-        const { id, createdAt, departments, conditionIds, unitId, towerId, parkingIds, photo, ...updateData } = req.body;
-        const data = await prisma.resident.update({
+        const data = await prisma.residente.update({
             where: { id: req.params.id },
-            data: {
-                ...updateData,
-                parkingIds: parkingIds ? JSON.stringify(parkingIds) : (parkingIds === null ? null : undefined),
-                conditionIds: conditionIds ? JSON.stringify(conditionIds) : (conditionIds === null ? null : undefined)
-            }
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('resident', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 app.delete('/api/residents/:id', async (req, res) => {
     try {
-        await prisma.resident.update({
+        await prisma.residente.update({
             where: { id: req.params.id },
             data: { isArchived: true }
         });
@@ -1303,38 +1477,24 @@ app.get('/api/departments', async (req, res) => {
             where: { isArchived: false },
             include: { tower: true, unitType: true }
         });
-        const parsedData = data.map(d => ({
-            ...d,
-            history: d.historyJson ? JSON.parse(d.historyJson) : []
-        }));
-        res.json(parsedData);
+        res.json(mapResponse('department', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/departments', async (req, res) => {
+app.post('/api/departments', requestMapper('department'), async (req, res) => {
     try {
-        const { history, ...rest } = req.body;
-        const data = await prisma.department.create({ 
-            data: {
-                ...rest,
-                historyJson: history ? JSON.stringify(history) : null
-            }
-        });
-        res.status(201).json(data);
+        const data = await prisma.department.create({ data: req.body });
+        res.status(201).json(mapResponse('department', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/departments/:id', async (req, res) => {
+app.put('/api/departments/:id', requestMapper('department'), async (req, res) => {
     try {
-        const { id, createdAt, isArchived, tower, unitType, resident, owner, commonExpensePayments, correspondence, parking, history, ...updateData } = req.body;
         const data = await prisma.department.update({
             where: { id: req.params.id },
-            data: {
-                ...updateData,
-                historyJson: history ? JSON.stringify(history) : (history === null ? null : undefined)
-            }
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('department', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
@@ -1352,33 +1512,40 @@ app.delete('/api/departments/:id', async (req, res) => {
 // --- Owners (Propietarios) - MISSING ---
 app.get('/api/owners', async (req, res) => {
     try {
-        const data = await prisma.owner.findMany({ where: { isArchived: false } });
-        res.json(data);
+        const data = await prisma.propietario.findMany({ 
+            where: { isArchived: false },
+            include: {
+                departments: {
+                    include: {
+                        tower: true
+                    }
+                }
+            }
+        });
+        res.json(mapResponse('owner', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/owners', async (req, res) => {
+app.post('/api/owners', requestMapper('owner'), async (req, res) => {
     try {
-        const { id, createdAt, departments, ...rest } = req.body;
-        const data = await prisma.owner.create({ data: rest });
-        res.status(201).json(data);
+        const data = await prisma.propietario.create({ data: req.body });
+        res.status(201).json(mapResponse('owner', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/owners/:id', async (req, res) => {
+app.put('/api/owners/:id', requestMapper('owner'), async (req, res) => {
     try {
-        const { id, createdAt, departments, ...updateData } = req.body;
-        const data = await prisma.owner.update({
+        const data = await prisma.propietario.update({
             where: { id: req.params.id },
-            data: updateData
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('owner', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
 app.delete('/api/owners/:id', async (req, res) => {
     try {
-        await prisma.owner.update({
+        await prisma.propietario.update({
             where: { id: req.params.id },
             data: { isArchived: true }
         });
@@ -1427,26 +1594,24 @@ app.delete('/api/fixed_assets/:id', async (req, res) => {
 app.get('/api/cameras', async (req, res) => {
     try {
         const data = await prisma.camera.findMany({ where: { isArchived: false } });
-        res.json(data);
+        res.json(mapResponse('camera', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/cameras', async (req, res) => {
+app.post('/api/cameras', requestMapper('camera'), async (req, res) => {
     try {
-        const { id, createdAt, ...rest } = req.body;
-        const data = await prisma.camera.create({ data: rest });
-        res.status(201).json(data);
+        const data = await prisma.camera.create({ data: req.body });
+        res.status(201).json(mapResponse('camera', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-app.put('/api/cameras/:id', async (req, res) => {
+app.put('/api/cameras/:id', requestMapper('camera'), async (req, res) => {
     try {
-        const { id, createdAt, ...updateData } = req.body;
         const data = await prisma.camera.update({
             where: { id: req.params.id },
-            data: updateData
+            data: req.body
         });
-        res.json(data);
+        res.json(mapResponse('camera', data));
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
@@ -1463,7 +1628,7 @@ app.delete('/api/cameras/:id', async (req, res) => {
 // --- Article Deliveries (Vales de Entrega) ---
 app.get('/api/article_deliveries', async (req, res) => {
     try {
-        const data = await prisma.articleDelivery.findMany({
+        const data = await prisma.articuloDelivery.findMany({
             include: { personnel: true },
             orderBy: { createdAt: 'desc' }
         });
@@ -1478,7 +1643,7 @@ app.get('/api/article_deliveries', async (req, res) => {
 app.post('/api/article_deliveries', async (req, res) => {
     try {
         const { articles, ...rest } = req.body;
-        const data = await prisma.articleDelivery.create({
+        const data = await prisma.articuloDelivery.create({
             data: {
                 ...rest,
                 articlesJson: JSON.stringify(articles || [])
@@ -1491,7 +1656,7 @@ app.post('/api/article_deliveries', async (req, res) => {
 app.put('/api/article_deliveries/:id', async (req, res) => {
     try {
         const { id, createdAt, personnel, articles, ...updateData } = req.body;
-        const data = await prisma.articleDelivery.update({
+        const data = await prisma.articuloDelivery.update({
             where: { id: req.params.id },
             data: {
                 ...updateData,
@@ -1504,7 +1669,647 @@ app.put('/api/article_deliveries/:id', async (req, res) => {
 
 app.delete('/api/article_deliveries/:id', async (req, res) => {
     try {
-        await prisma.articleDelivery.delete({ where: { id: req.params.id } });
+        await prisma.articuloDelivery.delete({ where: { id: req.params.id } });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// --- Bulk Upload Logs (Historial de Auditoría) ---
+app.get('/api/bulk_upload_logs', async (req, res) => {
+    try {
+        const data = await prisma.bulkUploadLog.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 50 // Limit to last 50 for performance
+        });
+        const parsedData = data.map(log => ({
+            ...log,
+            errors: log.errorsJson ? JSON.parse(log.errorsJson) : []
+        }));
+        res.json(parsedData);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/bulk_upload_logs/:id', async (req, res) => {
+    try {
+        await prisma.bulkUploadLog.delete({ where: { id: req.params.id } });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// ── FASE 1: Upload endpoints faltantes (estándar SGC) ──
+
+app.post('/api/infraestructura/upload', async (req, res) => {
+    try {
+        const { items = [], dryRun = false } = req.body;
+        const isDry = req.query.dryRun === 'true' || dryRun;
+        let created = 0, updated = 0;
+        for (const row of items) {
+            const name = String(row.nombre || row.name || '').trim().toLowerCase();
+            if (!name) continue;
+            const exists = await prisma.itemInfraestructura.findFirst({ where: { nombre: { equals: name, mode: 'insensitive' } } });
+            if (exists) { if (!isDry) await prisma.itemInfraestructura.update({ where: { id: exists.id }, data: { description: row.descripcion || row.description } }); updated++; }
+            else { if (!isDry) await prisma.itemInfraestructura.create({ data: { nombre: row.nombre || row.name, description: row.descripcion || row.description } }); created++; }
+        }
+        res.json({ processed: items.length, created, updated, errors: [], dryRun: isDry });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/equipamiento/upload', async (req, res) => {
+    try {
+        const { items = [] } = req.body;
+        const isDry = req.query.dryRun === 'true';
+        let created = 0, updated = 0;
+        for (const row of items) {
+            const name = String(row.nombre || row.name || '').trim().toLowerCase();
+            if (!name) continue;
+            const exists = await prisma.itemEquipamiento.findFirst({ where: { nombre: { equals: name, mode: 'insensitive' } } });
+            if (exists) { if (!isDry) await prisma.itemEquipamiento.update({ where: { id: exists.id }, data: { description: row.descripcion || row.description } }); updated++; }
+            else { if (!isDry) await prisma.itemEquipamiento.create({ data: { nombre: row.nombre || row.name, description: row.descripcion || row.description } }); created++; }
+        }
+        res.json({ processed: items.length, created, updated, errors: [], dryRun: isDry });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/espacios/upload', async (req, res) => {
+    try {
+        const { items = [] } = req.body;
+        const isDry = req.query.dryRun === 'true';
+        let created = 0, updated = 0;
+        for (const row of items) {
+            const name = String(row.nombre || row.name || '').trim().toLowerCase();
+            if (!name) continue;
+            const exists = await prisma.espacioComun.findFirst({ where: { nombre: { equals: name, mode: 'insensitive' } } });
+            if (exists) { if (!isDry) await prisma.espacioComun.update({ where: { id: exists.id }, data: { location: row.ubicacion || row.location || exists.location } }); updated++; }
+            else { if (!isDry) await prisma.espacioComun.create({ data: { nombre: row.nombre || row.name, location: row.ubicacion || row.location || 'Sin ubicación', rentalValue: parseFloat(row.valor_arriendo || 0), durationHours: parseInt(row.duracion_horas || 1) } }); created++; }
+        }
+        res.json({ processed: items.length, created, updated, errors: [], dryRun: isDry });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/afc/upload', async (req, res) => {
+    try {
+        const { items = [] } = req.body;
+        const isDry = req.query.dryRun === 'true';
+        let created = 0, updated = 0;
+        for (const row of items) {
+            const existing = await prisma.afc.findFirst();
+            const data = { fixedTermRate: parseFloat(row.tasa_contrato_fijo || row.fixedTermRate || 0), indefiniteTermRate: parseFloat(row.tasa_indefinido || row.indefiniteTermRate || 0) };
+            if (existing) { if (!isDry) await prisma.afc.update({ where: { id: existing.id }, data }); updated++; }
+            else { if (!isDry) await prisma.afc.create({ data }); created++; }
+        }
+        res.json({ processed: items.length, created, updated, errors: [], dryRun: isDry });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/feriados/upload', async (req, res) => {
+    try {
+        const { items = [] } = req.body;
+        const isDry = req.query.dryRun === 'true';
+        let created = 0, updated = 0;
+        for (const row of items) {
+            const dateStr = row.fecha || row.date;
+            const description = row.descripcion || row.description || '';
+            if (!dateStr) continue;
+            const date = new Date(dateStr);
+            const exists = await prisma.feriado.findFirst({ where: { date } });
+            if (exists) { if (!isDry) await prisma.feriado.update({ where: { id: exists.id }, data: { description } }); updated++; }
+            else { if (!isDry) await prisma.feriado.create({ data: { date, description } }); created++; }
+        }
+        res.json({ processed: items.length, created, updated, errors: [], dryRun: isDry });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/maestro_ipc/upload', async (req, res) => {
+    try {
+        const { items = [] } = req.body;
+        const isDry = req.query.dryRun === 'true';
+        let created = 0, updated = 0;
+        for (const row of items) {
+            const name = String(row.nombre || row.name || '').trim().toLowerCase();
+            if (!name) continue;
+            const exists = await prisma.proyeccionIPC.findFirst({ where: { nombre: { equals: name, mode: 'insensitive' } } });
+            if (exists) { if (!isDry) await prisma.proyeccionIPC.update({ where: { id: exists.id }, data: { ipcRate: parseFloat(row.tasa_ipc || row.ipcRate || exists.ipcRate) } }); updated++; }
+            else { if (!isDry) await prisma.proyeccionIPC.create({ data: { nombre: row.nombre || row.name, ipcRate: parseFloat(row.tasa_ipc || row.ipcRate || 0), ponderadoRate: parseFloat(row.tasa_ponderado || 0) } }); created++; }
+        }
+        res.json({ processed: items.length, created, updated, errors: [], dryRun: isDry });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/maestros_operativos/upload', async (req, res) => {
+    try {
+        const { items = [] } = req.body;
+        const isDry = req.query.dryRun === 'true';
+        let created = 0, updated = 0;
+        for (const row of items) {
+            const name = String(row.nombre || row.name || '').trim().toLowerCase();
+            const type = String(row.tipo || row.type || 'general');
+            if (!name) continue;
+            const exists = await prisma.parametroSistema.findFirst({ where: { nombre: { equals: name, mode: 'insensitive' }, type } });
+            if (exists) { if (!isDry) await prisma.parametroSistema.update({ where: { id: exists.id }, data: { description: row.descripcion || row.description } }); updated++; }
+            else { if (!isDry) await prisma.parametroSistema.create({ data: { nombre: row.nombre || row.name, type, description: row.descripcion || row.description } }); created++; }
+        }
+        res.json({ processed: items.length, created, updated, errors: [], dryRun: isDry });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/maestro_mensajes/upload', async (req, res) => {
+    try {
+        const { items = [] } = req.body;
+        const isDry = req.query.dryRun === 'true';
+        let created = 0, updated = 0;
+        for (const row of items) {
+            const name = String(row.nombre || row.name || '').trim().toLowerCase();
+            if (!name) continue;
+            const exists = await prisma.plantillaComunicacion.findFirst({ where: { nombre: { equals: name, mode: 'insensitive' } } });
+            if (exists) { if (!isDry) await prisma.plantillaComunicacion.update({ where: { id: exists.id }, data: { subject: row.asunto || row.subject || exists.subject, message: row.mensaje || row.message || exists.message } }); updated++; }
+            else { if (!isDry) await prisma.plantillaComunicacion.create({ data: { nombre: row.nombre || row.name, subject: row.asunto || row.subject || '', message: row.mensaje || row.message || '' } }); created++; }
+        }
+        res.json({ processed: items.length, created, updated, errors: [], dryRun: isDry });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/condiciones_especiales/upload', async (req, res) => {
+    try {
+        const { items = [] } = req.body;
+        const isDry = req.query.dryRun === 'true';
+        let created = 0, updated = 0;
+        for (const row of items) {
+            const name = String(row.nombre || row.name || '').trim().toLowerCase();
+            if (!name) continue;
+            const exists = await prisma.condicionEspecial.findFirst({ where: { nombre: { equals: name, mode: 'insensitive' } } });
+            if (exists) { if (!isDry) await prisma.condicionEspecial.update({ where: { id: exists.id }, data: { description: row.descripcion || row.description } }); updated++; }
+            else { if (!isDry) await prisma.condicionEspecial.create({ data: { nombre: row.nombre || row.name, description: row.descripcion || row.description } }); created++; }
+        }
+        res.json({ processed: items.length, created, updated, errors: [], dryRun: isDry });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// --- Condo Board (Directiva) ---
+app.get('/api/condo_board', async (req, res) => {
+    try {
+        const data = await prisma.comite.findMany({ where: { isArchived: false } });
+        res.json(mapResponse('condo_board', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/condo_board', requestMapper('condo_board'), async (req, res) => {
+    try {
+        const data = await prisma.comite.create({ data: req.body });
+        res.status(201).json(mapResponse('condo_board', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/condo_board/:id', requestMapper('condo_board'), async (req, res) => {
+    try {
+        const data = await prisma.comite.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(mapResponse('condo_board', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/condo_board/:id', async (req, res) => {
+    try {
+        await prisma.comite.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+
+// --- System Messages (Avisos) ---
+app.get('/api/system_messages', async (req, res) => {
+    try {
+        const data = await prisma.aviso.findMany({ 
+            where: { isArchived: false },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(mapResponse('system_announcement', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/system_messages', requestMapper('system_announcement'), async (req, res) => {
+    try {
+        const data = await prisma.aviso.create({ data: req.body });
+        res.status(201).json(mapResponse('system_announcement', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/system_messages/:id', requestMapper('system_announcement'), async (req, res) => {
+    try {
+        const data = await prisma.aviso.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(mapResponse('system_announcement', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/system_messages/:id', async (req, res) => {
+    try {
+        await prisma.aviso.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+
+// --- Shift Reports (Daily Events) ---
+app.get('/api/shift_reports', async (req, res) => {
+    try {
+        const data = await prisma.dailyReport.findMany({ 
+            where: { isArchived: false },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                resident: true,
+                owner: true,
+                department: true
+            }
+        });
+        res.json(mapResponse('daily_report', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/shift_reports', requestMapper('daily_report'), async (req, res) => {
+    try {
+        const data = await prisma.dailyReport.create({ data: req.body });
+        res.status(201).json(mapResponse('daily_report', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/shift_reports/:id', requestMapper('daily_report'), async (req, res) => {
+    try {
+        const data = await prisma.dailyReport.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(mapResponse('daily_report', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/shift_reports/:id', async (req, res) => {
+    try {
+        await prisma.dailyReport.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+
+// --- Shift Logs (Continuous Events) ---
+app.get('/api/shift_logs', async (req, res) => {
+    try {
+        const { daily_report_id } = req.query;
+        const where = { isArchived: false };
+        if (daily_report_id) where.dailyReportId = daily_report_id;
+        
+        const data = await prisma.shiftLog.findMany({ 
+            where,
+            orderBy: { timestamp: 'asc' }
+        });
+        res.json(mapResponse('shift_log', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/shift_logs', requestMapper('shift_log'), async (req, res) => {
+    try {
+        const data = await prisma.shiftLog.create({ data: req.body });
+        res.status(201).json(mapResponse('shift_log', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/shift_logs/:id', async (req, res) => {
+    try {
+        await prisma.shiftLog.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+
+// --- Visitors (Visitas) ---
+app.get('/api/visitors', async (req, res) => {
+    try {
+        const data = await prisma.visita.findMany({ 
+            where: { isArchived: false },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                resident: true,
+                department: true
+            }
+        });
+        res.json(mapResponse('visit', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/visitors', requestMapper('visit'), async (req, res) => {
+    try {
+        const data = await prisma.visita.create({ data: req.body });
+        res.status(201).json(mapResponse('visit', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/visitors/:id', requestMapper('visit'), async (req, res) => {
+    try {
+        const data = await prisma.visita.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(mapResponse('visit', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/visitors/:id', async (req, res) => {
+    try {
+        await prisma.visita.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+
+// --- Contractors (Personal Externo) ---
+app.get('/api/contractors', async (req, res) => {
+    try {
+        const data = await prisma.contratistaVisita.findMany({ 
+            where: { isArchived: false },
+            orderBy: { createdAt: 'desc' },
+            include: { department: true }
+        });
+        res.json(mapResponse('contractor', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/contractors', requestMapper('contractor'), async (req, res) => {
+    try {
+        const data = await prisma.contratistaVisita.create({ data: req.body });
+        res.status(201).json(mapResponse('contractor', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/contractors/:id', requestMapper('contractor'), async (req, res) => {
+    try {
+        const data = await prisma.contratistaVisita.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(mapResponse('contractor', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/contractors/:id', async (req, res) => {
+    try {
+        await prisma.contratistaVisita.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+
+// --- Supply Requests (Solicitudes de Insumos) ---
+app.get('/api/supply_requests', async (req, res) => {
+    try {
+        const data = await prisma.supplyRequest.findMany({ 
+            where: { isArchived: false },
+            orderBy: { createdAt: 'desc' },
+            include: { worker: true }
+        });
+        res.json(mapResponse('supply_request', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/supply_requests', requestMapper('supply_request'), async (req, res) => {
+    try {
+        const data = await prisma.supplyRequest.create({ data: req.body });
+        res.status(201).json(mapResponse('supply_request', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/supply_requests/:id', requestMapper('supply_request'), async (req, res) => {
+    try {
+        const data = await prisma.supplyRequest.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(mapResponse('supply_request', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/supply_requests/:id', async (req, res) => {
+    try {
+        await prisma.supplyRequest.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+
+// --- CCTV & Cameras (Seguridad) ---
+app.get('/api/cameras', async (req, res) => {
+    try {
+        const data = await prisma.camera.findMany({ 
+            where: { isArchived: false },
+            orderBy: { name: 'asc' }
+        });
+        res.json(mapResponse('camera', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/cameras', requestMapper('camera'), async (req, res) => {
+    try {
+        const data = await prisma.camera.create({ data: req.body });
+        res.status(201).json(mapResponse('camera', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.get('/api/cctv_logs', async (req, res) => {
+    try {
+        const { camera_id } = req.query;
+        const where = { isArchived: false };
+        if (camera_id) where.cameraId = camera_id;
+        
+        const data = await prisma.cctvLog.findMany({ 
+            where,
+            orderBy: { recordedAt: 'desc' },
+            include: { camera: true }
+        });
+        res.json(mapResponse('cctv_log', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/cctv_logs', requestMapper('cctv_log'), async (req, res) => {
+    try {
+        const data = await prisma.cctvLog.create({ data: req.body });
+        res.status(201).json(mapResponse('cctv_log', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/cctv_logs/:id', async (req, res) => {
+    try {
+        await prisma.cctvLog.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+
+// --- Reservations (Reserva de Espacios) ---
+app.get('/api/reservations', async (req, res) => {
+    try {
+        const data = await prisma.reserva.findMany({ 
+            where: { isArchived: false },
+            orderBy: { startAt: 'desc' },
+            include: { 
+                commonSpace: true,
+                resident: true
+            }
+        });
+        res.json(mapResponse('reservation', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/reservations', requestMapper('reservation'), async (req, res) => {
+    try {
+        // Simple overlap check
+        const overlap = await prisma.reserva.findFirst({
+            where: {
+                commonSpaceId: req.body.commonSpaceId,
+                isArchived: false,
+                status: { not: 'cancelled' },
+                OR: [
+                    {
+                        startAt: { lte: req.body.startAt },
+                        endAt: { gte: req.body.startAt }
+                    },
+                    {
+                        startAt: { lte: req.body.endAt },
+                        endAt: { gte: req.body.endAt }
+                    }
+                ]
+            }
+        });
+
+        if (overlap) {
+            return res.status(400).json({ error: 'El espacio ya está reservado en ese horario.' });
+        }
+
+        const data = await prisma.reserva.create({ data: req.body });
+        res.status(201).json(mapResponse('reservation', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/reservations/:id', requestMapper('reservation'), async (req, res) => {
+    try {
+        const data = await prisma.reserva.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(mapResponse('reservation', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/reservations/:id', async (req, res) => {
+    try {
+        await prisma.reserva.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+
+// --- Support Tickets (Gestión de Reclamos / Centro de Ayuda) ---
+app.get('/api/tickets', async (req, res) => {
+    try {
+        const data = await prisma.ticket.findMany({ 
+            where: { isArchived: false },
+            orderBy: { createdAt: 'desc' },
+            include: { resident: true }
+        });
+        res.json(mapResponse('support_ticket', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/tickets', requestMapper('support_ticket'), async (req, res) => {
+    try {
+        const data = await prisma.ticket.create({ data: req.body });
+        res.status(201).json(mapResponse('support_ticket', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/tickets/:id', requestMapper('support_ticket'), async (req, res) => {
+    try {
+        const data = await prisma.ticket.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(mapResponse('support_ticket', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/tickets/:id', async (req, res) => {
+    try {
+        await prisma.ticket.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
+        res.json({ success: true });
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+
+// --- Service Directory (Directorio de Servicios) ---
+app.get('/api/service_directory', async (req, res) => {
+    try {
+        const data = await prisma.directorioServicio.findMany({ 
+            where: { isArchived: false },
+            orderBy: { category: 'asc' }
+        });
+        res.json(mapResponse('service_directory', data));
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/service_directory', requestMapper('service_directory'), async (req, res) => {
+    try {
+        const data = await prisma.directorioServicio.create({ data: req.body });
+        res.status(201).json(mapResponse('service_directory', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put('/api/service_directory/:id', requestMapper('service_directory'), async (req, res) => {
+    try {
+        const data = await prisma.directorioServicio.update({
+            where: { id: req.params.id },
+            data: req.body
+        });
+        res.json(mapResponse('service_directory', data));
+    } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete('/api/service_directory/:id', async (req, res) => {
+    try {
+        await prisma.directorioServicio.update({
+            where: { id: req.params.id },
+            data: { isArchived: true }
+        });
         res.json({ success: true });
     } catch (err) { res.status(400).json({ error: err.message }); }
 });
@@ -1512,3 +2317,5 @@ app.delete('/api/article_deliveries/:id', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`🚀 SGC Full Backend en http://localhost:${PORT}`);
 });
+
+module.exports = app;

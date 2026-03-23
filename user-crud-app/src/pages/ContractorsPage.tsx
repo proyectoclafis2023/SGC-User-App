@@ -23,13 +23,13 @@ export const ContractorsPage: React.FC = () => {
     const [dni, setDni] = useState('');
     const [company, setCompany] = useState('');
     const [subject, setSubject] = useState('');
-    const [contractorId, setContractorId] = useState('');
+    const [contractor_id, setContractorId] = useState('');
 
     const filteredVisits = visits.filter(v =>
         v.names.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.dni.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.company.toLowerCase().includes(searchTerm.toLowerCase())
-    ).filter(v => activeTab === 'current' ? v.status === 'entered' : v.status === 'exited');
+    ).filter(v => activeTab === 'current' ? v.status === 'active' : v.status === 'exited');
 
     const resetForm = () => {
         setNames('');
@@ -46,8 +46,8 @@ export const ContractorsPage: React.FC = () => {
             dni,
             company,
             subject,
-            contractorId: contractorId || undefined,
-            entryTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            contractor_id: contractor_id || undefined,
+            entry_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         });
         setIsModalOpen(false);
         resetForm();
@@ -107,8 +107,8 @@ export const ContractorsPage: React.FC = () => {
                                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl">
                                     <HardHat className="w-6 h-6" />
                                 </div>
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${v.status === 'entered' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                                    {v.status === 'entered' ? 'En Recinto' : 'Salida'}
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${v.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                                    {v.status === 'active' ? 'En Recinto' : 'Salida'}
                                 </span>
                             </div>
 
@@ -126,17 +126,17 @@ export const ContractorsPage: React.FC = () => {
                                 </div>
                                 <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-200 dark:border-gray-700">
                                     <span className="font-black text-gray-400 uppercase tracking-widest">Ingreso</span>
-                                    <span className="font-black text-emerald-600">{v.entryTime}</span>
+                                    <span className="font-black text-emerald-600">{v.entry_at}</span>
                                 </div>
-                                {v.exitTime && (
+                                {v.exit_at && (
                                     <div className="flex items-center justify-between text-xs">
                                         <span className="font-black text-gray-400 uppercase tracking-widest">Salida</span>
-                                        <span className="font-black text-rose-600">{v.exitTime}</span>
+                                        <span className="font-black text-rose-600">{v.exit_at}</span>
                                     </div>
                                 )}
                             </div>
 
-                            {v.status === 'entered' && (
+                            {v.status === 'active' && (
                                 <button
                                     onClick={() => updateVisitStatus(v.id, 'exited')}
                                     className="w-full mt-6 py-3 bg-gray-900 dark:bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-lg"
@@ -174,7 +174,7 @@ export const ContractorsPage: React.FC = () => {
                                     <label className="text-xs font-black text-gray-500 ml-1 uppercase tracking-widest">Maestro Contratistas (Opcional)</label>
                                     <select
                                         className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-bold text-gray-900 dark:text-white"
-                                        value={contractorId}
+                                        value={contractor_id}
                                         onChange={e => {
                                             const selected = contractors.find(c => c.id === e.target.value);
                                             setContractorId(e.target.value);

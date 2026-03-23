@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 
-export const EmergencyNumbersPage: React.FC<{ isMaster?: boolean }> = ({ isMaster = false }) => {
+export const MaestroEmergenciasPage: React.FC<{ isMaster?: boolean }> = ({ isMaster = true }) => {
     const { numbers, addNumber, updateNumber, deleteNumber } = useEmergencyNumbers();
     const { user } = useAuth();
     const { settings } = useSettings();
@@ -23,7 +23,7 @@ export const EmergencyNumbersPage: React.FC<{ isMaster?: boolean }> = ({ isMaste
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [description, setDescription] = useState('');
-    const [webUrl, setWebUrl] = useState('');
+    const [web_url, setWebUrl] = useState('');
 
     const filteredNumbers = numbers.filter(n =>
         n.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,13 +53,13 @@ export const EmergencyNumbersPage: React.FC<{ isMaster?: boolean }> = ({ isMaste
         setName(num.name);
         setPhone(num.phone);
         setDescription(num.description || '');
-        setWebUrl(num.webUrl || '');
+        setWebUrl(num.web_url || '');
         setIsModalOpen(true);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { category, name, phone, description, webUrl };
+        const data = { category, name, phone, description, web_url };
         if (editingNumber) {
             await updateNumber(editingNumber.id, data);
         } else {
@@ -99,114 +99,56 @@ export const EmergencyNumbersPage: React.FC<{ isMaster?: boolean }> = ({ isMaste
                 </div>
             </div>
 
-            {!isMaster ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredNumbers.map(num => {
-                        const cat = categories.find(c => c.id === num.category) || categories[4];
-                        return (
-                            <div key={num.id} className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-6 shadow-sm hover:shadow-xl transition-all group">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className={`p-4 rounded-2xl ${cat.bg} ${cat.color} group-hover:scale-110 transition-transform`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredNumbers.map(num => {
+                    const cat = categories.find(c => c.id === num.category) || categories[4];
+                    return (
+                        <div key={num.id} className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-6 shadow-sm hover:shadow-xl transition-all group relative flex flex-col justify-between">
+                            <div>
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className={`p-4 rounded-2xl ${cat.bg} ${cat.color} group-hover:scale-110 transition-transform shadow-sm`}>
                                         <cat.icon className="w-6 h-6" />
                                     </div>
                                     <div className="flex gap-2">
-                                        {(isAdmin && isMaster) && (
-                                            <>
-                                                <button onClick={() => handleEdit(num)} className="p-2 text-gray-400 hover:text-indigo-600 transition-colors">
-                                                    <Edit2 className="w-4 h-4" />
-                                                </button>
-                                                <button onClick={() => { if (confirm('¿Eliminar contacto?')) deleteNumber(num.id); }} className="p-2 text-gray-400 hover:text-rose-600 transition-colors">
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </>
-                                        )}
+                                        <button onClick={() => handleEdit(num)} className="p-3 text-gray-400 hover:text-indigo-600 transition-colors bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
+                                            <Edit2 className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => { if (confirm('¿Eliminar contacto?')) deleteNumber(num.id); }} className="p-3 text-gray-400 hover:text-rose-600 transition-colors bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
 
-                                <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1">{num.name}</h3>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">{cat.label}</p>
+                                <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1 group-hover:text-indigo-600 transition-colors">{num.name}</h3>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">{cat.label}</span>
 
-                                <div className="space-y-4">
+                                {num.description && (
+                                    <p className="text-xs font-bold text-gray-500 italic leading-relaxed line-clamp-2 border-l-2 border-gray-100 dark:border-gray-800 pl-3 mb-6">
+                                        {num.description}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="block w-full py-4 bg-gray-900 dark:bg-black text-white rounded-2xl text-center text-lg font-black shadow-lg shadow-black/10">
+                                    {num.phone}
+                                </div>
+
+                                {num.web_url && (
                                     <a
-                                        href={`tel:${num.phone}`}
-                                        className="block w-full py-4 bg-gray-900 dark:bg-black text-white rounded-2xl text-center text-lg font-black hover:bg-rose-600 transition-all shadow-lg shadow-black/10 active:scale-95"
+                                        href={num.web_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center gap-2 text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-700 transition-colors tracking-widest pt-2"
                                     >
-                                        {num.phone}
+                                        Sitio Web <ExternalLink className="w-3 h-3" />
                                     </a>
-
-                                    {num.description && (
-                                        <p className="text-xs font-bold text-gray-500 italic leading-relaxed px-2">
-                                            {num.description}
-                                        </p>
-                                    )}
-
-                                    {num.webUrl && (
-                                        <a
-                                            href={num.webUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center justify-center gap-2 text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-700 transition-colors tracking-widest"
-                                        >
-                                            Ver sitio web <ExternalLink className="w-3 h-3" />
-                                        </a>
-                                    )}
-                                </div>
+                                )}
                             </div>
-                        );
-                    })}
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredNumbers.map(num => {
-                        const cat = categories.find(c => c.id === num.category) || categories[4];
-                        return (
-                            <div key={num.id} className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-6 shadow-sm hover:shadow-xl transition-all group relative flex flex-col justify-between">
-                                <div>
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className={`p-4 rounded-2xl ${cat.bg} ${cat.color} group-hover:scale-110 transition-transform shadow-sm`}>
-                                            <cat.icon className="w-6 h-6" />
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => handleEdit(num)} className="p-3 text-gray-400 hover:text-indigo-600 transition-colors bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                            <button onClick={() => { if (confirm('¿Eliminar contacto?')) deleteNumber(num.id); }} className="p-3 text-gray-400 hover:text-rose-600 transition-colors bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1 group-hover:text-indigo-600 transition-colors">{num.name}</h3>
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">{cat.label}</span>
-
-                                    {num.description && (
-                                        <p className="text-xs font-bold text-gray-500 italic leading-relaxed line-clamp-2 border-l-2 border-gray-100 dark:border-gray-800 pl-3 mb-6">
-                                            {num.description}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="block w-full py-4 bg-gray-900 dark:bg-black text-white rounded-2xl text-center text-lg font-black shadow-lg shadow-black/10">
-                                        {num.phone}
-                                    </div>
-
-                                    {num.webUrl && (
-                                        <a
-                                            href={num.webUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center justify-center gap-2 text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-700 transition-colors tracking-widest pt-2"
-                                        >
-                                            Sitio Web <ExternalLink className="w-3 h-3" />
-                                        </a>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+                        </div>
+                    );
+                })}
+            </div>
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 overflow-y-auto">
@@ -236,7 +178,7 @@ export const EmergencyNumbersPage: React.FC<{ isMaster?: boolean }> = ({ isMaste
                             <Input label="Nombre del Servicio / Contacto" value={name} onChange={e => setName(e.target.value)} required />
                             <Input label="Teléfono / Número" value={phone} onChange={e => setPhone(e.target.value)} required />
                             <Input label="Descripción Corta (Op)" value={description} onChange={e => setDescription(e.target.value)} />
-                            <Input label="URL Web (Op)" value={webUrl} onChange={e => setWebUrl(e.target.value)} />
+                            <Input label="URL Web (Op)" value={web_url} onChange={e => setWebUrl(e.target.value)} />
 
                             <div className="flex gap-4 pt-4">
                                 <Button type="button" variant="secondary" className="flex-1" onClick={() => setIsModalOpen(false)}>Cancelar</Button>

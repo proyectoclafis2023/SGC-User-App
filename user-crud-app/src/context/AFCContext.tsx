@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const AFCContext = createContext<AFCContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/afcs`;
+const API_URL = `${API_BASE_URL}/afc`;
 
 export const AFCProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [afcs, setAfcs] = useState<AFC[]>([]);
@@ -25,7 +25,7 @@ export const AFCProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         fetchAfcs();
     }, []);
 
-    const addAFC = async (afc: Omit<AFC, 'id' | 'createdAt'>) => {
+    const addAFC = async (afc: Omit<AFC, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

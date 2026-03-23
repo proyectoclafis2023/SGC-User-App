@@ -4,6 +4,7 @@ import { useCommonExpenses } from '../context/CommonExpenseContext';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Plus, Gavel, Calendar, Home, X, CheckCircle2 } from 'lucide-react';
+import type { UnitType } from '../types';
 
 export const CommonExpenseRulesPage: React.FC = () => {
     const { unitTypes } = useUnitTypes();
@@ -63,7 +64,7 @@ export const CommonExpenseRulesPage: React.FC = () => {
                                 <div>
                                     <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Aplica para</p>
                                     <p className="text-lg font-black text-gray-900 dark:text-white">
-                                        {rule.unitTypeId ? unitTypes.find(ut => ut.id === rule.unitTypeId)?.name : 'Todas las Unidades (Global)'}
+                                        {rule.unitTypeId ? unitTypes.find(ut => ut.id === rule.unitTypeId)?.nombre : 'Todas las Unidades (Global)'}
                                     </p>
                                 </div>
 
@@ -105,7 +106,7 @@ export const CommonExpenseRulesPage: React.FC = () => {
                                     onChange={(e) => setUnitTypeId(e.target.value)}
                                 >
                                     <option value="">Todas (Global)</option>
-                                    {unitTypes.map(ut => <option key={ut.id} value={ut.id}>{ut.name}</option>)}
+                                    {unitTypes.map((t: UnitType) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                                 </select>
                             </div>
 

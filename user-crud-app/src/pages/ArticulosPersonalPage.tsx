@@ -6,7 +6,7 @@ import { Plus, Trash2, Edit2, X, Shirt, Search, ShieldCheck, Briefcase, Filter, 
 import { useSystemParameters } from '../context/SystemParameterContext';
 import type { Article } from '../types';
 
-export const ArticlesPage: React.FC = () => {
+export const ArticulosPersonalPage: React.FC = () => {
     const { articles, addArticle, updateArticle, deleteArticle, uploadArticles } = useArticles();
     const { parameters } = useSystemParameters();
     const articleCategories = parameters.filter(p => p.type === 'article_category');
@@ -149,7 +149,6 @@ export const ArticlesPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Dash resumido de Stock */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-2">Total Unidades</p>

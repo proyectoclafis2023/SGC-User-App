@@ -19,11 +19,11 @@ export const CameraMasterPage: React.FC = () => {
     const [newItemName, setNewItemName] = useState('');
     const [newCameraDays, setNewCameraDays] = useState('30');
 
-    const filteredCameras = cameras.filter(c => !c.isArchived && c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredCameras = cameras.filter(c => !c.is_archived && c.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const handleAddItem = async () => {
         if (!newItemName.trim()) return;
-        await addCamera({ name: newItemName, backupHours: (parseInt(newCameraDays) || 30) * 24 });
+        await addCamera({ name: newItemName, backup_hours: (parseInt(newCameraDays) || 30) * 24 });
         setNewItemName('');
         setNewCameraDays('30');
         setIsAddModalOpen(false);
@@ -34,7 +34,7 @@ export const CameraMasterPage: React.FC = () => {
 
         let finalItem = { ...editingItem };
         if (editingItem.backupDays) {
-            finalItem.backupHours = (parseInt(editingItem.backupDays) || 30) * 24;
+            finalItem.backup_hours = (parseInt(editingItem.backupDays) || 30) * 24;
             delete finalItem.backupDays;
         }
 
@@ -85,7 +85,7 @@ export const CameraMasterPage: React.FC = () => {
                             <h3 className="text-lg font-black text-gray-900 dark:text-white mb-2 pr-8">{item.name}</h3>
                             <p className="text-sm font-bold text-gray-400 mb-6 flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/10 w-fit px-3 py-1.5 rounded-xl border border-indigo-100/50 dark:border-indigo-900/20">
                                 <Clock className="w-4 h-4 text-indigo-500" />
-                                {Math.round((item as any).backupHours / 24)} días de respaldo
+                                {Math.round((item as any).backup_hours / 24)} días de respaldo
                             </p>
 
                             <div className="flex items-center justify-between border-t dark:border-gray-800 pt-6">
@@ -96,7 +96,7 @@ export const CameraMasterPage: React.FC = () => {
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => {
-                                            setEditingItem({ ...item, backupDays: Math.round((item as any).backupHours / 24) });
+                                            setEditingItem({ ...item, backupDays: Math.round((item as any).backup_hours / 24) });
                                             setIsEditModalOpen(true);
                                         }}
                                         className="p-3 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-2xl transition-all"

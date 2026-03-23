@@ -40,22 +40,18 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
         fetchLogs();
     }, []);
 
-    const addLog = async (resId: string, userId: string, action: ReservationLog['action'], details: string) => {
-        const response = await fetch(LOGS_API_URL, {
+    const addLog = async (res_id: string, resident_id: string, action: ReservationLog['action'], details: string) => {
+        await fetch(LOGS_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                reservationId: resId,
-                userId,
+                reservation_id: res_id,
+                resident_id,
                 action,
                 details,
                 timestamp: new Date().toISOString()
             })
         });
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al agregar el log de reserva');
-        }
         await fetchLogs();
     };
 
@@ -65,7 +61,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
         return `${prefix}-${date}-${rand}`;
     };
 
-    const addReservation = async (reservation: Omit<Reservation, 'id' | 'folio' | 'createdAt' | 'status' | 'paymentStatus'>) => {
+    const addReservation = async (reservation: Omit<Reservation, 'id' | 'folio' | 'is_archived' | 'created_at' | 'status' | 'payment_status'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -73,17 +69,16 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
                 ...reservation,
                 folio: generateFolio('RES'),
                 status: 'pending',
-                paymentStatus: 'pending',
-                createdAt: new Date().toISOString()
+                payment_status: 'pending'
             })
         });
         if (!response.ok) {
             const err = await response.json();
-            throw new Error(err.message || 'Error al agregar la reserva');
+            throw new Error(err.error || err.message || 'Error al agregar la reserva');
         }
         const newRes = await response.json();
         await fetchReservations();
-        await addLog(newRes.id, reservation.userId, 'created', 'Reserva solicitada por el usuario');
+        await addLog(newRes.id, reservation.resident_id, 'created', 'Reserva solicitada por el usuario');
     };
 
     const updateReservation = async (reservation: Reservation) => {
@@ -94,7 +89,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
         });
         if (!response.ok) {
             const err = await response.json();
-            throw new Error(err.message || 'Error al actualizar la reserva');
+            throw new Error(err.error || err.message || 'Error al actualizar la reserva');
         }
         await fetchReservations();
     };
@@ -103,24 +98,24 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
         const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
         if (!response.ok) {
             const err = await response.json();
-            throw new Error(err.message || 'Error al eliminar la reserva');
+            throw new Error(err.error || err.message || 'Error al eliminar la reserva');
         }
         await fetchReservations();
     };
 
-    const approveReservation = async (id: string, adminId: string) => {
+    const approveReservation = async (id: string, admin_id: string) => {
         const res = reservations.find(r => r.id === id);
         if (!res) return;
         await updateReservation({
             ...res,
             status: 'approved',
-            approvalUserId: adminId,
-            approvalDate: new Date().toISOString()
+            approval_user_id: admin_id,
+            approval_date: new Date().toISOString()
         });
-        await addLog(id, adminId, 'approved', 'Reserva aprobada por administración');
+        await addLog(id, admin_id, 'approved', 'Reserva aprobada por administración');
     };
 
-    const rejectReservation = async (id: string, adminId: string, reason: string) => {
+    const rejectReservation = async (id: string, admin_id: string, reason: string) => {
         const res = reservations.find(r => r.id === id);
         if (!res) return;
         await updateReservation({
@@ -128,17 +123,17 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
             status: 'rejected',
             notes: reason
         });
-        await addLog(id, adminId, 'rejected', `Reserva rechazada: ${reason}`);
+        await addLog(id, admin_id, 'rejected', `Reserva rechazada: ${reason}`);
     };
 
-    const confirmPayment = async (id: string, adminId: string) => {
+    const confirmPayment = async (id: string, admin_id: string) => {
         const res = reservations.find(r => r.id === id);
         if (!res) return;
         await updateReservation({
             ...res,
-            paymentStatus: 'paid'
+            payment_status: 'paid'
         });
-        await addLog(id, adminId, 'payment_confirmed', 'Pago registrado por administración');
+        await addLog(id, admin_id, 'payment_confirmed', 'Pago registrado por administración');
     };
 
     const uploadSignedDocument = async (id: string, url: string) => {
@@ -146,7 +141,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
         if (!res) return;
         await updateReservation({
             ...res,
-            signedDocumentUrl: url
+            signed_document_url: url
         });
     };
 

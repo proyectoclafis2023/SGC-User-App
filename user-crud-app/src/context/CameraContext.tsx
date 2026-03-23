@@ -25,11 +25,11 @@ export const CameraProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         fetchCameras();
     }, []);
 
-    const addCamera = async (camera: Omit<Camera, 'id' | 'createdAt'>) => {
+    const addCamera = async (camera: Omit<Camera, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...camera, createdAt: new Date().toISOString() })
+            body: JSON.stringify({ ...camera, created_at: new Date().toISOString() })
         });
         if (!response.ok) {
             const err = await response.json();

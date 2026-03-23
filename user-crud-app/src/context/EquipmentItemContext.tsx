@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const EquipmentItemContext = createContext<EquipmentItemContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/equipment_items`;
+const API_URL = `${API_BASE_URL}/equipamiento`;
 
 export const EquipmentItemProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [items, setItems] = useState<EquipmentItem[]>([]);

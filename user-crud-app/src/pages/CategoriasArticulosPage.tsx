@@ -5,7 +5,7 @@ import { Input } from '../components/Input';
 import { Plus, Trash2, Edit2, X, Tag, Search, Package } from 'lucide-react';
 import type { SystemParameter } from '../types';
 
-export const ArticleCategoriesPage: React.FC = () => {
+export const CategoriasArticulosPage: React.FC = () => {
     const { parameters, addParameter, updateParameter, deleteParameter } = useSystemParameters();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<SystemParameter | null>(null);
@@ -36,7 +36,7 @@ export const ArticleCategoriesPage: React.FC = () => {
         };
 
         if (editingCategory) {
-            await updateParameter({ ...editingCategory, ...data });
+            await updateParameter(editingCategory.id, data);
         } else {
             await addParameter(data);
         }

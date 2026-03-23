@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const HolidayContext = createContext<HolidayContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/holidays`;
+const API_URL = `${API_BASE_URL}/feriados`;
 
 export const HolidayProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [holidays, setHolidays] = useState<Holiday[]>([]);

@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '../components/Button';
+import { Upload, Download, AlertCircle, Info, CheckCircle2, XCircle, History, Database, FileText, Package, Users, ShieldCheck, Building2, Landmark, LifeBuoy, AlertTriangle, Banknote, Home, Tag, LineChart, Phone, Mail, Smartphone, Calendar, ArrowRight } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
+import * as XLSX from 'xlsx';
+
 import { useArticles } from '../context/ArticleContext';
 import { usePersonnel } from '../context/PersonnelContext';
 import { useResidents } from '../context/ResidentContext';
@@ -8,19 +12,9 @@ import { useBanks } from '../context/BankContext';
 import { useFixedAssets } from '../context/FixedAssetContext';
 import { useHealthProviders } from '../context/HealthProviderContext';
 import { usePensionFunds } from '../context/PensionFundContext';
-import { useSpecialConditions } from '../context/SpecialConditionContext';
 import { useUnitTypes } from '../context/UnitTypeContext';
-import { useCommonExpenses } from '../context/CommonExpenseContext';
-import { Upload, Download, AlertCircle, Info, CheckCircle2, XCircle, History, Database, FileText, Package, Users, ShieldCheck, Building2, Landmark, LifeBuoy, AlertTriangle, Banknote, Home, Tag, LineChart, Phone, Mail, Smartphone, Calendar } from 'lucide-react';
-import type { 
-    Article, Personnel, Resident, Owner, Bank, FixedAsset, HealthProvider, 
-    PensionFund, SpecialCondition, UnitType, Tower, Department, 
-    CommonSpace, Parking, SystemParameter, 
-    InfrastructureItem, EquipmentItem, SystemMessage, EmergencyNumber,
-    CommunityExpense, SpecialFund, Camera
-} from '../types';
-import type { IPCProjection } from '../context/IPCProjectionContext';
 import { useInfrastructure } from '../context/InfrastructureContext';
+import { useCommonExpenses } from '../context/CommonExpenseContext';
 import { useCommonSpaces } from '../context/CommonSpaceContext';
 import { useParkings } from '../context/ParkingContext';
 import { useSystemParameters } from '../context/SystemParameterContext';
@@ -34,88 +28,89 @@ import { useHolidays } from '../context/HolidayContext';
 import { useCommunications } from '../context/CommunicationContext';
 import { useCameras } from '../context/CameraContext';
 
-import * as XLSX from 'xlsx';
-
-type EntityType = 'articles' | 'personnel' | 'residents' | 'owners' | 'banks' | 'assets' | 'health' | 'afp' | 'conditions' | 'units' | 'extra_funds' | 'income' | 'community_expenses' | 'towers' | 'departments' | 'common_spaces' | 'parking' | 'article_categories' | 'ipc' | 'infra_items' | 'equip_items' | 'messages' | 'emergency_numbers' | 'afc_master' | 'holiday_master' | 'comm_templates' | 'cameras';
+type EntityType = 'articulos_personal' | 'personnel' | 'residents' | 'owners' | 'bancos' | 'assets' | 'previsiones' | 'afps' | 'conditions' | 'tipos_unidad' | 'extra_funds' | 'income' | 'community_expenses' | 'towers' | 'departments' | 'espacios' | 'estacionamientos' | 'maestro_categorias_articulos' | 'ipc' | 'infra_items' | 'equip_items' | 'messages' | 'maestro_emergencias' | 'afc_master' | 'holiday_master' | 'comm_templates' | 'cameras';
 
 interface ProcessingError {
     row: number;
-    message: string;
+    module: string;
+    field?: string;
+    value?: string;
+    error: string;
     sheet?: string;
 }
 
+interface BulkUploadLog {
+    id: string;
+    module: string;
+    processed: number;
+    created: number;
+    updated: number;
+    status: string;
+    dryRun: boolean;
+    errors: any[];
+    createdAt: string;
+}
+
+const LOAD_HIERARCHY = [
+    { step: 1, title: 'Infraestructura', entities: ['towers', 'unit_types', 'departments', 'parking'], description: 'Base física necesaria para asignar unidades.' },
+    { step: 2, title: 'Maestros Base', entities: ['banks', 'pension_funds', 'health_providers', 'article_categories', 'emergency_numbers'], description: 'Catálogos requeridos por otros módulos.' },
+    { step: 3, title: 'Comunidad', entities: ['residents', 'owners'], description: 'Habitantes vinculados a la infraestructura.' },
+    { step: 4, title: 'Módulos Dependientes', entities: ['personnel', 'articles', 'assets'], description: 'Operaciones diarias y equipamiento.' }
+];
+
 export const MassiveUploadPage: React.FC = () => {
-    const [selectedEntity, setSelectedEntity] = useState<EntityType>('articles');
+    // Entities and Icons (Keep for UI selection and template generation)
+    const { articles } = useArticles();
+    const { personnel } = usePersonnel();
+    const { residents } = useResidents();
+    const { owners } = useOwners();
+    const { banks } = useBanks();
+    const { assets } = useFixedAssets();
+    const { providers } = useHealthProviders();
+    const { funds } = usePensionFunds();
+    const { unitTypes } = useUnitTypes();
+    const { towers, departments } = useInfrastructure();
+    const { spaces } = useCommonSpaces();
+    const { parkings } = useParkings();
+    const { parameters } = useSystemParameters();
+    const { projections } = useIPCProjections();
+    const { items: infraItems } = useInfrastructureItems();
+    const { items: equipItems } = useEquipmentItems();
+    const { messages: systemMessages } = useSystemMessages();
+    const { numbers: emergencyNumbers } = useEmergencyNumbers();
+    const { afcs } = useAFC();
+    const { holidays } = useHolidays();
+    const { templates: commTemplates } = useCommunications();
+    const { cameras: localCameras } = useCameras();
+    const { communityExpenses } = useCommonExpenses();
+
+    const [selectedEntity, setSelectedEntity] = useState<EntityType>('articulos_personal');
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
     const [errors, setErrors] = useState<ProcessingError[]>([]);
-    const [successCount, setSuccessCount] = useState(0);
+    const [isDryRun, setIsDryRun] = useState(true);
+    const [stats, setStats] = useState({ created: 0, updated: 0, processed: 0, isSimulated: false });
     const [pendingSheets, setPendingSheets] = useState<{ entityValue: EntityType; label: string; data: any[]; selected: boolean }[]>([]);
     const [showSelectionPanel, setShowSelectionPanel] = useState(false);
-
-    const { articles, addArticle, updateArticle } = useArticles();
-    const { personnel, addPersonnel, updatePersonnel } = usePersonnel();
-    const { residents, addResident, updateResident } = useResidents();
-    const { owners, addOwner, updateOwner } = useOwners();
-    const { banks, addBank, updateBank } = useBanks();
-    const { assets, addAsset, updateAsset } = useFixedAssets();
-    const { providers, addProvider, updateProvider } = useHealthProviders();
-    const { funds, addFund, updateFund } = usePensionFunds();
-    const { conditions, addCondition, updateCondition } = useSpecialConditions();
-    const { unitTypes, addUnitType, updateUnitType } = useUnitTypes();
-    const { funds: specialFunds, addFund: addSpecialFund, updateFund: updateSpecialFund, addPayment: addIncome, communityExpenses, addCommunityExpense } = useCommonExpenses();
-    const { towers, addTower, updateTower, departments, addDepartment, updateDepartment } = useInfrastructure();
-    const { spaces, addSpace, updateSpace } = useCommonSpaces();
-    const { parkings, addParking, updateParking } = useParkings();
-    const { parameters, addParameter, updateParameter } = useSystemParameters();
-    const { projections, addProjection, updateProjection } = useIPCProjections();
-    const { items: infraItems, addItem: addInfraItem, updateItem: updateInfraItem } = useInfrastructureItems();
-    const { items: equipItems, addItem: addEquipItem, updateItem: updateEquipItem } = useEquipmentItems();
-    const { messages: systemMessages, addMessage: addSystemMessage, updateMessage: updateSystemMessage } = useSystemMessages();
-    const { numbers: emergencyNumbers, addNumber, updateNumber } = useEmergencyNumbers();
-    const { afcs, addAFC, updateAFC } = useAFC();
-    const { holidays, addHoliday, updateHoliday } = useHolidays();
-    const { templates: commTemplates, addTemplate, updateTemplate } = useCommunications();
-    const { cameras: localCameras, addCamera, updateCamera } = useCameras();
+    const [showHistory, setShowHistory] = useState(false);
+    const [history, setHistory] = useState<BulkUploadLog[]>([]);
 
     const entities: { value: EntityType; label: string; icon: any; requiredHeaders: string[]; description: string; category: string }[] = [
-        // Operaciones y Soporte
-        { value: 'infra_items', label: 'Bitácora (Instalaciones)', icon: Building2, requiredHeaders: ['nombre'], description: 'Puntos de control para la bitácora de instalaciones (Ascensores, Bombas, etc).', category: 'Operaciones y Soporte' },
-        { value: 'equip_items', label: 'Bitácora (Equipamiento)', icon: Smartphone, requiredHeaders: ['nombre'], description: 'Puntos de control para equipamiento crítico (Cámaras, Radios, etc).', category: 'Operaciones y Soporte' },
-        { value: 'emergency_numbers', label: 'Números Emergencia', icon: Phone, requiredHeaders: ['nombre', 'telefono'], description: 'Directorio de servicios de emergencia y soporte técnico.', category: 'Operaciones y Soporte' },
-        { value: 'common_spaces', label: 'Espacios Comunes', icon: Landmark, requiredHeaders: ['nombre', 'ubicacion'], description: 'Áreas de uso común como quinchos, gimnasios o salas multiuso.', category: 'Operaciones y Soporte' },
-        { value: 'cameras', label: 'Maestro Cámaras (CCTV)', icon: Smartphone, requiredHeaders: ['nombre', 'horas_respaldo'], description: 'Inventario de cámaras de seguridad y capacidad de respaldo.', category: 'Operaciones y Soporte' },
-        
-        // Comunidad
-        { value: 'residents', label: 'Residentes', icon: Users, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Habitantes actuales de las unidades del condominio.', category: 'Comunidad y Administración' },
-        { value: 'owners', label: 'Propietarios', icon: ShieldCheck, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Dueños legales de las unidades.', category: 'Comunidad y Administración' },
-        { value: 'conditions', label: 'Condiciones Especiales', icon: ShieldCheck, requiredHeaders: ['nombre'], description: 'Condiciones médicas o de movilidad reducida.', category: 'Comunidad y Administración' },
-        { value: 'messages', label: 'Mensajes del Sistema', icon: Mail, requiredHeaders: ['contenido'], description: 'Avisos del sistema para la marquesina o avisos generales.', category: 'Comunidad y Administración' },
-
-        // Recursos Humanos y Maestros
-        { value: 'personnel', label: 'Maestro Personal', icon: Users, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Funcionarios, conserjes y personal operativo.', category: 'Recursos Humanos' },
-        { value: 'articles', label: 'Insumos y EPP', icon: Package, requiredHeaders: ['nombre'], description: 'Artículos de bodega y elementos de protección.', category: 'Recursos Humanos' },
-        { value: 'article_categories', label: 'Categorías de Insumos', icon: Tag, requiredHeaders: ['nombre'], description: 'Clasificación para el maestro de insumos.', category: 'Recursos Humanos' },
-        { value: 'health', label: 'Previsiones / Salud', icon: LifeBuoy, requiredHeaders: ['nombre'], description: 'Isapres y Fonasa.', category: 'Recursos Humanos' },
-        { value: 'afp', label: 'AFPs', icon: FileText, requiredHeaders: ['nombre'], description: 'Administradoras de Fondos de Pensiones.', category: 'Recursos Humanos' },
-        { value: 'banks', label: 'Bancos', icon: Landmark, requiredHeaders: ['nombre'], description: 'Instituciones bancarias.', category: 'Recursos Humanos' },
-        { value: 'afc_master', label: 'Maestro AFC', icon: ShieldCheck, requiredHeaders: ['nombre', 'tasa_plazo_fijo', 'tasa_indefinido'], description: 'Tasas del Seguro de Cesantía (AFC).', category: 'Recursos Humanos' },
-        { value: 'holiday_master', label: 'Maestro Feriados', icon: Calendar, requiredHeaders: ['fecha', 'descripcion'], description: 'Días feriados para el cálculo de nómina y turnos.', category: 'Recursos Humanos' },
-
-        // Infraestructura
-        { value: 'towers', label: 'Edificios (Torres)', icon: Building2, requiredHeaders: ['nombre'], description: 'Estructuras principales del condominio.', category: 'Infraestructura' },
-        { value: 'departments', label: 'Departamentos (Unidades)', icon: Home, requiredHeaders: ['numero', 'torre'], description: 'Unidades habitacionales vinculadas a una torre.', category: 'Infraestructura' },
-        { value: 'parking', label: 'Estacionamientos', icon: Smartphone, requiredHeaders: ['numero'], description: 'Plazas de estacionamiento.', category: 'Infraestructura' },
-        { value: 'units', label: 'Tipos de Unidad', icon: Building2, requiredHeaders: ['nombre'], description: 'Clasificación de las unidades (Unidad, Bodega, etc).', category: 'Infraestructura' },
-
-        // Finanzas
-        { value: 'community_expenses', label: 'Carga Egresos GC', icon: Landmark, requiredHeaders: ['descripcion', 'monto', 'fecha'], description: 'Egresos mensuales que componen el Gasto Común.', category: 'Finanzas y Contabilidad' },
-        { value: 'income', label: 'Carga Ingresos Pagos', icon: Banknote, requiredHeaders: ['rut', 'monto', 'mes', 'año'], description: 'Carga de pagos realizados por residentes.', category: 'Finanzas y Contabilidad' },
-        { value: 'extra_funds', label: 'Maestro Fondos Especiales', icon: Landmark, requiredHeaders: ['nombre', 'codigo_fondo'], description: 'Fondos de reserva o emergencia.', category: 'Finanzas y Contabilidad' },
-        { value: 'assets', label: 'Activo Fijo', icon: Database, requiredHeaders: ['descripcion'], description: 'Bienes del condominio sujetos a depreciación.', category: 'Finanzas y Contabilidad' },
-        { value: 'ipc', label: 'Maestro IPC', icon: LineChart, requiredHeaders: ['nombre', 'tasa'], description: 'Índices de corrección monetaria.', category: 'Finanzas y Contabilidad' },
-        { value: 'comm_templates', label: 'Mensajes Prefijados', icon: Mail, requiredHeaders: ['nombre', 'asunto', 'mensaje'], description: 'Plantillas de comunicación para envíos masivos por email.', category: 'Finanzas y Contabilidad' },
+        { value: 'towers', label: 'Edificios (Torres)', icon: Building2, requiredHeaders: ['nombre'], description: 'Estructuras principales.', category: 'Infraestructura' },
+        { value: 'tipos_unidad', label: 'Tipos de Unidad', icon: Tag, requiredHeaders: ['nombre'], description: 'Clasificación de unidades.', category: 'Infraestructura' },
+        { value: 'departments', label: 'Departamentos (Unidades)', icon: Home, requiredHeaders: ['numero', 'torre'], description: 'Unidades vinculadas a torre.', category: 'Infraestructura' },
+        { value: 'estacionamientos', label: 'Estacionamientos', icon: Smartphone, requiredHeaders: ['numero'], description: 'Plazas de estacionamiento.', category: 'Infraestructura' },
+        { value: 'bancos', label: 'Bancos', icon: Landmark, requiredHeaders: ['nombre'], description: 'Instituciones bancarias.', category: 'Maestros Base' },
+        { value: 'afps', label: 'AFPs', icon: FileText, requiredHeaders: ['nombre'], description: 'Fondos de pensiones.', category: 'Maestros Base' },
+        { value: 'previsiones', label: 'Previsiones / Salud', icon: LifeBuoy, requiredHeaders: ['nombre'], description: 'Isapres y Fonasa.', category: 'Maestros Base' },
+        { value: 'maestro_categorias_articulos', label: 'Categorías de Insumos', icon: Tag, requiredHeaders: ['nombre'], description: 'Clasificación para insumos.', category: 'Maestros Base' },
+        { value: 'maestro_emergencias', label: 'Emergencias', icon: Phone, requiredHeaders: ['nombre', 'telefono'], description: 'Números de emergencia.', category: 'Maestros Base' },
+        { value: 'residents', label: 'Residentes', icon: Users, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Habitantes actuales.', category: 'Comunidad' },
+        { value: 'owners', label: 'Propietarios', icon: ShieldCheck, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Dueños legales.', category: 'Comunidad' },
+        { value: 'personnel', label: 'Maestro Personal', icon: Users, requiredHeaders: ['nombres', 'apellidos', 'rut'], description: 'Personal operativo.', category: 'Operaciones' },
+        { value: 'articulos_personal', label: 'Insumos y EPP', icon: Package, requiredHeaders: ['nombre'], description: 'Artículos de bodega.', category: 'Operaciones' },
+        { value: 'assets', label: 'Activo Fijo', icon: Database, requiredHeaders: ['descripcion'], description: 'Bienes del condominio.', category: 'Operaciones' }
     ];
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,17 +120,13 @@ export const MassiveUploadPage: React.FC = () => {
             setStatus('idle');
             setMessage('');
             setErrors([]);
-            setSuccessCount(0);
-            setPendingSheets([]);
-            setShowSelectionPanel(false);
-
-            // Pre-scan the file for multiple sheets
+            setStats({ created: 0, updated: 0, processed: 0, isSimulated: false });
+            
             const reader = new FileReader();
             reader.onload = (event) => {
                 const data = new Uint8Array(event.target?.result as ArrayBuffer);
                 const workbook = XLSX.read(data, { type: 'array' });
-                
-                const foundSheets: { entityValue: EntityType; label: string; data: any[]; selected: boolean }[] = [];
+                const foundSheets: any[] = [];
                 
                 workbook.SheetNames.forEach((sheetName: string) => {
                     const entity = entities.find(ent => ent.label.toLowerCase() === sheetName.trim().toLowerCase());
@@ -143,20 +134,15 @@ export const MassiveUploadPage: React.FC = () => {
                         const worksheet = workbook.Sheets[sheetName];
                         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 0 });
                         if (jsonData.length > 0) {
-                            foundSheets.push({
-                                entityValue: entity.value,
-                                label: entity.label,
-                                data: jsonData,
-                                selected: true
-                            });
+                            foundSheets.push({ entityValue: entity.value, label: entity.label, data: jsonData, selected: true });
                         }
                     }
                 });
 
-                if (foundSheets.length > 1) {
+                if (foundSheets.length > 0) {
                     setPendingSheets(foundSheets);
                     setShowSelectionPanel(true);
-                    setMessage(`Se encontraron ${foundSheets.length} maestros en el archivo. Seleccione cuáles desea cargar.`);
+                    setMessage(`Se detectaron ${foundSheets.length} maestros en el archivo.`);
                 }
             };
             reader.readAsArrayBuffer(selectedFile);
@@ -165,559 +151,66 @@ export const MassiveUploadPage: React.FC = () => {
 
     const processFile = async () => {
         if (!file) return;
-
         setStatus('processing');
         setErrors([]);
-        setSuccessCount(0);
-        setShowSelectionPanel(false);
         
-        const reader = new FileReader();
-
-        reader.onload = async (e) => {
-            try {
+        let sheetsToProcess: { entity: EntityType; data: any[]; label: string }[] = [];
+        if (pendingSheets.length > 0) {
+            sheetsToProcess = pendingSheets.filter(ps => ps.selected).map(ps => ({ entity: ps.entityValue, data: ps.data, label: ps.label }));
+        } else {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
                 const data = new Uint8Array(e.target?.result as ArrayBuffer);
                 const workbook = XLSX.read(data, { type: 'array' });
-                
-                let sheetsToProcess: { entity: EntityType; data: any[] }[] = [];
+                const firstSheet = workbook.SheetNames[0];
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
+                sheetsToProcess = [{ entity: selectedEntity, data: jsonData, label: firstSheet }];
+                await sendToBackend(sheetsToProcess);
+            };
+            reader.readAsArrayBuffer(file);
+            return;
+        }
+        await sendToBackend(sheetsToProcess);
+    };
 
-                if (pendingSheets.length > 0) {
-                    sheetsToProcess = pendingSheets
-                        .filter((ps: any) => ps.selected)
-                        .map((ps: any) => ({ entity: ps.entityValue, data: ps.data }));
-                } else {
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 0 });
-                    if (jsonData.length === 0) throw new Error('El archivo está vacío o no tiene el formato correcto.');
-                    sheetsToProcess = [{ entity: selectedEntity, data: jsonData }];
-                }
+    const sendToBackend = async (sheets: { entity: EntityType; data: any[]; label: string }[]) => {
+        let totalCreated = 0, totalUpdated = 0, totalProcessed = 0;
+        const allErrors: ProcessingError[] = [];
+        setErrors([]);
+        setStats({ created: 0, updated: 0, processed: 0, isSimulated: isDryRun });
 
-                if (sheetsToProcess.length === 0) throw new Error('No hay maestros seleccionados para procesar.');
+        for (const sheet of sheets) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/${sheet.entity}/upload?dryRun=${isDryRun}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: sheet.data })
+                });
 
-                let totalSuccess = 0;
-                let allErrors: ProcessingError[] = [];
-
-                // Helper to normalize DNI/RUT for comparison (removes dots, dashes and trims)
-                const normDNI = (val: any) => {
-                    if (!val) return '';
-                    return String(val).replace(/[^a-zA-Z0-9]/g, '').toUpperCase().trim();
-                };
-                // Local caches to handle inter-sheet dependencies in a single upload session
-                const localTowers = [...towers];
-                const localResidents = [...residents];
-                const localUnitTypes = [...unitTypes];
-                const localPersonnel = [...personnel];
-                const localOwners = [...owners];
-
-                for (const sheet of sheetsToProcess) {
-                    const entityConfig = entities.find(ent => ent.value === sheet.entity);
-                    const jsonData = sheet.data;
-
-                    for (let i = 0; i < jsonData.length; i++) {
-                        const row = jsonData[i] as any;
-                        const rowNumber = i + 2; 
-
-                        const obj: any = {};
-                        Object.keys(row).forEach(key => {
-                            obj[key.trim().toLowerCase()] = row[key];
-                        });
-
-                        // Skip completely empty rows
-                        if (Object.values(obj).every(v => v === null || v === undefined || v === '')) continue;
-
-                        try {
-                            switch (sheet.entity) {
-                                case 'articles':
-                                    if (!obj.nombre) throw new Error('Nombre del artículo es obligatorio');
-                                    const existingArticle = articles.find((a: Article) => a.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const articleData = {
-                                        name: String(obj.nombre),
-                                        description: String(obj.descripcion || ''),
-                                        category: (obj.categoria || 'EPP') as any,
-                                        price: Number(obj.precio || 0),
-                                        stock: Number(obj.stock || 0),
-                                        minStock: Number(obj.stock_minimo || 0),
-                                        isActive: obj.activo === 'SI' || obj.activo === true,
-                                        unit: String(obj.unidad || 'unidades'),
-                                        allowPersonnelRequest: obj.permite_solicitud === 'SI' || obj.permite_solicitud === true
-                                    };
-                                    if (existingArticle) {
-                                        await updateArticle({ ...existingArticle, ...articleData });
-                                    } else {
-                                        await addArticle(articleData);
-                                    }
-                                    break;
-                                case 'personnel':
-                                    if (!obj.nombres || !obj.rut) throw new Error('Nombres y RUT son obligatorios');
-                                    const existingPerson = localPersonnel.find((p: Personnel) => normDNI(p.dni) === normDNI(obj.rut));
-                                    const personData = {
-                                        names: String(obj.nombres),
-                                        lastNames: String(obj.apellidos || ''),
-                                        dni: String(obj.rut),
-                                        position: String(obj.cargo || ''),
-                                        address: String(obj.direccion || ''),
-                                        isHonorary: obj.honorario === 'SI' || obj.honorario === true,
-                                        baseSalary: Number(obj.sueldo_base || 0),
-                                        vacationDays: Number(obj.dias_vacaciones || 0),
-                                        vacationLastUpdate: String(obj.ultima_actualizacion_vacaciones || ''),
-                                        phone: String(obj.telefono || ''),
-                                        email: String(obj.email || ''),
-                                        assignedShift: String(obj.turno_asignado || ''),
-                                        status: 'active' as any
-                                    };
-                                    if (existingPerson) {
-                                        await updatePersonnel({ ...existingPerson, ...personData } as any);
-                                        Object.assign(existingPerson, personData);
-                                    } else {
-                                        const newP = await addPersonnel({ ...personData, hasEmergencyContact: false } as any);
-                                        if (newP?.id) localPersonnel.push(newP);
-                                    }
-                                    break;
-                                case 'residents': {
-                                    if (!obj.nombres || !obj.rut) throw new Error('Nombres y RUT son obligatorios');
-                                    const existingResident = localResidents.find((r: Resident) => normDNI(r.dni) === normDNI(obj.rut));
-                                    const residentData = {
-                                        names: String(obj.nombres),
-                                        lastNames: String(obj.apellidos || ''),
-                                        dni: String(obj.rut),
-                                        email: String(obj.email || ''),
-                                        phone: String(obj.telefono || ''),
-                                        familyCount: Number(obj.integrantes || 1),
-                                        hasPets: obj.mascotas === 'SI' || obj.mascotas === true,
-                                        isTenant: obj.arrendatario === 'SI' || obj.arrendatario === true,
-                                        rentAmount: Number(obj.monto_arriendo || 0),
-                                        notes: String(obj.observaciones || ''),
-                                        status: 'active' as any
-                                    };
-                                    if (existingResident) {
-                                        await updateResident({ ...existingResident, ...residentData });
-                                        Object.assign(existingResident, residentData);
-                                    } else {
-                                        const newRes = await addResident({ ...residentData, conditionIds: [] }) as any;
-                                        if (newRes?.id) localResidents.push(newRes);
-                                    }
-                                    break;
-                                }
-                                case 'owners':
-                                    if (!obj.nombres || !obj.rut) throw new Error('Nombres y RUT son obligatorios');
-                                    const existingOwner = localOwners.find((o: Owner) => normDNI(o.dni) === normDNI(obj.rut));
-                                    const ownerData = {
-                                        names: String(obj.nombres),
-                                        lastNames: String(obj.apellidos || ''),
-                                        dni: String(obj.rut),
-                                        email: String(obj.email || ''),
-                                        phone: String(obj.telefono || ''),
-                                        receiveResidentNotifications: obj.notificaciones === 'SI' || obj.notificaciones === true || true,
-                                        canResidentSeeArrears: obj.ver_deudas === 'SI' || obj.ver_deudas === true || false,
-                                        status: 'active' as any
-                                    };
-                                    if (existingOwner) {
-                                        await updateOwner({ ...existingOwner, ...ownerData });
-                                        Object.assign(existingOwner, ownerData);
-                                    } else {
-                                        const newOId = await addOwner(ownerData);
-                                        if (newOId) localOwners.push({ ...ownerData, id: newOId } as any);
-                                    }
-                                    break;
-                                case 'units': {
-                                    if (!obj.nombre) throw new Error('Nombre del tipo de unidad es obligatorio');
-                                    const existingUnit = localUnitTypes.find((u: UnitType) => u.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const unitData = {
-                                        name: String(obj.nombre),
-                                        baseCommonExpense: Number(obj.gasto_base || 0),
-                                        defaultM2: Number(obj.m2_defecto || obj.m2 || 60)
-                                    };
-                                    if (existingUnit) {
-                                        await updateUnitType({ ...existingUnit, ...unitData });
-                                        Object.assign(existingUnit, unitData);
-                                    } else {
-                                        const newUT = await addUnitType(unitData) as any;
-                                        if (newUT?.id) localUnitTypes.push(newUT);
-                                    }
-                                    break;
-                                }
-                                case 'banks':
-                                    if (!obj.nombre) throw new Error('Nombre del banco es obligatorio');
-                                    const existingBank = banks.find((b: Bank) => b.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    if (existingBank) {
-                                        await updateBank({ ...existingBank, name: String(obj.nombre) });
-                                    } else {
-                                        await addBank({ name: String(obj.nombre) });
-                                    }
-                                    break;
-                                case 'assets':
-                                    if (!obj.descripcion) throw new Error('Descripción del activo es obligatorio');
-                                    const existingAsset = assets.find((a: FixedAsset) => a.description.toLowerCase() === String(obj.descripcion).toLowerCase());
-                                    const assetData = {
-                                        description: String(obj.descripcion),
-                                        model: String(obj.modelo || ''),
-                                        purchasePrice: Number(obj.precio_compra || 0),
-                                        depreciatedValue: Number(obj.valor_depreciated || 0),
-                                        purchaseDate: String(obj.fecha_compra || new Date().toISOString().split('T')[0]),
-                                        details: String(obj.detalles || ''),
-                                        quantity: Number(obj.cantidad || 1),
-                                        isActive: true
-                                    };
-                                    if (existingAsset) {
-                                        await updateAsset({ ...existingAsset, ...assetData });
-                                    } else {
-                                        await addAsset(assetData);
-                                    }
-                                    break;
-                                case 'health':
-                                    if (!obj.nombre) throw new Error('Nombre de la previsión es obligatorio');
-                                    const existingProvider = providers.find((p: HealthProvider) => p.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const providerData = {
-                                        name: String(obj.nombre),
-                                        type: (obj.tipo || 'isapre') as any,
-                                        discountRate: Number(obj.tasa || 7)
-                                    };
-                                    if (existingProvider) {
-                                        await updateProvider({ ...existingProvider, ...providerData });
-                                    } else {
-                                        await addProvider(providerData);
-                                    }
-                                    break;
-                                case 'afp': {
-                                    if (!obj.nombre) throw new Error('Nombre de la AFP es obligatorio');
-                                    const existingAFPFund = funds.find((f: PensionFund) => f.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const fundData = {
-                                        name: String(obj.nombre),
-                                        discountRate: Number(obj.tasa || 0)
-                                    };
-                                    if (existingAFPFund) {
-                                        await updateFund({ ...existingAFPFund, ...fundData });
-                                    } else {
-                                        await addFund(fundData);
-                                    }
-                                    break;
-                                }
-                                case 'conditions': {
-                                    if (!obj.nombre) throw new Error('Nombre de la condición es obligatorio');
-                                    const existingCondition = conditions.find((c: SpecialCondition) => c.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const conditionData = {
-                                        name: String(obj.nombre),
-                                        description: String(obj.descripcion || '')
-                                    };
-                                    if (existingCondition) {
-                                        await updateCondition({ ...existingCondition, ...conditionData });
-                                    } else {
-                                        await addCondition(conditionData);
-                                    }
-                                    break;
-                                }
-                                case 'extra_funds': {
-                                    if (!obj.nombre || obj.codigo_fondo === undefined) throw new Error('Nombre y Código de Fondo son obligatorios');
-                                    const existingSpecialFund = specialFunds.find((f: SpecialFund) => f.fundCode === Number(obj.codigo_fondo));
-                                    const extraFundData = {
-                                        name: String(obj.nombre),
-                                        description: String(obj.descripcion || ''),
-                                        fundCode: Number(obj.codigo_fondo),
-                                        type: (obj.tipo || 'reserve') as any,
-                                        totalAmountPerUnit: Number(obj.monto_por_unidad || 0),
-                                        isActive: true,
-                                        deadline: obj.fecha_limite ? String(obj.fecha_limite) : undefined
-                                    };
-                                    if (existingSpecialFund) {
-                                        await updateSpecialFund({ ...existingSpecialFund, ...extraFundData });
-                                    } else {
-                                        await addSpecialFund(extraFundData);
-                                    }
-                                    break;
-                                }
-                                case 'income':
-                                    if (!obj.rut || !obj.monto || !obj.mes || !obj.año) throw new Error('RUT, Monto, Mes y Año son obligatorios');
-                                    let resident = localResidents.find((r: Resident) => normDNI(r.dni) === normDNI(obj.rut));
-                                    
-                                    // Backup matching: If RUT/DNI match fails, try matching by Tower and Unit if provided
-                                    if (!resident && obj.torre && obj.unidad) {
-                                        const tower = localTowers.find((t: Tower) => t.name.toLowerCase() === String(obj.torre).toLowerCase());
-                                        const dept = departments.find((d: Department) => d.number === String(obj.unidad) && d.towerId === tower?.id);
-                                        if (dept) {
-                                            resident = localResidents.find((r: Resident) => r.unitId === dept.id);
-                                        }
-                                    }
-
-                                    if (!resident) throw new Error(`Residente con RUT ${obj.rut} no encontrado`);
-                                    await addIncome({
-                                        departmentId: resident.unitId || 'unknown',
-                                        amountPaid: Number(obj.monto),
-                                        periodMonth: Number(obj.mes),
-                                        periodYear: Number(obj.año),
-                                        paymentDate: obj.fecha_pago ? String(obj.fecha_pago) : new Date().toISOString().split('T')[0],
-                                        status: 'paid',
-                                        paymentMethod: String(obj.metodo_pago || 'Transferencia'),
-                                        isElectronic: true,
-                                        notes: 'Carga masiva de implementación'
-                                    });
-                                    break;
-                                case 'community_expenses':
-                                    if (!obj.descripcion || !obj.monto || !obj.fecha) throw new Error('Descripción, Monto y Fecha son obligatorios');
-                                    await addCommunityExpense({
-                                        description: String(obj.descripcion),
-                                        amount: Number(obj.monto),
-                                        date: String(obj.fecha),
-                                        category: (obj.categoria || 'Otros') as any
-                                    });
-                                    break;
-                                case 'towers': {
-                                    if (!obj.nombre) throw new Error('Nombre de la torre es obligatorio');
-                                    const existingTower = localTowers.find((t: Tower) => t.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    if (existingTower) {
-                                        await updateTower({ ...existingTower, name: String(obj.nombre) });
-                                    } else {
-                                        const newTower = await addTower({ name: String(obj.nombre), departments: [] });
-                                        if (newTower) localTowers.push(newTower);
-                                    }
-                                    break;
-                                }
-                                case 'departments': {
-                                    if (!obj.numero || !obj.torre) throw new Error('Número y Torre son obligatorios');
-                                    let tower = localTowers.find((t: Tower) => t.name.toLowerCase() === String(obj.torre).toLowerCase());
-                                    if (!tower) {
-                                        // Auto-create tower if missing
-                                        tower = await addTower({ name: String(obj.torre), departments: [] });
-                                        if (tower) localTowers.push(tower);
-                                        else throw new Error(`Fallo al crear automáticamente la torre '${obj.torre}'`);
-                                    }
-                                    
-                                    const unitType = localUnitTypes.find((u: UnitType) => u.name.toLowerCase() === String(obj.tipo_unidad || '').toLowerCase());
-                                    
-                                    const existingDept = departments.find((d: Department) => d.number === String(obj.numero) && d.towerId === tower?.id);
-                                    const deptData = {
-                                        number: String(obj.numero),
-                                        floor: Number(obj.piso || 1),
-                                        towerId: tower?.id || '',
-                                        unitTypeId: unitType?.id,
-                                        m2: Number(obj.m2 || 60),
-                                        terrainM2: Number(obj.m2_terreno || 0),
-                                        value: Number(obj.valor || 0),
-                                        dormitorios: Number(obj.dormitorios || 0),
-                                        banos: Number(obj.banos || 0),
-                                        estacionamientos: Number(obj.estacionamientos || 0),
-                                        yearBuilt: Number(obj.ano_construccion || new Date().getFullYear()),
-                                        isAvailable: obj.disponible === 'SI' || obj.disponible === true,
-                                        publishType: obj.tipo_publicacion || 'venta',
-                                        propertyRole: obj.rol_sii || '',
-                                        waterClientId: obj.agua || '',
-                                        electricityClientId: obj.luz || '',
-                                        gasClientId: obj.gas || ''
-                                    };
-                                    if (existingDept) {
-                                        await updateDepartment({ ...existingDept, ...deptData });
-                                    } else {
-                                        await addDepartment(deptData);
-                                    }
-                                    break;
-                                }
-                                case 'common_spaces':
-                                    if (!obj.nombre || !obj.ubicacion) throw new Error('Nombre y Ubicación son obligatorios');
-                                    const existingSpace = spaces.find((s: CommonSpace) => s.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const spaceData = {
-                                        name: String(obj.nombre),
-                                        location: String(obj.ubicacion),
-                                        rentalValue: Number(obj.valor_arriendo || 0),
-                                        durationHours: Number(obj.duracion || 1),
-                                        conditions: String(obj.condiciones || '')
-                                    };
-                                    if (existingSpace) {
-                                        await updateSpace({ ...existingSpace, ...spaceData });
-                                    } else {
-                                        await addSpace(spaceData);
-                                    }
-                                    break;
-                                case 'parking': {
-                                    if (!obj.numero) throw new Error('Número de estacionamiento es obligatorio');
-                                    const existingParking = parkings.find((p: Parking) => p.number === String(obj.numero));
-                                    const dept = departments.find((d: Department) => d.number === String(obj.unidad));
-                                    const pData = {
-                                        number: String(obj.numero),
-                                        location: String(obj.ubicacion || ''),
-                                        isHandicapped: obj.discapacitado === 'SI' || obj.discapacitado === true,
-                                        departmentId: dept?.id,
-                                        notes: String(obj.notas || '')
-                                    };
-                                    if (existingParking) {
-                                        await updateParking({ ...existingParking, ...pData });
-                                    } else {
-                                        await addParking(pData);
-                                    }
-                                    break;
-                                }
-                                case 'article_categories':
-                                    if (!obj.nombre) throw new Error('Nombre de la categoría es obligatorio');
-                                    const existingCat = parameters.find((p: SystemParameter) => p.type === 'article_category' && p.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    if (existingCat) {
-                                        await updateParameter(existingCat.id, { ...existingCat, name: String(obj.nombre), description: String(obj.descripcion || '') });
-                                    } else {
-                                        await addParameter({ type: 'article_category', name: String(obj.nombre), description: String(obj.descripcion || ''), isActive: true });
-                                    }
-                                    break;
-                                case 'ipc':
-                                    if (!obj.nombre || obj.tasa === undefined) throw new Error('Nombre y Tasa son obligatorios');
-                                    const existingIPC = projections.find((p: IPCProjection) => p.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const ipcData = {
-                                        name: String(obj.nombre),
-                                        ipcRate: Number(obj.tasa),
-                                        ponderadoRate: Number(obj.ponderado || 0),
-                                        description: String(obj.descripcion || ''),
-                                        isActive: true
-                                    };
-                                    if (existingIPC) {
-                                        await updateProjection({ ...existingIPC, ...ipcData });
-                                    } else {
-                                        await addProjection(ipcData);
-                                    }
-                                    break;
-                                case 'infra_items':
-                                    if (!obj.nombre) throw new Error('Nombre de la instalación es obligatorio');
-                                    const existingInfra = infraItems.find((i: InfrastructureItem) => i.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const infraData = {
-                                        name: String(obj.nombre),
-                                        isMandatory: obj.obligatorio === 'SI' || obj.obligatorio === true,
-                                        isArchived: false
-                                    };
-                                    if (existingInfra) {
-                                        await updateInfraItem({ ...existingInfra, ...infraData });
-                                    } else {
-                                        await addInfraItem(infraData);
-                                    }
-                                    break;
-                                case 'cameras':
-                                    if (!obj.nombre) throw new Error('Nombre de la cámara es obligatorio');
-                                    const existingCam = localCameras.find((c: Camera) => c.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const camData = {
-                                        name: String(obj.nombre),
-                                        description: String(obj.descripcion || ''),
-                                        backupHours: Number(obj.horas_respaldo || 168),
-                                        isArchived: false
-                                    };
-                                    if (existingCam) {
-                                        await updateCamera({ ...existingCam, ...camData });
-                                    } else {
-                                        await addCamera(camData);
-                                    }
-                                    break;
-                                case 'equip_items':
-                                    if (!obj.nombre) throw new Error('Nombre del equipamiento es obligatorio');
-                                    const existingEquip = equipItems.find((e: EquipmentItem) => e.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const equipData = {
-                                        name: String(obj.nombre),
-                                        isMandatory: obj.obligatorio === 'SI' || obj.obligatorio === true,
-                                        isArchived: false
-                                    };
-                                    if (existingEquip) {
-                                        await updateEquipItem({ ...existingEquip, ...equipData });
-                                    } else {
-                                        await addEquipItem(equipData);
-                                    }
-                                    break;
-                                case 'messages':
-                                    if (!obj.contenido) throw new Error('Contenido es obligatorio');
-                                    const existingMsg = systemMessages.find((m: SystemMessage) => m.text.toLowerCase() === String(obj.contenido).toLowerCase());
-                                    const msgData = {
-                                        text: String(obj.contenido),
-                                        type: (obj.tipo || 'info') as any,
-                                        isActive: true
-                                    };
-                                    if (existingMsg) {
-                                        await updateSystemMessage({ ...existingMsg, ...msgData });
-                                    } else {
-                                        await addSystemMessage(msgData);
-                                    }
-                                    break;
-                                case 'emergency_numbers':
-                                    if (!obj.nombre || !obj.telefono) throw new Error('Nombre y Teléfono son obligatorios');
-                                    const existingNum = emergencyNumbers.find((n: EmergencyNumber) => n.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const numData = {
-                                        category: String(obj.categoria || 'General'),
-                                        name: String(obj.nombre),
-                                        phone: String(obj.telefono),
-                                        description: String(obj.descripcion || '')
-                                    };
-                                    if (existingNum) {
-                                        await updateNumber(existingNum.id, numData);
-                                    } else {
-                                        await addNumber(numData);
-                                    }
-                                    break;
-                                case 'afc_master':
-                                    if (!obj.nombre) throw new Error('Nombre del registro AFC es obligatorio');
-                                    const existingAFC = afcs.find(a => a.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const afcData = {
-                                        name: String(obj.nombre),
-                                        fixedTermRate: Number(obj.tasa_plazo_fijo || 0),
-                                        indefiniteTermRate: Number(obj.tasa_indefinido || 0),
-                                        isActive: true
-                                    };
-                                    if (existingAFC) {
-                                        await updateAFC({ ...existingAFC, ...afcData });
-                                    } else {
-                                        await addAFC(afcData);
-                                    }
-                                    break;
-                                case 'holiday_master':
-                                    if (!obj.fecha || !obj.descripcion) throw new Error('Fecha y Descripción son obligatorios');
-                                    const existingHoliday = holidays.find(h => h.date.split('T')[0] === String(obj.fecha).split('T')[0]);
-                                    const hData = {
-                                        date: String(obj.fecha),
-                                        description: String(obj.descripcion)
-                                    };
-                                    if (existingHoliday) {
-                                        await updateHoliday({ ...existingHoliday, ...hData });
-                                    } else {
-                                        await addHoliday(hData);
-                                    }
-                                    break;
-                                case 'comm_templates':
-                                    if (!obj.nombre || !obj.asunto || !obj.mensaje) throw new Error('Nombre, Asunto y Mensaje son obligatorios');
-                                    const existingTemplate = commTemplates.find(t => t.name.toLowerCase() === String(obj.nombre).toLowerCase());
-                                    const tplData = {
-                                        name: String(obj.nombre),
-                                        subject: String(obj.asunto),
-                                        message: String(obj.mensaje),
-                                        type: (obj.tipo || 'general') as any
-                                    };
-                                    if (existingTemplate) {
-                                        await updateTemplate({ ...existingTemplate, ...tplData });
-                                    } else {
-                                        await addTemplate(tplData);
-                                    }
-                                    break;
-                            }
-                            totalSuccess++;
-                        } catch (err: any) {
-                            allErrors.push({
-                                row: rowNumber,
-                                message: err.message || 'Error desconocido',
-                                sheet: entityConfig?.label || sheet.entity
-                            });
-                        }
+                const result = await response.json();
+                if (response.ok) {
+                    totalCreated += result.created || 0;
+                    totalUpdated += result.updated || 0;
+                    totalProcessed += result.processed || 0;
+                    if (result.errors && result.errors.length > 0) {
+                        allErrors.push(...result.errors.map((e: any) => ({ ...e, sheet: sheet.label })));
                     }
+                } else {
+                    allErrors.push({ row: 0, module: sheet.entity, error: result.error || 'Error de servidor', sheet: sheet.label });
                 }
-
-                setSuccessCount(totalSuccess);
-                setErrors(allErrors);
-                setStatus('success');
-                setMessage(allErrors.length > 0 
-                    ? `Procesamiento finalizado con ${allErrors.length} advertencias.` 
-                    : `Carga exitosa de ${totalSuccess} registros en total.`);
-                setFile(null);
-                setPendingSheets([]);
-            } catch (err: unknown) {
-                const error = err as Error;
-                console.error('File processing error:', error);
-                setStatus('error');
-                setMessage(error.message || 'Error al procesar el archivo.');
+            } catch (err: any) {
+                allErrors.push({ row: 0, module: sheet.entity, error: err.message, sheet: sheet.label });
             }
-        };
+        }
 
-        reader.onerror = () => {
-            setStatus('error');
-            setMessage('Error al leer el archivo desde el disco.');
-        };
-
-        reader.readAsArrayBuffer(file);
+        setStats({ created: totalCreated, updated: totalUpdated, processed: totalProcessed, isSimulated: isDryRun });
+        setErrors(allErrors);
+        setStatus('success');
+        setMessage(allErrors.length > 0 
+            ? `Finalizado con ${allErrors.length} advertencias${isDryRun ? ' (SIMULACIÓN)' : ''}.` 
+            : `Carga finalizada con éxito${isDryRun ? ' (SIMULACIÓN)' : ''}.`);
+        setFile(null);
+        setPendingSheets([]);
     };
 
     const getEntityExportData = (entity: EntityType) => {
@@ -725,219 +218,97 @@ export const MassiveUploadPage: React.FC = () => {
         let data: any[][] = [];
 
         switch (entity) {
-            case 'articles': 
+            case 'articulos_personal': 
                 headers = ['nombre', 'descripcion', 'categoria', 'precio', 'stock', 'stock_minimo', 'activo']; 
-                articles?.forEach((a: Article) => data.push([a.name, a.description, a.category, a.price, a.stock, a.minStock, a.isActive ? 'SI' : 'NO']));
+                articles?.forEach((a: any) => data.push([a.name, a.description, a.category, a.price, a.stock, a.minStock, a.isActive ? 'SI' : 'NO']));
                 break;
             case 'personnel': 
-                headers = ['nombres', 'apellidos', 'rut', 'cargo', 'direccion', 'honorario', 'sueldo_base', 'dias_vacaciones', 'telefono', 'email', 'turno_asignado', 'ultima_actualizacion_vacaciones']; 
-                personnel?.forEach((p: Personnel) => data.push([p.names, p.lastNames, p.dni, p.position, p.address, p.isHonorary ? 'SI' : 'NO', p.baseSalary, p.vacationDays, p.phone, p.email, p.assignedShift, p.vacationLastUpdate]));
+                headers = ['nombres', 'apellidos', 'rut', 'cargo', 'direccion', 'honorario', 'sueldo_base', 'dias_vacaciones', 'telefono', 'email']; 
+                personnel?.forEach((p: any) => data.push([p.names, p.lastNames, p.dni, p.position, p.address, p.isHonorary ? 'SI' : 'NO', p.baseSalary, p.vacationDays, p.phone, p.email]));
                 break;
             case 'residents': 
                 headers = ['nombres', 'apellidos', 'rut', 'email', 'telefono', 'integrantes', 'mascotas', 'arrendatario', 'monto_arriendo', 'observaciones'];
-                residents?.forEach((r: Resident) => data.push([r.names, r.lastNames, r.dni, r.email, r.phone, r.familyCount, r.hasPets ? 'SI' : 'NO', r.isTenant ? 'SI' : 'NO', r.rentAmount, r.notes]));
+                residents?.forEach((r: any) => data.push([r.names, r.lastNames, r.dni, r.email, r.phone, r.familyCount, r.hasPets ? 'SI' : 'NO', r.isTenant ? 'SI' : 'NO', r.rentAmount, r.notes]));
                 break;
             case 'owners': 
                 headers = ['nombres', 'apellidos', 'rut', 'email', 'telefono', 'notificaciones', 'ver_deudas'];
-                owners?.forEach((o: Owner) => data.push([o.names, o.lastNames, o.dni, o.email, o.phone, o.receiveResidentNotifications ? 'SI' : 'NO', o.canResidentSeeArrears ? 'SI' : 'NO']));
-                break;
-            case 'units': 
-                headers = ['nombre', 'gasto_base', 'm2_defecto'];
-                unitTypes?.forEach((u: UnitType) => data.push([u.name, u.baseCommonExpense, u.defaultM2]));
-                break;
-            case 'banks': 
-                headers = ['nombre'];
-                banks?.forEach((b: Bank) => data.push([b.name]));
-                break;
-            case 'assets': 
-                headers = ['descripcion', 'modelo', 'precio_compra', 'valor_depreciado', 'fecha_compra', 'detalles', 'cantidad'];
-                assets?.forEach((a: FixedAsset) => data.push([a.description, a.model, a.purchasePrice, a.depreciatedValue, a.purchaseDate, a.details, a.quantity]));
-                break;
-            case 'health': 
-                headers = ['nombre', 'tipo', 'tasa'];
-                providers?.forEach((p: HealthProvider) => data.push([p.name, p.type, p.discountRate]));
-                break;
-            case 'afp': 
-                headers = ['nombre', 'tasa'];
-                funds?.forEach((f: PensionFund) => data.push([f.name, f.discountRate]));
-                break;
-            case 'conditions': 
-                headers = ['nombre', 'descripcion'];
-                conditions?.forEach((c: SpecialCondition) => data.push([c.name, c.description]));
-                break;
-            case 'extra_funds': 
-                headers = ['nombre', 'descripcion', 'codigo_fondo', 'tipo', 'monto_por_unidad', 'deadline'];
-                specialFunds?.forEach((f: SpecialFund) => data.push([f.name, f.description, f.fundCode, f.type, f.totalAmountPerUnit, f.deadline || '']));
-                break;
-            case 'income': 
-                headers = ['rut', 'monto', 'mes', 'año', 'fecha_pago', 'metodo_pago'];
-                data.push(['1-1', 1000, 1, 2024, '2024-01-01', 'Transferencia']);
-                break;
-            case 'community_expenses': 
-                headers = ['descripcion', 'monto', 'fecha', 'categoria'];
-                communityExpenses?.forEach((e: CommunityExpense) => data.push([e.description, e.amount, e.date, e.category]));
+                owners?.forEach((o: any) => data.push([o.names, o.lastNames, o.dni, o.email, o.phone, o.receiveResidentNotifications ? 'SI' : 'NO', o.canResidentSeeArrears ? 'SI' : 'NO']));
                 break;
             case 'towers': 
                 headers = ['nombre'];
-                towers?.forEach((t: Tower) => data.push([t.name]));
+                towers?.forEach((t: any) => data.push([t.name]));
+                break;
+            case 'tipos_unidad': 
+                headers = ['nombre', 'gasto_base', 'm2_defecto'];
+                unitTypes?.forEach((u: any) => data.push([u.name, u.baseCommonExpense, u.defaultM2]));
                 break;
             case 'departments': 
-                headers = ['numero', 'piso', 'torre', 'tipo_unidad', 'm2', 'm2_terreno', 'valor', 'dormitorios', 'banos', 'estacionamientos', 'ano_construccion', 'disponible', 'tipo_publicacion', 'rol_sii', 'agua', 'luz', 'gas'];
-                departments?.forEach((d: Department) => {
-                    const towerName = towers?.find((t: Tower) => t.id === d.towerId)?.name || '';
-                    const unitTypeName = unitTypes?.find((u: UnitType) => u.id === d.unitTypeId)?.name || '';
-                    data.push([
-                        d.number, 
-                        d.floor, 
-                        towerName, 
-                        unitTypeName, 
-                        d.m2, 
-                        d.terrainM2, 
-                        d.value, 
-                        d.dormitorios, 
-                        d.banos, 
-                        d.estacionamientos, 
-                        d.yearBuilt, 
-                        d.isAvailable ? 'SI' : 'NO', 
-                        d.publishType, 
-                        d.propertyRole, 
-                        d.waterClientId, 
-                        d.electricityClientId, 
-                        d.gasClientId
-                    ]);
+                headers = ['numero', 'piso', 'torre', 'tipo_unidad', 'm2', 'm2_terreno', 'valor', 'dormitorios', 'banos', 'estacionamientos', 'ano_construccion', 'disponible', 'tipo_publicacion', 'rol_sii'];
+                departments?.forEach((d: any) => {
+                    const towerName = towers?.find((t: any) => t.id === d.towerId)?.name || '';
+                    const unitTypeName = unitTypes?.find((u: any) => u.id === d.unitTypeId)?.name || '';
+                    data.push([ d.number, d.floor, towerName, unitTypeName, d.m2, d.terrainM2, d.value, d.dormitorios, d.banos, d.estacionamientos, d.yearBuilt, d.isAvailable ? 'SI' : 'NO', d.publishType, d.propertyRole ]);
                 });
                 break;
-            case 'common_spaces': 
-                headers = ['nombre', 'ubicacion', 'valor_arriendo', 'duracion', 'condiciones'];
-                spaces?.forEach((s: CommonSpace) => data.push([s.name, s.location, s.rentalValue, s.durationHours, s.conditions || '']));
-                break;
-            case 'parking': 
-                headers = ['numero', 'ubicacion', 'discapacitado', 'unidad', 'notas'];
-                parkings?.forEach((p: Parking) => {
-                    const deptNum = departments?.find((d: Department) => d.id === p.departmentId)?.number || '';
-                    data.push([p.number, p.location, p.isHandicapped ? 'SI' : 'NO', deptNum, p.notes || '']);
+            case 'estacionamientos': 
+                headers = ['numero', 'ubicacion', 'discapacitado', 'unidad'];
+                parkings?.forEach((p: any) => {
+                    const deptNum = departments?.find((d: any) => d.id === p.departmentId)?.number || '';
+                    data.push([p.number, p.location, p.isHandicapped ? 'SI' : 'NO', deptNum]);
                 });
                 break;
-            case 'article_categories': 
+            case 'bancos': 
+                headers = ['nombre'];
+                banks?.forEach((b: any) => data.push([b.name]));
+                break;
+            case 'afps': 
+                headers = ['nombre', 'tasa'];
+                funds?.forEach((f: any) => data.push([f.name, f.discountRate]));
+                break;
+            case 'previsiones': 
+                headers = ['nombre', 'tipo', 'tasa'];
+                providers?.forEach((p: any) => data.push([p.name, p.type, p.discountRate]));
+                break;
+            case 'maestro_categorias_articulos': 
                 headers = ['nombre', 'descripcion'];
-                parameters?.filter((p: SystemParameter) => p.type === 'article_category').forEach((p: SystemParameter) => data.push([p.name, p.description]));
+                parameters?.filter((p: any) => p.type === 'article_category').forEach((p: any) => data.push([p.name, p.description]));
                 break;
-            case 'ipc': 
-                headers = ['nombre', 'tasa', 'descripcion'];
-                projections?.forEach((p: IPCProjection) => data.push([p.name, p.ipcRate, p.description]));
-                break;
-            case 'infra_items': 
-                headers = ['nombre', 'obligatorio'];
-                infraItems?.forEach((i: InfrastructureItem) => data.push([i.name, i.isMandatory ? 'SI' : 'NO']));
-                break;
-            case 'equip_items': 
-                headers = ['nombre', 'obligatorio'];
-                equipItems?.forEach((e: EquipmentItem) => data.push([e.name, e.isMandatory ? 'SI' : 'NO']));
-                break;
-            case 'messages': 
-                headers = ['contenido', 'tipo'];
-                systemMessages?.forEach((m: SystemMessage) => data.push([m.text, m.type]));
-                break;
-            case 'emergency_numbers': 
+            case 'maestro_emergencias': 
                 headers = ['nombre', 'telefono', 'descripcion', 'categoria'];
-                emergencyNumbers?.forEach((n: EmergencyNumber) => data.push([n.name, n.phone, n.description, n.category]));
+                emergencyNumbers?.forEach((n: any) => data.push([n.name, n.phone, n.description, n.category]));
                 break;
-            case 'afc_master':
-                headers = ['nombre', 'tasa_plazo_fijo', 'tasa_indefinido'];
-                afcs?.forEach(a => data.push([a.name, a.fixedTermRate, a.indefiniteTermRate]));
-                break;
-            case 'holiday_master':
-                headers = ['fecha', 'descripcion'];
-                holidays?.forEach(h => data.push([h.date.split('T')[0], h.description]));
-                break;
-            case 'comm_templates':
-                headers = ['nombre', 'asunto', 'mensaje', 'tipo'];
-                commTemplates?.forEach(t => data.push([t.name, t.subject, t.message, t.type]));
-                break;
-            case 'cameras':
-                headers = ['nombre', 'descripcion', 'horas_respaldo'];
-                localCameras?.forEach(c => data.push([c.name, c.description, c.backupHours]));
+            case 'assets': 
+                headers = ['descripcion', 'modelo', 'precio_compra', 'valor_depreciado', 'fecha_compra', 'detalles', 'cantidad'];
+                assets?.forEach((a: any) => data.push([a.description, a.model, a.purchasePrice, a.depreciatedValue, a.purchaseDate, a.details, a.quantity]));
                 break;
         }
-
         return [headers, ...data];
     };
 
     const downloadExcelTemplate = () => {
+        const fullData = getEntityExportData(selectedEntity);
+        const ws = XLSX.utils.aoa_to_sheet(fullData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Template");
+        XLSX.writeFile(wb, `template_${selectedEntity}.xlsx`);
+    };
+
+    const fetchHistory = async () => {
         try {
-            const fullData = getEntityExportData(selectedEntity);
-            const ws = XLSX.utils.aoa_to_sheet(fullData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
-            XLSX.writeFile(wb, `maestro_${selectedEntity}_${new Date().toISOString().split('T')[0]}.xlsx`);
-        } catch (err: any) {
-            console.error('Error downloading template:', err);
-            setStatus('error');
-            setMessage('Error al generar la plantilla de Excel.');
+            const resp = await fetch(`${API_BASE_URL}/bulk_upload_logs`);
+            if (resp.ok) setHistory(await resp.json());
+            setShowHistory(true);
+        } catch (e) {
+            console.error("Error fetching history", e);
         }
     };
 
-    const downloadAllMasters = () => {
+    const deleteLog = async (id: string) => {
+        if (!confirm('¿Eliminar este registro de auditoría?')) return;
         try {
-            setStatus('processing');
-            setMessage('Generando archivo consolidado...');
-            const wb = XLSX.utils.book_new();
-            entities.forEach(entity => {
-                try {
-                    const fullData = getEntityExportData(entity.value);
-                    const ws = XLSX.utils.aoa_to_sheet(fullData);
-                    XLSX.utils.book_append_sheet(wb, ws, entity.label.substring(0, 31)); 
-                } catch (e) {
-                    console.warn(`Error exporting entity ${entity.value}:`, e);
-                }
-            });
-            XLSX.writeFile(wb, `TODOS_LOS_MAESTROS_SGC_${new Date().toISOString().split('T')[0]}.xlsx`);
-            setStatus('idle');
-            setMessage('');
-        } catch (err: any) {
-            console.error('Error downloading all masters:', err);
-            setStatus('error');
-            setMessage('Error crítico al generar el archivo con todos los maestros.');
-        }
-    };
-
-    const refreshData = async () => {
-        window.location.reload(); 
-    };
-
-    const downloadErrorReport = () => {
-        if (errors.length === 0 && successCount === 0) return;
-        
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const fileName = `LOG_CARGA_${timestamp}.txt`;
-        
-        const logContent = [
-            `REPORTE DE CARGA MASIVA - SGC`,
-            `FECHA: ${new Date().toLocaleString()}`,
-            `RESULTADO: ${errors.length > 0 ? 'FINALIZADO CON ERRORES' : 'EXITOSO'}`,
-            `REGISTROS EXITOSOS: ${successCount}`,
-            `REGISTROS CON ERROR: ${errors.length}`,
-            `--------------------------------------------------`,
-            '',
-            errors.length > 0 ? 'DETALLE DE ERRORES:' : 'No se detectaron errores.',
-            ...errors.map(err => {
-                const sheetPrefix = err.sheet ? `[${err.sheet}] ` : '';
-                return `Fila ${err.row}: ${sheetPrefix}${err.message}`;
-            }),
-            '',
-            `--------------------------------------------------`,
-            'Fin del reporte.'
-        ].join('\n');
-
-        const blob = new Blob([logContent], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+            const resp = await fetch(`${API_BASE_URL}/bulk_upload_logs/${id}`, { method: 'DELETE' });
+            if (resp.ok) setHistory(history.filter(log => log.id !== id));
+        } catch (e) { console.error(e); }
     };
 
     return (
@@ -946,104 +317,61 @@ export const MassiveUploadPage: React.FC = () => {
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-3 italic">
                         <Upload className="w-8 h-8 text-indigo-600" />
-                        Gestión Masiva de Maestros
+                        8.1.0 Carga Masiva (Backend-Driven)
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium ml-11 uppercase text-[10px] tracking-widest font-black">
-                        Carga y Descarga de información crítica del sistema
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium ml-11 uppercase text-[10px] tracking-widest font-black italic">
+                        Migrado a estándar SGC v1.0
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="secondary" onClick={downloadAllMasters} className="rounded-2xl font-black uppercase text-[10px] tracking-widest h-12 px-6 bg-emerald-600/10 text-emerald-600 border-emerald-600/20 hover:bg-emerald-600/20">
-                        <Download className="w-4 h-4 mr-2" />
-                        Descargar Todo (.xlsx)
-                    </Button>
-                    <Button variant="secondary" onClick={refreshData} className="rounded-2xl font-black uppercase text-[10px] tracking-widest h-12 px-6">
+                    <Button variant="secondary" onClick={fetchHistory} className="rounded-2xl font-black uppercase text-[10px] tracking-widest h-12 px-6">
                         <History className="w-4 h-4 mr-2" />
-                        Refrescar Datos
+                        Ver Historial de Cargas
+                    </Button>
+                    <Button variant="secondary" onClick={() => window.location.reload()} className="rounded-2xl font-black uppercase text-[10px] tracking-widest h-12 px-6">
+                        Refrescar
                     </Button>
                 </div>
             </div>
 
-            <div className="bg-indigo-600 dark:bg-indigo-900 shadow-2xl shadow-indigo-500/20 p-8 rounded-[3rem] mb-8 text-white relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-12 opacity-10 transform translate-x-10 -translate-y-10 group-hover:scale-110 transition-transform">
-                    <Database className="w-48 h-48" />
-                </div>
-                <div className="flex gap-6 items-start relative z-10">
-                    <div className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-[2rem] flex items-center justify-center text-white shrink-0 shadow-inner">
-                        <Info className="w-8 h-8" />
+            {/* Hierarchy Guide */}
+            <div className="bg-indigo-600 shadow-2xl shadow-indigo-500/20 p-8 rounded-[3rem] text-white">
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+                        <Info className="w-6 h-6" />
                     </div>
-                    <div>
-                        <h2 className="text-xl font-black uppercase tracking-tight mb-2">Reseña de Operación Masiva</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-indigo-50">
-                            <div className="space-y-2">
-                                <p className="text-sm font-black flex items-center gap-2">
-                                    <Download className="w-4 h-4" /> DESCARGA DE MAESTRO
-                                </p>
-                                <p className="text-xs opacity-80 leading-relaxed">
-                                    Permite exportar la base de datos actual a Excel. Es ideal para realizar auditorías, 
-                                    limpieza de datos o para usarla como base para nuevas cargas. 
-                                    <span className="block mt-1 text-white font-bold">Si el archivo aparece vacío, asegúrese de tener registros creados en el módulo correspondiente.</span>
-                                </p>
-                            </div>
-                            <div className="space-y-2">
-                                <p className="text-sm font-black flex items-center gap-2">
-                                    <Upload className="w-4 h-4" /> CARGA DE DATOS
-                                </p>
-                                <p className="text-xs opacity-80 leading-relaxed">
-                                    El sistema procesará su archivo validando que el RUT sea correcto y que no existan duplicados críticos. 
-                                    Los campos vacíos pueden generar errores de validación. 
-                                    Se recomienda descargar la plantilla primero.
-                                </p>
-                            </div>
+                    <h2 className="text-xl font-black uppercase tracking-tight">Jerarquía de Carga Obligatoria</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    {LOAD_HIERARCHY.map(h => (
+                        <div key={h.step} className="bg-white/10 backdrop-blur-sm p-4 rounded-3xl border border-white/10 relative group hover:bg-white/20 transition-all">
+                            <span className="absolute -top-3 -left-3 w-8 h-8 bg-white text-indigo-600 rounded-full flex items-center justify-center font-black shadow-lg">{h.step}</span>
+                            <h3 className="font-black text-sm mb-1 uppercase text-indigo-100">{h.title}</h3>
+                            <p className="text-[10px] opacity-70 leading-tight">{h.description}</p>
+                            {h.step < 4 && <ArrowRight className="hidden md:block absolute -right-6 top-1/2 transform -translate-y-1/2 opacity-30" />}
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-amber-50 border border-amber-100 rounded-[2rem] p-8 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
-                <div className="flex items-start gap-6">
-                    <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-500/20 shrink-0">
-                        <AlertTriangle className="w-8 h-8" />
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-black text-amber-900 uppercase tracking-tight mb-2">Herramienta de Carga de Implementación</h2>
-                        <p className="text-sm text-amber-800 leading-relaxed font-medium">
-                            Esta funcionalidad está diseñada exclusivamente para la <strong>fase de implementación inicial</strong> del sistema por parte del Superadmin. 
-                            Su propósito es poblar la base de datos de manera masiva y rápida. 
-                            <br /><br />
-                            <span className="bg-amber-200/50 px-2 py-0.5 rounded font-black text-amber-950">¡ATENCIÓN!</span> 
-                            Cualquier dato cargado que ya exista (identificado por RUT o Nombre) será <strong>puesto a cero o sobreescrito (pisado)</strong> con la nueva información del archivo. 
-                            Use esta herramienta con precaución, ya que la integridad de los datos históricos manuales podría verse afectada.
-                        </p>
-                    </div>
+                    ))}
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Selector */}
                 <div className="lg:col-span-1 space-y-4">
-                    <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                        <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider mb-4 px-2">Paso 1: Seleccionar Maestro</h3>
-                        <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                            {Array.from(new Set(entities.map(e => e.category))).map((category: string) => (
-                                <div key={category} className="space-y-2">
-                                    <div className="flex items-center gap-2 px-2 py-1">
-                                        <div className="h-px bg-gray-200 dark:bg-gray-800 flex-grow" />
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{category}</span>
-                                        <div className="h-px bg-gray-200 dark:bg-gray-800 flex-grow" />
-                                    </div>
+                    <div className="bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 px-2">Seleccionar Maestro</h3>
+                        <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                            {Array.from(new Set(entities.map(e => e.category))).map((cat) => (
+                                <div key={cat} className="space-y-2">
+                                    <div className="text-[9px] font-black text-indigo-600 uppercase tracking-widest border-b border-indigo-50 dark:border-indigo-900 pb-1 mb-2 italic">{cat}</div>
                                     <div className="space-y-1">
-                                        {entities.filter(e => e.category === category).map((entity) => (
+                                        {entities.filter(e => e.category === cat).map(ent => (
                                             <button
-                                                key={entity.value}
-                                                onClick={() => setSelectedEntity(entity.value)}
-                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all ${selectedEntity === entity.value
-                                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-gray-950 scale-[1.02]'
-                                                    : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                                    }`}
+                                                key={ent.value}
+                                                onClick={() => setSelectedEntity(ent.value)}
+                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all ${selectedEntity === ent.value ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
                                             >
-                                                <entity.icon className={`w-4 h-4 ${selectedEntity === entity.value ? 'text-white' : 'text-indigo-500'}`} />
-                                                <span className="text-sm font-bold">{entity.label}</span>
+                                                <ent.icon className={`w-4 h-4 ${selectedEntity === ent.value ? 'text-white' : 'text-indigo-500'}`} />
+                                                <span className="text-xs font-bold">{ent.label}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -1051,174 +379,181 @@ export const MassiveUploadPage: React.FC = () => {
                             ))}
                         </div>
                     </div>
-
-                    <div className="bg-amber-50 dark:bg-amber-900/10 p-5 rounded-3xl border border-amber-100 dark:border-amber-900/20">
-                        <div className="flex gap-3">
-                            <Info className="w-5 h-5 text-amber-600 shrink-0" />
-                            <div>
-                                <h4 className="text-xs font-black text-amber-800 dark:text-amber-400 uppercase tracking-wider">Seguridad y Validación</h4>
-                                <p className="text-[11px] text-amber-700 dark:text-amber-500 mt-1 leading-relaxed">
-                                    El sistema valida que todas las columnas requeridas existan y que no haya datos vacíos en campos críticos (RUT, Nombres, etc.).
-                                </p>
-                                <div className="mt-3 flex flex-col gap-2">
-                                    <button
-                                        onClick={downloadExcelTemplate}
-                                        className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-black hover:underline"
-                                    >
-                                        <Download className="w-3 h-3" /> Descargar Plantilla (.xlsx)
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                {/* Upload Area */}
+                {/* Main Area */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white dark:bg-gray-900 p-8 rounded-[40px] border border-gray-100 dark:border-gray-800 shadow-xl flex flex-col items-center justify-center min-h-[400px]">
-                        <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 transition-all ${status === 'success' ? (errors.length > 0 ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600') :
-                            status === 'error' ? 'bg-red-100 text-red-600' :
-                                file ? 'bg-indigo-100 text-indigo-600 animate-bounce' : 'bg-gray-100 text-gray-400'
-                            }`}>
-                            {status === 'success' ? (errors.length > 0 ? <AlertCircle className="w-12 h-12" /> : <CheckCircle2 className="w-12 h-12" />) :
-                                status === 'error' ? <XCircle className="w-12 h-12" /> :
-                                    <Upload className="w-12 h-12" />}
+                    <div className="bg-white dark:bg-gray-900 p-10 rounded-[3.5rem] border border-gray-100 dark:border-gray-800 shadow-xl min-h-[450px] flex flex-col items-center justify-center text-center">
+                        <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 shadow-2xl ${status === 'processing' ? 'animate-pulse bg-indigo-100 text-indigo-600' : 'bg-gray-50 text-gray-400'}`}>
+                            {status === 'success' ? <CheckCircle2 className="w-12 h-12 text-emerald-500" /> : <Upload className="w-12 h-12" />}
                         </div>
-
-                        <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">
-                            {status === 'success' ? (errors.length > 0 ? 'Carga con Advertencias' : '¡Carga Exitosa!') :
-                                status === 'error' ? 'Error Crítico' :
-                                    file ? file.name : 'Subir Archivo de Maestro'}
+                        
+                        <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2 italic">
+                            {status === 'processing' ? 'Procesando Maestros...' : 'Cargador Universal SGC'}
                         </h2>
-
-                        <p className="text-gray-500 text-sm text-center max-w-sm mb-8 font-medium">
-                            {message}
-                            {!file && status === 'idle' && 'Seleccione un archivo Excel para validar y cargar los datos.'}
+                        <p className="text-sm text-gray-500 max-w-sm mb-8 leading-relaxed">
+                            {message || 'Suba un archivo Excel. La resolución de relaciones y validaciones se ejecutarán en el servidor.'}
                         </p>
 
+                        <div className="flex items-center gap-3 mb-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
+                            <input 
+                                type="checkbox" 
+                                id="dryRunToggle"
+                                checked={isDryRun} 
+                                onChange={(e) => setIsDryRun(e.target.checked)}
+                                className="w-5 h-5 accent-indigo-600 rounded cursor-pointer"
+                            />
+                            <label htmlFor="dryRunToggle" className="text-xs font-black text-gray-700 dark:text-gray-300 cursor-pointer uppercase tracking-tighter">
+                                Modo Simulación (Validar sin guardar cambios)
+                            </label>
+                        </div>
+
                         {!file && status !== 'processing' && (
-                            <label className="cursor-pointer">
-                                <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" />
-                                <div className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-500/20 hover:scale-105 transition-transform active:scale-95">
-                                    {status === 'success' || status === 'error' ? 'Seleccionar otro archivo' : 'Seleccionar Archivo'}
+                            <label className="group relative">
+                                <input type="file" accept=".xlsx" onChange={handleFileChange} className="hidden" />
+                                <div className="px-10 py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-xs shadow-xl shadow-indigo-500/30 group-hover:scale-105 transition-transform cursor-pointer">
+                                    Seleccionar Excel
                                 </div>
                             </label>
                         )}
 
                         {showSelectionPanel && (
-                            <div className="mt-8 w-full max-w-2xl bg-white dark:bg-gray-800 rounded-[2rem] border-2 border-indigo-100 dark:border-indigo-900/30 p-6 shadow-2xl animate-in zoom-in-95 duration-300">
-                                <div className="flex items-center justify-between mb-4 px-2">
-                                    <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                                        <Database className="w-4 h-4 text-indigo-600" />
-                                        Maestros Detectados en el Excel
-                                    </h4>
-                                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-900/50 px-2 py-1 rounded-full uppercase">
-                                        {pendingSheets.filter(p => p.selected).length} seleccionados
-                                    </span>
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar mb-6">
-                                    {pendingSheets.map((sheet: any, idx: number) => (
-                                        <label key={idx} className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${sheet.selected ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800' : 'bg-gray-50 border-gray-100 dark:bg-gray-800 dark:border-gray-700 opacity-60'}`}>
-                                            <input 
-                                                type="checkbox" 
-                                                checked={sheet.selected} 
-                                                onChange={() => {
-                                                    const updated = [...pendingSheets];
-                                                    updated[idx].selected = !updated[idx].selected;
-                                                    setPendingSheets(updated);
-                                                }}
-                                                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                                            />
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-black text-gray-900 dark:text-white">{sheet.label}</span>
-                                                <span className="text-[10px] text-gray-500 font-bold">{sheet.data.length} registros</span>
-                                            </div>
-                                        </label>
+                            <div className="mt-8 w-full bg-indigo-50 dark:bg-indigo-900/10 p-6 rounded-[2.5rem] border border-indigo-100 dark:border-indigo-800">
+                                <h4 className="text-[10px] font-black uppercase text-indigo-600 mb-4 tracking-tighter italic">Hojas Detectadas</h4>
+                                <div className="grid grid-cols-2 gap-3 mb-6">
+                                    {pendingSheets.map((s, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-2xl border border-indigo-200">
+                                            <input type="checkbox" checked={s.selected} onChange={() => {
+                                                const up = [...pendingSheets]; up[idx].selected = !up[idx].selected; setPendingSheets(up);
+                                            }} className="accent-indigo-600" />
+                                            <span className="text-[10px] font-black truncate">{s.label}</span>
+                                        </div>
                                     ))}
                                 </div>
-
-                                <div className="flex gap-3 justify-end">
-                                    <Button variant="secondary" onClick={() => { setFile(null); setShowSelectionPanel(false); setPendingSheets([]); }} className="text-[10px]">Descartar</Button>
-                                    <Button onClick={processFile} className="bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20 text-[10px]">
-                                        Confirmar y Cargar Seleccionados
+                                <div className="flex gap-3 justify-center">
+                                    <Button variant="secondary" onClick={() => { setFile(null); setShowSelectionPanel(false); }} className="rounded-2xl text-[10px]">Cancelar</Button>
+                                    <Button onClick={processFile} className={`rounded-2xl text-[10px] ${isDryRun ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
+                                        {isDryRun ? 'Ejecutar Validación' : 'Iniciar Carga Real'}
                                     </Button>
                                 </div>
                             </div>
                         )}
 
-                        {file && status === 'processing' && (
-                            <div className="flex flex-col items-center gap-4">
-                                <span className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></span>
-                                <span className="font-black text-gray-600 uppercase text-xs tracking-widest">Validando y Procesando maestros...</span>
+                        {status === 'success' && (
+                            <div className="mt-8 grid grid-cols-3 gap-6 w-full max-w-lg italic">
+                                <div className="p-4 bg-gray-50 rounded-2xl">
+                                    <p className="text-[10px] font-black text-gray-400">PROCESADOS</p>
+                                    <p className="text-xl font-black">{stats.processed}</p>
+                                </div>
+                                <div className="p-4 bg-emerald-50 rounded-2xl">
+                                    <p className="text-[10px] font-black text-emerald-600">{stats.isSimulated ? 'DETECTADOS NUEVOS' : 'CREADOS'}</p>
+                                    <p className="text-xl font-black text-emerald-600">{stats.created}</p>
+                                </div>
+                                <div className="p-4 bg-blue-50 rounded-2xl">
+                                    <p className="text-[10px] font-black text-blue-600">{stats.isSimulated ? 'DETECTADOS EXISTENTES' : 'ACTUALIZADOS'}</p>
+                                    <p className="text-xl font-black text-blue-600">{stats.updated}</p>
+                                </div>
                             </div>
                         )}
 
-                        {file && status === 'idle' && !showSelectionPanel && (
-                            <div className="flex gap-4">
-                                <Button variant="secondary" onClick={() => setFile(null)}>Cancelar</Button>
-                                <Button onClick={processFile}>
-                                    Validar y Cargar
-                                </Button>
-                            </div>
-                        )}
-
-                        {/* Error Report */}
                         {errors.length > 0 && (
-                            <div className="mt-8 w-full max-w-md bg-red-50 dark:bg-red-900/10 rounded-2xl p-6 border border-red-100 dark:border-red-900/20">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h4 className="text-xs font-black text-red-800 dark:text-red-400 uppercase tracking-wider flex items-center gap-2">
-                                        <XCircle className="w-4 h-4" /> Errores encontrados ({errors.length})
-                                    </h4>
-                                    <Button 
-                                        variant="secondary" 
-                                        size="sm" 
-                                        onClick={downloadErrorReport}
-                                        className="h-7 px-3 text-[9px] font-black uppercase tracking-tighter border-red-200 text-red-700 hover:bg-red-100"
-                                    >
-                                        <FileText className="w-3 h-3 mr-1" /> Adjuntar Log
-                                    </Button>
-                                </div>
-                                <div className="max-h-40 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
-                                    {errors.map((err, idx) => (
-                                        <div key={idx} className="text-[10px] text-red-700 dark:text-red-500 flex flex-col border-b border-red-100/50 pb-1 mb-1 last:border-0">
-                                            <span className="font-bold">Fila {err.row} {err.sheet && `[${err.sheet}]`}:</span>
-                                            <span className="opacity-90">{err.message}</span>
+                            <div className="mt-8 w-full text-left bg-red-50 p-6 rounded-[2rem] border border-red-100">
+                                <h4 className="text-xs font-black text-red-600 uppercase mb-4 flex items-center gap-2 italic">
+                                    <XCircle className="w-4 h-4" /> Errores Estructurados ({errors.length})
+                                </h4>
+                                <div className="max-h-40 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                                    {errors.map((e, idx) => (
+                                        <div key={idx} className="text-[10px] border-b border-red-200 pb-2 italic">
+                                            <div className="flex justify-between font-black mb-1">
+                                                <span>FILA {e.row} - [{e.sheet}]</span>
+                                                <span className="text-red-800 uppercase">{e.module}</span>
+                                            </div>
+                                            <p className="text-red-700 font-bold">{e.error}</p>
+                                            <p className="opacity-50 mt-1 truncate">VALOR: {e.value}</p>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
-                        
-                        {successCount > 0 && status === 'success' && (
-                            <div className="mt-4 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
-                                ✓ {successCount} registros procesados correctamente.
-                            </div>
-                        )}
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Maestro Destino</p>
-                            <p className="text-lg font-black text-gray-900 dark:text-white italic">
-                                {entities.find(e => e.value === selectedEntity)?.label}
-                            </p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Columnas Obligatorias</p>
-                            <p className="text-xs font-bold text-gray-600 dark:text-gray-400">
-                                {entities.find(e => e.value === selectedEntity)?.requiredHeaders.join(', ').toUpperCase()}
-                            </p>
-                        </div>
-                        <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm md:col-span-2">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Descripción del Maestro</p>
-                            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                {entities.find(e => e.value === selectedEntity)?.description}
-                            </p>
-                        </div>
+                    
+                    <div className="flex justify-between p-2">
+                        <Button variant="secondary" onClick={downloadExcelTemplate} className="text-[10px] font-black h-10 px-6 rounded-2xl italic">
+                            <Download className="w-3 h-3 mr-2" /> Plantilla de {selectedEntity.toUpperCase()}
+                        </Button>
+                        <Button variant="secondary" onClick={() => window.open(API_BASE_URL + '/health')} className="text-[10px] font-black h-10 px-6 rounded-2xl italic">
+                            <CheckCircle2 className="w-3 h-3 mr-2" /> Verificar Salud API
+                        </Button>
                     </div>
                 </div>
             </div>
+
+            {/* History Overlay */}
+            {showHistory && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-gray-900 w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden border border-gray-100 dark:border-gray-800">
+                        <div className="p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                            <h2 className="text-2xl font-black italic flex items-center gap-3">
+                                <History className="w-6 h-6 text-indigo-600" />
+                                Historial de Auditoría (8.1.0)
+                            </h2>
+                            <Button variant="secondary" onClick={() => setShowHistory(false)} className="rounded-2xl">Cerrar</Button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                            {history.length === 0 ? (
+                                <div className="text-center py-20 text-gray-400">No hay registros de carga real disponibles.</div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {history.map(log => (
+                                        <div key={log.id} className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700 group relative">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${
+                                                            log.status === 'success' ? 'bg-emerald-100 text-emerald-700' : 
+                                                            log.status === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                                                        }`}>
+                                                            {log.status}
+                                                        </span>
+                                                        <span className="text-[10px] font-black text-indigo-600 uppercase italic">{log.module}</span>
+                                                    </div>
+                                                    <p className="text-xs font-black text-gray-900 dark:text-white">
+                                                        {new Date(log.createdAt).toLocaleString('es-CL')}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Resumen</p>
+                                                    <p className="text-sm font-black">+{log.created} | ~{log.updated}</p>
+                                                </div>
+                                            </div>
+                                            {log.errors && log.errors.length > 0 && (
+                                                <div className="mt-4 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-red-50 dark:border-red-900/10">
+                                                    <p className="text-[10px] font-black text-red-600 mb-2 uppercase flex items-center gap-2 italic">
+                                                        <AlertTriangle className="w-3 h-3" /> {log.errors.length} Errores registrados
+                                                    </p>
+                                                    <div className="max-h-32 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                                        {log.errors.map((e, idx) => (
+                                                            <p key={idx} className="text-[10px] text-gray-500 italic border-l-2 border-red-200 pl-2">
+                                                                Fila {e.row}: <span className="text-red-800 font-bold">{e.error}</span>
+                                                            </p>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <button 
+                                                onClick={() => deleteLog(log.id)}
+                                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:text-red-600 transition-all"
+                                            >
+                                                <XCircle className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

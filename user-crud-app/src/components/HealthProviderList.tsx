@@ -46,7 +46,7 @@ export const HealthProviderList: React.FC<HealthProviderListProps> = ({ provider
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                    {provider.discountRate}%
+                                    {provider.discount_rate}%
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

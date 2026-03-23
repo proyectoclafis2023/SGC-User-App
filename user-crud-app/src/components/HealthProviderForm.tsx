@@ -14,13 +14,13 @@ interface HealthProviderFormProps {
 export const HealthProviderForm: React.FC<HealthProviderFormProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
     const [name, setName] = useState('');
     const [type, setType] = useState<'fonasa' | 'isapre'>('isapre');
-    const [discountRate, setDiscountRate] = useState(0);
+    const [discount_rate, setDiscountRate] = useState(0);
 
     useEffect(() => {
         if (initialData) {
             setName(initialData.name);
             setType(initialData.type);
-            setDiscountRate(initialData.discountRate);
+            setDiscountRate(initialData.discount_rate);
         } else {
             setName('');
             setType('isapre');
@@ -30,7 +30,7 @@ export const HealthProviderForm: React.FC<HealthProviderFormProps> = ({ isOpen, 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit({ name, type, discountRate: Number(discountRate) }, initialData?.id);
+        onSubmit({ name, type, discount_rate: Number(discount_rate) }, initialData?.id);
     };
 
     if (!isOpen) return null;
@@ -60,7 +60,7 @@ export const HealthProviderForm: React.FC<HealthProviderFormProps> = ({ isOpen, 
                         label="% de Descuento (Cotización)"
                         type="number"
                         step="0.01"
-                        value={discountRate}
+                        value={discount_rate}
                         onChange={(e) => setDiscountRate(Number(e.target.value))}
                         required
                         placeholder="ej. 7.00"

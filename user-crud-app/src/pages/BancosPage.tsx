@@ -5,7 +5,7 @@ import { Input } from '../components/Input';
 import { Plus, Trash2, Edit2, X, Landmark, Search } from 'lucide-react';
 import type { Bank } from '../types';
 
-export const BanksPage: React.FC = () => {
+export const BancosPage: React.FC = () => {
     const { banks, addBank, updateBank, deleteBank } = useBanks();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBank, setEditingBank] = useState<Bank | null>(null);
@@ -34,7 +34,7 @@ export const BanksPage: React.FC = () => {
     };
 
     const filteredBanks = banks.filter(b =>
-        !b.isArchived && b.name.toLowerCase().includes(searchTerm.toLowerCase())
+        !b.is_archived && b.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (

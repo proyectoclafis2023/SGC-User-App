@@ -7,26 +7,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Bank {
+// sgc-module: bancos
+model Banco {
   id         String      @id @default(cuid())
-  name       String
+  nombre     String      @unique @map("name")
   isArchived Boolean     @default(false)
   createdAt  DateTime    @default(now())
   personnel  Personnel[]
+
+  @@map("Bank")
 }
 
+// sgc-module: afps
 model PensionFund {
   id           String      @id @default(cuid())
-  name         String
+  name         String      @unique
   discountRate Float
   isArchived   Boolean     @default(false)
   createdAt    DateTime    @default(now())
   personnel    Personnel[]
 }
 
+// sgc-module: previsiones
 model HealthProvider {
   id           String      @id @default(cuid())
-  name         String
+  name         String      @unique
   type         String
   discountRate Float
   isArchived   Boolean     @default(false)
@@ -34,20 +39,23 @@ model HealthProvider {
   personnel    Personnel[]
 }
 
-model UnitType {
+// sgc-module: tipos_unidad
+model TipoUnidad {
   id                 String              @id @default(cuid())
-  name               String
+  nombre             String              @unique @map("name")
   baseCommonExpense  Float
   defaultM2          Float?
   isArchived         Boolean             @default(false)
   createdAt          DateTime            @default(now())
   commonExpenseRules CommonExpenseRule[]
   departments        Department[]
+
+  @@map("UnitType")
 }
 
 model Tower {
   id          String       @id @default(cuid())
-  name        String
+  name        String       @unique
   isArchived  Boolean      @default(false)
   createdAt   DateTime     @default(now())
   departments Department[]
@@ -82,14 +90,16 @@ model Department {
   createdAt             DateTime               @default(now())
   commonExpensePayments CommonExpensePayment[]
   correspondence        Correspondence[]
-  resident              Resident?              @relation(fields: [residentId], references: [id])
-  owner                 Owner?                 @relation(fields: [ownerId], references: [id])
-  unitType              UnitType?              @relation(fields: [unitTypeId], references: [id])
-  tower                 Tower?                 @relation(fields: [towerId], references: [id])
-  parking               Parking[]
+  resident              Residente?              @relation(fields: [residentId], references: [id])
+  owner                 Propietario?            @relation(fields: [ownerId], references: [id])
+  unitType              TipoUnidad?             @relation(fields: [unitTypeId], references: [id])
+  tower                 Tower?                  @relation(fields: [towerId], references: [id])
+  parking               Estacionamiento[]
+
+  @@unique([number, towerId])
 }
 
-model Owner {
+model Propietario {
   id                           String       @id @default(cuid())
   names                        String
   lastNames                    String
@@ -103,15 +113,19 @@ model Owner {
   isArchived                   Boolean      @default(false)
   createdAt                    DateTime     @default(now())
   departments                  Department[]
+
+  @@map("Owner")
 }
 
-model Resident {
+model Residente {
   id           String       @id @default(cuid())
+  reservations Reserva[]
+  tickets      Ticket[]
   names        String
   lastNames    String
   dni          String       @unique
-  phone        String
-  email        String
+  phone                        String
+  email                        String
   photo        String?
   towerId      String?
   unitId       String?
@@ -126,6 +140,8 @@ model Resident {
   isArchived   Boolean      @default(false)
   createdAt    DateTime     @default(now())
   departments  Department[]
+
+  @@map("Resident")
 }
 
 model Personnel {
@@ -162,11 +178,13 @@ model Personnel {
   status                      String            @default("active")
   isArchived                  Boolean           @default(false)
   createdAt                   DateTime          @default(now())
-  articleDeliveries           ArticleDelivery[]
+  articleDeliveries           EntregaArticulo[]
+  reports                     DailyReport[]
+  supplyRequests              SupplyRequest[]
   jornadaGroup                JornadaGroup?     @relation(fields: [jornadaGroupId], references: [id])
-  pensionFund                 PensionFund?    @relation(fields: [pensionFundId], references: [id])
-  healthProvider              HealthProvider? @relation(fields: [healthProviderId], references: [id])
-  bank                        Bank?           @relation(fields: [bankId], references: [id])
+  pensionFund                 PensionFund?      @relation(fields: [pensionFundId], references: [id])
+  healthProvider              HealthProvider?   @relation(fields: [healthProviderId], references: [id])
+  bank                        Banco?            @relation(fields: [bankId], references: [id])
 }
 
 model JornadaGroup {
@@ -184,37 +202,47 @@ model JornadaGroup {
   personnel    Personnel[]
 }
 
-model IPCProjection {
+// sgc-module: maestro_ipc
+model ProyeccionIPC {
   id            String   @id @default(cuid())
-  name          String
+  nombre        String   @map("name")
   ipcRate       Float
   ponderadoRate Float    @default(0)
   description   String?
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
+
+  @@map("IPCProjection")
 }
 
-model InfrastructureItem {
+// sgc-module: infraestructura
+model ItemInfraestructura {
   id          String   @id @default(cuid())
-  name        String
+  nombre      String   @map("name")
   description String?
   isMandatory Boolean  @default(false)
   isArchived  Boolean  @default(false)
   createdAt   DateTime @default(now())
+
+  @@map("InfrastructureItem")
 }
 
-model EquipmentItem {
+// sgc-module: equipamiento
+model ItemEquipamiento {
   id          String   @id @default(cuid())
-  name        String
+  nombre      String   @map("name")
   description String?
   isMandatory Boolean  @default(false)
   isArchived  Boolean  @default(false)
   createdAt   DateTime @default(now())
+
+  @@map("EquipmentItem")
 }
 
-model Article {
+// sgc-module: articulos_personal
+model Articulo {
   id                    String   @id @default(cuid())
-  name                  String
+  nombre                String   @unique @map("name")
   description           String?
   category              String
   unit                  String   @default("unidades")
@@ -225,6 +253,8 @@ model Article {
   allowPersonnelRequest Boolean  @default(false)
   isArchived            Boolean  @default(false)
   createdAt             DateTime @default(now())
+
+  @@map("Article")
 }
 
 model Correspondence {
@@ -237,19 +267,23 @@ model Correspondence {
   status       String     @default("pending")
   receivedAt   DateTime?  @default(now())
   deliveredAt  DateTime?
+  isArchived   Boolean    @default(false)
   createdAt    DateTime   @default(now())
   department   Department @relation(fields: [departmentId], references: [id])
 }
 
-model Parking {
+// sgc-module: estacionamientos
+model Estacionamiento {
   id            String      @id @default(cuid())
-  number        String
+  number        String      @unique
   location      String?
   isHandicapped Boolean     @default(false)
   isArchived    Boolean     @default(false)
   departmentId  String?
   createdAt     DateTime    @default(now())
   department    Department? @relation(fields: [departmentId], references: [id])
+
+  @@map("Parking")
 }
 
 model CommonExpenseRule {
@@ -260,7 +294,7 @@ model CommonExpenseRule {
   description   String?
   isArchived    Boolean   @default(false)
   createdAt     DateTime  @default(now())
-  unitType      UnitType? @relation(fields: [unitTypeId], references: [id])
+  unitType      TipoUnidad? @relation(fields: [unitTypeId], references: [id])
 }
 
 model CommonExpensePayment {
@@ -297,24 +331,31 @@ model SpecialFund {
   createdAt          DateTime @default(now())
 }
 
-model EmergencyNumber {
+// sgc-module: maestro_emergencias
+model NumeroEmergencia {
   id          String   @id @default(cuid())
   category    String
-  name        String
+  nombre      String   @unique @map("name")
   phone       String
   description String?
   webUrl      String?
   isArchived  Boolean  @default(false)
   createdAt   DateTime @default(now())
+
+  @@map("EmergencyNumber")
 }
 
-model CommunicationTemplate {
+// sgc-module: maestro_mensajes
+model PlantillaComunicacion {
   id        String   @id @default(cuid())
-  name      String
+  nombre    String   @map("name")
   subject   String
   message   String   @default("")
   type      String   @default("general")
-  createdAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  isArchived Boolean  @default(false)
+
+  @@map("CommunicationTemplate")
 }
 
 model CommunicationHistory {
@@ -325,26 +366,35 @@ model CommunicationHistory {
   senderId      String
   targetFilter  String
   attachmentUrl String?
+  isArchived    Boolean  @default(false)
   createdAt     DateTime @default(now())
 }
 
-model SystemParameter {
+// sgc-module: maestros_operativos, maestro_categorias_articulos
+model ParametroSistema {
   id          String   @id @default(cuid())
   type        String
-  name        String
+  nombre      String   @map("name")
   description String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
+
+  @@unique([type, nombre])
+  @@map("SystemParameter")
 }
 
-model Holiday {
+// sgc-module: feriados
+model Feriado {
   id          String   @id @default(cuid())
   date        DateTime
   description String
   isArchived  Boolean  @default(false)
   createdAt   DateTime @default(now())
+
+  @@map("Holiday")
 }
 
+// sgc-module: afc
 model Afc {
   id                 String   @id @default(cuid())
   name               String   @default("AFC")
@@ -354,23 +404,30 @@ model Afc {
   createdAt          DateTime @default(now())
 }
 
-model SpecialCondition {
+// sgc-module: condiciones_especiales
+model CondicionEspecial {
   id          String   @id @default(cuid())
-  name        String
+  nombre      String   @map("name")
   description String?
   isArchived  Boolean  @default(false)
   createdAt   DateTime @default(now())
+
+  @@map("SpecialCondition")
 }
 
-model CommonSpace {
-  id            String   @id @default(cuid())
-  name          String
+// sgc-module: espacios
+model EspacioComun {
+  id            String    @id @default(cuid())
+  reservations  Reserva[]
+  nombre        String   @map("name")
   location      String
   rentalValue   Float    @default(0)
   durationHours Int      @default(1)
   conditions    String?
   isArchived    Boolean  @default(false)
   createdAt     DateTime @default(now())
+
+  @@map("CommonSpace")
 }
 
 model CommunityExpense {
@@ -419,7 +476,7 @@ model SystemSettings {
   updatedAt             DateTime @updatedAt
 }
 
-model ArticleDelivery {
+model EntregaArticulo {
   id             String   @id @default(cuid())
   folio          String   @unique
   personnelId    String
@@ -430,6 +487,8 @@ model ArticleDelivery {
   signedDocument String?
   createdAt      DateTime @default(now())
   personnel      Personnel @relation(fields: [personnelId], references: [id])
+
+  @@map("ArticleDelivery")
 }
 
 model Camera {
@@ -437,13 +496,15 @@ model Camera {
   name        String
   description String?
   backupHours Int      @default(168)
-  isArchived  Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  isArchived  Boolean   @default(false)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  logs        CctvLog[]
 }
 
 model FixedAsset {
   id               String   @id @default(cuid())
-  description      String
+  description      String   @unique
   quantity         Int      @default(1)
   purchasePrice    Float    @default(0)
   depreciatedValue Float    @default(0)
@@ -453,4 +514,233 @@ model FixedAsset {
   purchaseDate     String
   isArchived       Boolean  @default(false)
   createdAt        DateTime @default(now())
+}
+
+model BulkUploadLog {
+  id          String   @id @default(cuid())
+  module      String
+  processed   Int
+  created     Int
+  updated     Int
+  status      String   // "success", "warning", "error"
+  dryRun      Boolean  @default(false)
+  errorsJson  String?  // Detalle de errores en formato JSON
+  createdAt   DateTime @default(now())
+}
+
+model Comite {
+  id             String    @id @default(cuid())
+  name           String
+  position       String
+  dni            String    @unique
+  address        String?
+  email          String?
+  phone          String?
+  photo          String?
+  signaturePhoto String?
+  isArchived     Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+
+  @@map("CommitteeMember")
+}
+
+model Aviso {
+  id              String   @id @default(cuid())
+  text            String
+  type            String   @default("info")
+  isActive        Boolean  @default(true)
+  image           String?
+  youtubeUrl      String?
+  durationSeconds Int      @default(10)
+  isFullImage     Boolean  @default(false)
+  expiresAt       DateTime?
+  tags            String?
+  isArchived      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@map("SystemAnnouncement")
+}
+
+model DailyReport {
+  id                         String      @id @default(cuid())
+  folio                      String      @unique
+  workerId                   String
+  workerName                 String
+  shiftDate                  String
+  shiftType                  String      // Manana, Tarde, Noche
+  novedades                  String?
+  hasIncidents               Boolean     @default(false)
+  incidentDetails            String?
+  incidentAttachments        String?
+  hasInfrastructureIssues    Boolean     @default(false)
+  infrastructureIssueTypes   String?
+  infrastructureIssueDetails String?
+  infrastructureAttachments  String?
+  hasEquipmentIssues         Boolean     @default(false)
+  equipmentIssueTypes        String?
+  equipmentIssueDetails      String?
+  equipmentAttachments       String?
+  status                     String      @default("open")
+  createdAt                  DateTime    @default(now())
+  closedAt                   DateTime?
+  adminReopenedBy            String?
+  adminReopenReason          String?
+  isArchived                 Boolean     @default(false)
+  
+  // Opciones de relación para trazabilidad operativa
+  residentId                 String?
+  ownerId                    String?
+  departmentId               String?
+  
+  resident                   Residente?   @relation(fields: [residentId], references: [id])
+  owner                      Propietario? @relation(fields: [ownerId], references: [id])
+  department     Department?  @relation(fields: [departmentId], references: [id])
+  logs           ShiftLog[]
+
+  @@map("DailyReport")
+}
+
+model ShiftLog {
+  id              String      @id @default(cuid())
+  dailyReportId   String
+  timestamp       DateTime    @default(now())
+  event           String
+  category        String?     // routine, incident, check
+  workerId        String
+  isArchived      Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  
+  dailyReport     DailyReport @relation(fields: [dailyReportId], references: [id])
+
+  @@map("ShiftLog")
+}
+
+model Visita {
+  id              String   @id @default(cuid())
+  folio           String   @unique
+  names           String
+  dni             String
+  residentId      String?
+  towerId         String?
+  departmentId    String?
+  visitDate       String
+  visitTime       String?
+  isPreRegistered Boolean  @default(false)
+  status          String   @default("scheduled")
+  entryTime       String?
+  exitTime        String?
+  vehiclePlate    String?
+  notes           String?
+  isArchived      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  resident        Residente?  @relation(fields: [residentId], references: [id])
+  department      Department? @relation(fields: [departmentId], references: [id])
+
+  @@map("Visitor")
+}
+
+model ContratistaVisita {
+  id              String   @id @default(cuid())
+  folio           String   @unique
+  contractorId    String?  // Relation to Master Contractor (optional)
+  names           String
+  dni             String
+  company         String
+  subject         String
+  departmentId    String?
+  status          String   @default("active") // active, exited, expired
+  entryAt         DateTime @default(now())
+  exitAt          DateTime?
+  allowedUntil    DateTime?
+  isArchived      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  department      Department? @relation(fields: [departmentId], references: [id])
+
+  @@map("ContractorAccess")
+}
+
+model SupplyRequest {
+  id              String   @id @default(cuid())
+  folio           String   @unique
+  name            String
+  description     String?
+  requestedBy     String   // worker_id
+  status          String   @default("pending") // pending, approved, rejected, delivered
+  isArchived      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  worker          Personnel @relation(fields: [requestedBy], references: [id])
+
+  @@map("SupplyRequest")
+}
+
+model CctvLog {
+  id              String   @id @default(cuid())
+  folio           String   @unique
+  cameraId        String
+  eventType       String   // intrusion, movement, error, routine
+  description     String?
+  recordedAt      DateTime @default(now())
+  evidenceUrl     String?
+  isArchived      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  camera          Camera   @relation(fields: [cameraId], references: [id])
+
+  @@map("CctvLog")
+}
+
+model Reserva {
+  id              String   @id @default(cuid())
+  folio           String   @unique
+  commonSpaceId   String   @map("common_space_id")
+  residentId      String   @map("resident_id")
+  startAt         DateTime @map("start_at")
+  endAt           DateTime @map("end_at")
+  status          String   @default("pending") // pending, approved, cancelled, completed
+  isArchived      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  commonSpace     EspacioComun @relation(fields: [commonSpaceId], references: [id])
+  resident        Residente    @relation(fields: [residentId], references: [id])
+
+  @@map("Reservation")
+}
+
+model Ticket {
+  id              String   @id @default(cuid())
+  folio           String   @unique
+  residentId      String   @map("resident_id")
+  unitId          String?  @map("unit_id")
+  towerId         String?  @map("tower_id")
+  type            String   @default("request")
+  subject         String
+  description     String
+  image           String?
+  status          String   @default("open") // open, in_progress, resolved, closed
+  adminNotes      String?  @map("admin_notes")
+  acknowledgedAt  DateTime? @map("acknowledged_at")
+  acknowledgedBy  String?  @map("acknowledged_by")
+  isArchived      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  resident        Residente @relation(fields: [residentId], references: [id])
+
+  @@map("SupportTicket")
+}
+
+model DirectorioServicio {
+  id            String   @id @default(cuid())
+  name          String
+  category      String
+  contactPhone  String?  @map("contact_phone")
+  contactEmail  String?  @map("contact_email")
+  description   String?
+  isArchived    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("ServiceDirectory")
 }

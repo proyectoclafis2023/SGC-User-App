@@ -29,17 +29,17 @@ export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ childre
         return `${prefix}-${dateStr}-${rand}`;
     };
 
-    const addReport = async (report: Omit<ShiftReport, 'id' | 'folio' | 'createdAt' | 'status' | 'hasIncidents' | 'hasInfrastructureIssues' | 'hasEquipmentIssues'>): Promise<boolean> => {
+    const addReport = async (report: Omit<ShiftReport, 'id' | 'folio' | 'created_at' | 'status' | 'has_incidents' | 'has_infrastructure_issues' | 'has_equipment_issues'>): Promise<boolean> => {
         const id = Math.random().toString(36).substr(2, 9);
         const newRecord: ShiftReport = {
             ...report,
             id,
             status: 'open',
-            hasIncidents: false,
-            hasInfrastructureIssues: false,
-            hasEquipmentIssues: false,
+            has_incidents: false,
+            has_infrastructure_issues: false,
+            has_equipment_issues: false,
             folio: generateFolio('SHR'),
-            createdAt: new Date().toISOString()
+            created_at: new Date().toISOString()
         };
 
         try {
@@ -83,16 +83,16 @@ export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ childre
         await updateReport(id, {
             ...data,
             status: 'closed',
-            closedAt: new Date().toISOString()
+            closed_at: new Date().toISOString()
         });
     };
 
     const reopenShift = async (id: string, adminName: string, reason: string) => {
         await updateReport(id, {
             status: 'open',
-            adminReopenedBy: adminName,
-            adminReopenReason: reason,
-            closedAt: undefined
+            admin_reopened_by: adminName,
+            admin_reopen_reason: reason,
+            closed_at: undefined
         });
     };
 

@@ -149,7 +149,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
     const handleQuickAddBank = async (e: React.FormEvent) => {
         e.preventDefault();
         if (newBankName.trim()) {
-            const id = await addBank({ name: newBankName.trim() });
+            const id = await addBank({ nombre: newBankName.trim() });
             setBankId(id);
             setNewBankName('');
             setIsAddingBank(false);
@@ -613,7 +613,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                         className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
                                     >
                                         <option value="">Seleccione banco...</option>
-                                        {banks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                        {banks.map(b => <option key={b.id} value={b.id}>{b.nombre}</option>)}
                                     </select>
                                 </div>
                                 <Input

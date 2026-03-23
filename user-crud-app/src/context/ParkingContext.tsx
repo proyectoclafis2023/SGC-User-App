@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const ParkingContext = createContext<ParkingContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/parking`;
+const API_URL = `${API_BASE_URL}/estacionamientos`;
 
 export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [parkings, setParkings] = useState<Parking[]>([]);

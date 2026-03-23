@@ -164,7 +164,7 @@ export const AvailableUnitsPage: React.FC = () => {
                                             </div>
                                             <span className="font-bold">Gasto Común Base</span>
                                         </div>
-                                        <span className="font-black text-gray-900 dark:text-white">{formatCurrency(unit.baseCommonExpense || 40000)}</span>
+                                        <span className="font-black text-gray-900 dark:text-white">{formatCurrency(unit.base_common_expense || 40000)}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
                                         <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400">

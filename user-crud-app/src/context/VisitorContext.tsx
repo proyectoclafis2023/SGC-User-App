@@ -29,13 +29,13 @@ export const VisitorProvider: React.FC<{ children: ReactNode }> = ({ children })
         return `${prefix}-${dateStr}-${rand}`;
     };
 
-    const addVisitor = async (visitor: Omit<Visitor, 'id' | 'folio' | 'createdAt'>) => {
+    const addVisitor = async (visitor: Omit<Visitor, 'id' | 'folio' | 'created_at'>) => {
         const id = Math.random().toString(36).substr(2, 9);
         const newRecord: Visitor = {
             ...visitor,
             id,
             folio: generateFolio('VIS'),
-            createdAt: new Date().toISOString()
+            created_at: new Date().toISOString()
         };
 
         const response = await fetch(`${API_BASE_URL}/visitors`, {
@@ -55,8 +55,8 @@ export const VisitorProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (!visitor) return;
 
         const updated = { ...visitor, status };
-        if (status === 'entered') updated.entryTime = time || new Date().toLocaleTimeString();
-        if (status === 'exited') updated.exitTime = time || new Date().toLocaleTimeString();
+        if (status === 'entered') updated.entry_at = time || new Date().toLocaleTimeString();
+        if (status === 'exited') updated.exit_at = time || new Date().toLocaleTimeString();
 
         const response = await fetch(`${API_BASE_URL}/visitors/${id}`, {
             method: 'PUT',

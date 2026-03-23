@@ -22,17 +22,17 @@ export const CorrespondencePage: React.FC = () => {
     const [viewMode, setViewMode] = useState<'all' | 'pending' | 'delivered' | 'expected'>('all');
 
     // Form states
-    const [towerId, setTowerId] = useState('');
-    const [departmentId, setDepartmentId] = useState('');
+    const [tower_id, setTowerId] = useState('');
+    const [department_id, setDepartmentId] = useState('');
     const [type, setType] = useState<Correspondence['type']>('package');
     const [addressee, setAddressee] = useState('');
     const [courier, setCourier] = useState('');
     const [manualCourier, setManualCourier] = useState('');
     const [showManualCourier, setShowManualCourier] = useState(false);
     const [details, setDetails] = useState('');
-    const [evidenceImage, setEvidenceImage] = useState<string | undefined>(undefined);
-    const [expectedDate, setExpectedDate] = useState('');
-    const [expectedTimeRange, setExpectedTimeRange] = useState('');
+    const [evidence_image, setEvidenceImage] = useState<string | undefined>(undefined);
+    const [expected_date, setExpectedDate] = useState('');
+    const [expected_time_range, setExpectedTimeRange] = useState('');
 
     const isAdmin = user?.role === 'admin' || user?.role === 'global_admin' || user?.role === 'worker';
     const isResident = user?.role === 'resident';
@@ -46,7 +46,7 @@ export const CorrespondencePage: React.FC = () => {
     // Effect to pre-select unit if resident has only one property
     useEffect(() => {
         if (isModalOpen && isResident && residentProperties.length === 1) {
-            setTowerId(residentProperties[0].towerId || '');
+            setTowerId(residentProperties[0].tower_id || '');
             setDepartmentId(residentProperties[0].id);
         }
     }, [isModalOpen, isResident, residentProperties]);
@@ -68,18 +68,18 @@ export const CorrespondencePage: React.FC = () => {
         const status = isResident ? 'expected' : 'received';
 
         await addItem({
-            towerId,
-            departmentId,
+            tower_id,
+            department_id,
             type,
             addressee,
             courier,
             details,
-            evidenceImage,
+            evidence_image,
             status,
-            expectedDate,
-            expectedTimeRange,
-            receivedAt: status === 'received' ? new Date().toISOString() : undefined,
-            receivedBy: status === 'received' ? user?.name : undefined
+            expected_date,
+            expected_time_range,
+            received_at: status === 'received' ? new Date().toISOString() : undefined,
+            received_by: status === 'received' ? user?.name : undefined
         });
 
         setIsModalOpen(false);
@@ -116,7 +116,7 @@ export const CorrespondencePage: React.FC = () => {
             (viewMode === 'delivered' && item.status === 'delivered') ||
             (viewMode === 'expected' && item.status === 'expected');
 
-        const isAuthorized = isAdmin || (isResident && item.departmentId === (user as any).relatedId);
+        const isAuthorized = isAdmin || (isResident && item.department_id === (user as any).relatedId);
 
         return matchesSearch && matchesView && isAuthorized;
     });
@@ -197,7 +197,7 @@ export const CorrespondencePage: React.FC = () => {
                                 <div>
                                     <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight">{item.addressee}</h3>
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                                        {getUnitInfo(item.towerId, item.departmentId)}
+                                        {getUnitInfo(item.tower_id, item.department_id)}
                                     </p>
                                 </div>
 
@@ -218,8 +218,8 @@ export const CorrespondencePage: React.FC = () => {
                                             <AlertCircle className="w-4 h-4" />
                                             <p className="text-xs font-black uppercase tracking-widest">Información de llegada</p>
                                         </div>
-                                        <p className="text-sm font-bold">Fecha: {item.expectedDate ? new Date(item.expectedDate).toLocaleDateString() : 'Por definir'}</p>
-                                        <p className="text-xs text-gray-500 font-medium">Bloque: {item.expectedTimeRange || 'No especificado'}</p>
+                                        <p className="text-sm font-bold">Fecha: {item.expected_date ? new Date(item.expected_date).toLocaleDateString() : 'Por definir'}</p>
+                                        <p className="text-xs text-gray-500 font-medium">Bloque: {item.expected_time_range || 'No especificado'}</p>
                                     </div>
                                 ) : (
                                     <div>
@@ -228,9 +228,9 @@ export const CorrespondencePage: React.FC = () => {
                                     </div>
                                 )}
 
-                                {item.evidenceImage && (
+                                {item.evidence_image && (
                                     <div className="relative group/img aspect-video rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
-                                        <img src={item.evidenceImage} alt="Evidencia" className="w-full h-full object-cover" />
+                                        <img src={item.evidence_image} alt="Evidencia" className="w-full h-full object-cover" />
                                     </div>
                                 )}
 
@@ -247,7 +247,7 @@ export const CorrespondencePage: React.FC = () => {
 
                                 <div className="pt-4 border-t border-gray-50 dark:border-gray-800 flex justify-between items-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                                     <span>Ref: {item.id.toUpperCase()}</span>
-                                    <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                                    <span>{new Date(item.created_at).toLocaleDateString()}</span>
                                 </div>
                             </div>
                         </div>
@@ -273,13 +273,13 @@ export const CorrespondencePage: React.FC = () => {
                                     <label className="text-xs font-black text-gray-500 ml-1 uppercase">Torre/Edificio</label>
                                     <select
                                         className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 font-bold text-sm outline-none"
-                                        value={towerId}
+                                        value={tower_id}
                                         onChange={(e) => setTowerId(e.target.value)}
                                         required
                                     >
                                         <option value="">Seleccionar...</option>
                                         {isResident ? (
-                                            Array.from(new Set(residentProperties.map(p => p.towerId))).map(tId => {
+                                            Array.from(new Set(residentProperties.map(p => p.tower_id))).map(tId => {
                                                 const tower = towers.find(t => t.id === tId);
                                                 return <option key={tId} value={tId}>{tower?.name}</option>;
                                             })
@@ -292,18 +292,18 @@ export const CorrespondencePage: React.FC = () => {
                                     <label className="text-xs font-black text-gray-500 ml-1 uppercase">Unidad</label>
                                     <select
                                         className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 font-bold text-sm outline-none"
-                                        value={departmentId}
+                                        value={department_id}
                                         onChange={(e) => setDepartmentId(e.target.value)}
                                         required
-                                        disabled={!towerId}
+                                        disabled={!tower_id}
                                     >
                                         <option value="">Seleccionar...</option>
                                         {isResident ? (
-                                            residentProperties.filter(p => p.towerId === towerId).map(d => (
+                                            residentProperties.filter(p => p.tower_id === tower_id).map(d => (
                                                 <option key={d.id} value={d.id}>{d.number}</option>
                                             ))
                                         ) : (
-                                            towers.find(t => t.id === towerId)?.departments.map(d => (
+                                            towers.find(t => t.id === tower_id)?.departments.map(d => (
                                                 <option key={d.id} value={d.id}>{d.number}</option>
                                             ))
                                         )}
@@ -364,10 +364,10 @@ export const CorrespondencePage: React.FC = () => {
                                     />
                                 )}
                                 {isResident && (
-                                    <Input label="Fecha Estimada" type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} />
+                                    <Input label="Fecha Estimada" type="date" value={expected_date} onChange={(e) => setExpectedDate(e.target.value)} />
                                 )}
                                 {isResident && (
-                                    <Input label="Bloque Horario" value={expectedTimeRange} onChange={(e) => setExpectedTimeRange(e.target.value)} placeholder="Ej: 14:00 - 18:00" />
+                                    <Input label="Bloque Horario" value={expected_time_range} onChange={(e) => setExpectedTimeRange(e.target.value)} placeholder="Ej: 14:00 - 18:00" />
                                 )}
                             </div>
 
@@ -389,8 +389,8 @@ export const CorrespondencePage: React.FC = () => {
                                             onClick={() => document.getElementById('camera-upload')?.click()}
                                             className="w-24 h-24 bg-white dark:bg-gray-800 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-sm cursor-pointer hover:scale-105 transition-transform overflow-hidden relative"
                                         >
-                                            {evidenceImage ? (
-                                                <img src={evidenceImage} className="w-full h-full object-cover" />
+                                            {evidence_image ? (
+                                                <img src={evidence_image} className="w-full h-full object-cover" />
                                             ) : (
                                                 <>
                                                     <Camera className="w-6 h-6 text-indigo-600" />

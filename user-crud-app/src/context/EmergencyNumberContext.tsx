@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const EmergencyNumberContext = createContext<EmergencyNumberContextType | undefined>(undefined);
 
-const BACKEND_URL = `${API_BASE_URL}/emergency_numbers`;
+const BACKEND_URL = `${API_BASE_URL}/maestro_emergencias`;
 
 export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [numbers, setNumbers] = useState<EmergencyNumber[]>([]);

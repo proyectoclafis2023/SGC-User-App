@@ -13,18 +13,18 @@ export const AFCPage: React.FC = () => {
 
     const [formData, setFormData] = useState({
         name: 'AFC',
-        fixedTermRate: 3.0,
-        indefiniteTermRate: 2.4,
-        isActive: true
+        fixed_term_rate: 3.0,
+        indefinite_term_rate: 2.4,
+        is_active: true
     });
 
     const handleAdd = () => {
         setEditingAfc(null);
         setFormData({
             name: 'AFC',
-            fixedTermRate: 3.0,
-            indefiniteTermRate: 2.4,
-            isActive: true
+            fixed_term_rate: 3.0,
+            indefinite_term_rate: 2.4,
+            is_active: true
         });
         setIsModalOpen(true);
     };
@@ -33,9 +33,9 @@ export const AFCPage: React.FC = () => {
         setEditingAfc(afc);
         setFormData({
             name: afc.name,
-            fixedTermRate: afc.fixedTermRate,
-            indefiniteTermRate: afc.indefiniteTermRate,
-            isActive: afc.isActive
+            fixed_term_rate: afc.fixed_term_rate,
+            indefinite_term_rate: afc.indefinite_term_rate,
+            is_active: afc.is_active
         });
         setIsModalOpen(true);
     };
@@ -111,10 +111,10 @@ export const AFCPage: React.FC = () => {
                                         {afc.name}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                        {afc.fixedTermRate}%
+                                        {afc.fixed_term_rate}%
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                        {afc.indefiniteTermRate}%
+                                        {afc.indefinite_term_rate}%
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -163,16 +163,16 @@ export const AFCPage: React.FC = () => {
                                     label="% Plazo Fijo"
                                     type="number"
                                     step="0.01"
-                                    value={formData.fixedTermRate}
-                                    onChange={e => setFormData({ ...formData, fixedTermRate: parseFloat(e.target.value) })}
+                                    value={formData.fixed_term_rate}
+                                    onChange={e => setFormData({ ...formData, fixed_term_rate: parseFloat(e.target.value) })}
                                     required
                                 />
                                 <Input
                                     label="% Indefinido"
                                     type="number"
                                     step="0.01"
-                                    value={formData.indefiniteTermRate}
-                                    onChange={e => setFormData({ ...formData, indefiniteTermRate: parseFloat(e.target.value) })}
+                                    value={formData.indefinite_term_rate}
+                                    onChange={e => setFormData({ ...formData, indefinite_term_rate: parseFloat(e.target.value) })}
                                     required
                                 />
                             </div>

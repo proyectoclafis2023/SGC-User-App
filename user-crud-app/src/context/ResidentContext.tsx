@@ -46,7 +46,7 @@ export const ResidentProvider: React.FC<{ children: ReactNode }> = ({ children }
         return result;
     };
 
-    const addResident = async (resident: Omit<Resident, 'id' | 'createdAt' | 'status'>) => {
+    const addResident = async (resident: Omit<Resident, 'id' | 'created_at' | 'status'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -67,9 +67,9 @@ export const ResidentProvider: React.FC<{ children: ReactNode }> = ({ children }
         await addLog({
             entityType: 'resident',
             entityId: newRes.id,
-            unitId: newRes.unitId,
+            unit_id: newRes.unit_id,
             action: 'created',
-            details: `Residente ${newRes.names} ${newRes.lastNames} registrado.`
+            details: `Residente ${newRes.names} ${newRes.last_names} registrado.`
         });
         return newRes;
     };
@@ -88,9 +88,9 @@ export const ResidentProvider: React.FC<{ children: ReactNode }> = ({ children }
         await addLog({
             entityType: 'resident',
             entityId: resident.id,
-            unitId: resident.unitId,
+            unit_id: resident.unit_id,
             action: 'updated',
-            details: `Datos del residente ${resident.names} ${resident.lastNames} actualizados.`
+            details: `Datos del residente ${resident.names} ${resident.last_names} actualizados.`
         });
     };
 

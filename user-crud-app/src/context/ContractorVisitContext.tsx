@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const ContractorVisitContext = createContext<ContractorVisitContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/contractor_visits`;
+const API_URL = `${API_BASE_URL}/contractors`;
 
 export const ContractorVisitProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [visits, setVisits] = useState<ContractorVisit[]>([]);
@@ -31,7 +31,7 @@ export const ContractorVisitProvider: React.FC<{ children: ReactNode }> = ({ chi
         return `${prefix}-${date}-${rand}`;
     };
 
-    const addVisit = async (visit: Omit<ContractorVisit, 'id' | 'folio' | 'createdAt' | 'status'>) => {
+    const addVisit = async (visit: Omit<ContractorVisit, 'id' | 'folio' | 'created_at' | 'status'>) => {
         try {
             await fetch(API_URL, {
                 method: 'POST',
@@ -39,8 +39,8 @@ export const ContractorVisitProvider: React.FC<{ children: ReactNode }> = ({ chi
                 body: JSON.stringify({
                     ...visit,
                     folio: generateFolio('VCON'),
-                    status: 'entered',
-                    createdAt: new Date().toISOString()
+                    status: 'active',
+                    created_at: new Date().toISOString()
                 })
             });
             await fetchVisits();
@@ -59,7 +59,7 @@ export const ContractorVisitProvider: React.FC<{ children: ReactNode }> = ({ chi
                     body: JSON.stringify({ 
                         ...visit, 
                         status, 
-                        exitTime: status === 'exited' ? new Date().toLocaleTimeString() : visit.exitTime 
+                        exit_at: status === 'exited' ? new Date().toLocaleTimeString() : visit.exit_at 
                     })
                 });
                 await fetchVisits();

@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const SpecialConditionContext = createContext<SpecialConditionContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/special_conditions`; // Verify table name
+const API_URL = `${API_BASE_URL}/condiciones_especiales`; // Verify table name
 
 export const SpecialConditionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [conditions, setConditions] = useState<SpecialCondition[]>([]);

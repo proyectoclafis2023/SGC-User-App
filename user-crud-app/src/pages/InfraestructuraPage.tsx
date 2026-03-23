@@ -11,13 +11,13 @@ import {
     Building2, Plus, Copy, Trash2, Edit2, Dog,
     AlertTriangle, Save, X, Home, Droplets, Zap,
     Flame, UserCheck, Clock, Search, UserPlus,
-    DollarSign, BedDouble, Bath, Car, Maximize, Map, Camera
+    Map, Camera
 } from 'lucide-react';
 import { formatRUT } from '../utils/formatters';
 import { useSettings } from '../context/SettingsContext';
 import type { Department, Tower, Owner, Resident, UnitType, SpecialCondition, HistoryLog } from '../types';
 
-export const InfrastructurePage: React.FC = () => {
+export const InfraestructuraPage: React.FC = () => {
     const { towers, addTower, deleteTower, updateTower, duplicateTower, addDepartment, updateDepartment, deleteDepartment } = useInfrastructure();
     const { getLogsByUnit } = useHistoryLogs();
     const { owners, addOwner } = useOwners();
@@ -26,7 +26,7 @@ export const InfrastructurePage: React.FC = () => {
     const { conditions } = useSpecialConditions();
     const { settings } = useSettings();
 
-    const handleDeleteDept = (_towerId: string, deptId: string, number: string) => {
+    const handleDeleteDept = (_tower_id: string, deptId: string, number: string) => {
         if (window.confirm(`¿Está seguro de eliminar la unidad ${number}?`)) {
             deleteDepartment(deptId);
         }
@@ -39,7 +39,7 @@ export const InfrastructurePage: React.FC = () => {
     const [isQuickCreateResidentOpen, setIsQuickCreateResidentOpen] = useState(false);
 
     const [currentTower, setCurrentTower] = useState<Tower | null>(null);
-    const [editingDept, setEditingDept] = useState<{ towerId: string; dept: Department } | null>(null);
+    const [editingDept, setEditingDept] = useState<{ tower_id: string; dept: Department } | null>(null);
     const [historyDept, setHistoryDept] = useState<Department | null>(null);
     const [towerName, setTowerName] = useState('');
 
@@ -47,40 +47,37 @@ export const InfrastructurePage: React.FC = () => {
     const [residentSearch, setResidentSearch] = useState('');
 
     const [deptNumber, setDeptNumber] = useState('');
-    const [unitTypeId, setUnitTypeId] = useState('');
-    const [propertyRole, setPropertyRole] = useState('');
+    const [unit_type_id, setUnitTypeId] = useState('');
+    const [property_role, setPropertyRole] = useState('');
     const [m2, setM2] = useState(0);
     const [floor, setFloor] = useState<number | ''>('');
-    const [waterClientId, setWaterClientId] = useState('');
+    const [water_client_id, setWaterClientId] = useState('');
 
     useEffect(() => {
-        // Solo cargar m2 si es una unidad nueva o si m2 es 0/vacío
-        if (unitTypeId) {
-            const type = unitTypes.find((t: UnitType) => t.id === unitTypeId);
-            if (type && type.defaultM2) {
-                // Only update if current m2 is 0 or if we are creating a new one
+        if (unit_type_id) {
+            const type = unitTypes.find((t: UnitType) => t.id === unit_type_id);
+            if (type && type.default_m2) {
                 if (m2 === 0 || !editingDept) {
-                    setM2(type.defaultM2);
+                    setM2(type.default_m2);
                 }
             }
         }
-    }, [unitTypeId, unitTypes, editingDept]);
-    const [electricityClientId, setElectricityClientId] = useState('');
-    const [gasClientId, setGasClientId] = useState('');
-    const [ownerId, setOwnerId] = useState('');
-    const [residentId, setResidentId] = useState('');
+    }, [unit_type_id, unitTypes, editingDept]);
+    const [electricity_client_id, setElectricityClientId] = useState('');
+    const [gas_client_id, setGasClientId] = useState('');
+    const [owner_id, setOwnerId] = useState('');
+    const [resident_id, setResidentId] = useState('');
 
-    // New fields
     const [value, setValue] = useState(0);
     const [dormitorios, setDormitorios] = useState(0);
     const [banos, setBanos] = useState(0);
     const [estacionamientos, setEstacionamientos] = useState(0);
-    const [terrainM2, setTerrainM2] = useState(0);
-    const [yearBuilt, setYearBuilt] = useState(new Date().getFullYear());
-    const [isAvailable, setIsAvailable] = useState(false);
-    const [publishType, setPublishType] = useState<'venta' | 'arriendo'>('venta');
+    const [terrain_m2, setTerrainM2] = useState(0);
+    const [year_built, setYearBuilt] = useState(new Date().getFullYear());
+    const [is_available, setIsAvailable] = useState(false);
+    const [publish_type, setPublishType] = useState<'venta' | 'arriendo'>('venta');
     const [image, setImage] = useState('');
-    const [locationMapUrl, setLocationMapUrl] = useState('');
+    const [location_map_url, setLocationMapUrl] = useState('');
 
     const [quickNames, setQuickNames] = useState('');
     const [quickLastNames, setQuickLastNames] = useState('');
@@ -89,7 +86,7 @@ export const InfrastructurePage: React.FC = () => {
     const [quickEmail, setQuickEmail] = useState('');
 
     const filteredOwners = useMemo(() => {
-        const activeOwners = owners.filter((o: Owner) => !o.isArchived);
+        const activeOwners = owners.filter((o: Owner) => !o.is_archived);
         if (!ownerSearch.trim()) return [];
         const q = ownerSearch.toLowerCase();
         return activeOwners.filter((o: Owner) =>
@@ -99,7 +96,7 @@ export const InfrastructurePage: React.FC = () => {
     }, [owners, ownerSearch]);
 
     const filteredResidents = useMemo(() => {
-        const activeResidents = residents.filter((r: Resident) => !r.isArchived);
+        const activeResidents = residents.filter((r: Resident) => !r.is_archived);
         if (!residentSearch.trim()) return [];
         const q = residentSearch.toLowerCase();
         return activeResidents.filter((r: Resident) =>
@@ -129,33 +126,33 @@ export const InfrastructurePage: React.FC = () => {
         setIsTowerModalOpen(false);
     };
 
-    const handleOpenDeptModal = (towerId: string, dept?: Department) => {
+    const handleOpenDeptModal = (tower_id: string, dept?: Department) => {
         setOwnerSearch('');
         setResidentSearch('');
         if (dept) {
-            setEditingDept({ towerId, dept });
+            setEditingDept({ tower_id, dept });
             setDeptNumber(dept.number);
-            setUnitTypeId(dept.unitTypeId || '');
-            setPropertyRole(dept.propertyRole || '');
+            setUnitTypeId(dept.unit_type_id || '');
+            setPropertyRole(dept.property_role || '');
             setM2(dept.m2 || 0);
             setFloor(dept.floor || '');
-            setWaterClientId(dept.waterClientId || '');
-            setElectricityClientId(dept.electricityClientId || '');
-            setGasClientId(dept.gasClientId || '');
-            setOwnerId(dept.ownerId || '');
-            setResidentId(dept.residentId || '');
+            setWaterClientId(dept.water_client_id || '');
+            setElectricityClientId(dept.electricity_client_id || '');
+            setGasClientId(dept.gas_client_id || '');
+            setOwnerId(dept.owner_id || '');
+            setResidentId(dept.resident_id || '');
             setValue(dept.value || 0);
             setDormitorios(dept.dormitorios || 0);
             setBanos(dept.banos || 0);
             setEstacionamientos(dept.estacionamientos || 0);
-            setTerrainM2(dept.terrainM2 || 0);
-            setYearBuilt(dept.yearBuilt || new Date().getFullYear());
-            setIsAvailable(dept.isAvailable || false);
-            setPublishType(dept.publishType || 'venta');
+            setTerrainM2(dept.terrain_m2 || 0);
+            setYearBuilt(dept.year_built || new Date().getFullYear());
+            setIsAvailable(dept.is_available || false);
+            setPublishType(dept.publish_type || 'venta');
             setImage(dept.image || '');
-            setLocationMapUrl(dept.locationMapUrl || '');
+            setLocationMapUrl(dept.location_map_url || '');
         } else {
-            setCurrentTower(towers.find((t: Tower) => t.id === towerId) || null);
+            setCurrentTower(towers.find((t: Tower) => t.id === tower_id) || null);
             setEditingDept(null);
             setDeptNumber('');
             setUnitTypeId('');
@@ -187,34 +184,34 @@ export const InfrastructurePage: React.FC = () => {
             alert('Los metros cuadrados no pueden ser negativos.');
             return;
         }
-        const towerId = editingDept ? editingDept.towerId : currentTower?.id;
-        if (!towerId) {
+        const tower_id = editingDept ? editingDept.tower_id : currentTower?.id;
+        if (!tower_id) {
             alert('Debe seleccionar un edificio primero.');
             return;
         }
 
         const deptData: any = {
-            towerId,
+            tower_id,
             number: deptNumber,
-            unitTypeId,
-            propertyRole,
+            unit_type_id,
+            property_role,
             m2: Number(m2),
             floor: floor !== '' ? Number(floor) : undefined,
-            waterClientId,
-            electricityClientId,
-            gasClientId,
-            ownerId: ownerId || undefined,
-            residentId: residentId || undefined,
+            water_client_id,
+            electricity_client_id,
+            gas_client_id,
+            owner_id: owner_id || undefined,
+            resident_id: resident_id || undefined,
             value: Number(value),
             dormitorios: Number(dormitorios),
             banos: Number(banos),
             estacionamientos: Number(estacionamientos),
-            terrainM2: Number(terrainM2),
-            yearBuilt: Number(yearBuilt),
-            isAvailable,
-            publishType,
+            terrain_m2: Number(terrain_m2),
+            year_built: Number(year_built),
+            is_available,
+            publish_type,
             image,
-            locationMapUrl
+            location_map_url
         };
 
         try {
@@ -239,14 +236,13 @@ export const InfrastructurePage: React.FC = () => {
                 dni: quickDni,
                 phone: quickPhone,
                 email: quickEmail,
-                notes: 'Creado desde InfrastructurePage'
+                notes: 'Creado desde InfraestructuraPage'
             });
             if (id) {
                 setOwnerId(id);
-                setOwnerSearch(''); // Clear search to show new owner in list if needed
+                setOwnerSearch('');
             }
             setIsQuickCreateOwnerOpen(false);
-            // Reset quick fields
             setQuickNames(''); setQuickLastNames(''); setQuickDni(''); setQuickPhone(''); setQuickEmail('');
         } catch (error) {
             console.error('Error in quick create owner:', error);
@@ -266,15 +262,15 @@ export const InfrastructurePage: React.FC = () => {
             hasPets: false,
             conditionIds: [],
             isTenant: false,
-            notes: 'Creado desde InfrastructurePage'
+            notes: 'Creado desde InfraestructuraPage'
         });
         setResidentId(id);
         setIsQuickCreateResidentOpen(false);
     };
 
     const handleDuplicateOwnerToResident = async () => {
-        if (!ownerId) return;
-        const owner = owners.find((o: Owner) => o.id === ownerId);
+        if (!owner_id) return;
+        const owner = owners.find((o: Owner) => o.id === owner_id);
         if (!owner) return;
         const id = await addResident({
             names: owner.names,
@@ -293,7 +289,7 @@ export const InfrastructurePage: React.FC = () => {
 
     const getOwnerName = (id?: string) => owners.find((o: Owner) => o.id === id) ? `${owners.find((o: Owner) => o.id === id)?.names} ${owners.find((o: Owner) => o.id === id)?.lastNames}` : 'Sin asignar';
     const getResidentName = (id?: string) => residents.find((r: Resident) => r.id === id) ? `${residents.find((r: Resident) => r.id === id)?.names} ${residents.find((r: Resident) => r.id === id)?.lastNames}` : 'Sin asignar';
-    const getUnitTypeName = (id?: string) => unitTypes.find((t: UnitType) => t.id === id)?.name || 'Sin tipo';
+    const getUnitTypeName = (id?: string) => unitTypes.find((t: UnitType) => t.id === id)?.nombre || 'Sin tipo';
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -322,7 +318,7 @@ export const InfrastructurePage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-8">
-                {(towers || []).filter((t: Tower) => !t.isArchived).sort((a: Tower, b: Tower) => (a.name || '').localeCompare(b.name || '')).map((tower: Tower) => (
+                {(towers || []).filter((t: Tower) => !t.is_archived).sort((a: Tower, b: Tower) => (a.name || '').localeCompare(b.name || '')).map((tower: Tower) => (
                     <div key={tower.id} className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden group hover:shadow-xl transition-all duration-500">
                         <div className="p-8 border-b border-gray-50 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="flex items-center gap-6">
@@ -332,14 +328,14 @@ export const InfrastructurePage: React.FC = () => {
                                 <div>
                                     <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
                                         {tower.name}
-                                        {tower.departments.filter((d: Department) => !d.isArchived).length === 0 && (
+                                        {tower.departments.filter((d: Department) => !d.is_archived).length === 0 && (
                                             <span className="px-2 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 rounded-lg text-[8px] font-black uppercase tracking-widest border border-rose-200 flex items-center gap-1 animate-pulse">
                                                 <AlertTriangle className="w-3 h-3" /> Sin Unidades
                                             </span>
                                         )}
                                     </h2>
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                        ID: {tower.id} • {tower.departments.filter((d: Department) => !d.isArchived).length} UNIDADES REGISTRADAS
+                                        ID: {tower.id} • {tower.departments.filter((d: Department) => !d.is_archived).length} UNIDADES REGISTRADAS
                                     </p>
                                 </div>
                             </div>
@@ -371,11 +367,11 @@ export const InfrastructurePage: React.FC = () => {
 
                         <div className="p-8">
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                                {((tower as any).departments || []).filter((d: Department) => !d.isArchived).map((dept: Department) => {
-                                    const resInfo = residents.find((r: Resident) => r.id === dept.residentId);
+                                {((tower as any).departments || []).filter((d: Department) => !d.is_archived).map((dept: Department) => {
+                                    const resInfo = residents.find((r: Resident) => r.id === dept.resident_id);
                                     const censusFrequency = settings.censusFrequencyYears || 1;
-                                    const isCensusOverdue = !dept.lastCensusDate || 
-                                        new Date(dept.lastCensusDate).getTime() + (censusFrequency * 365 * 24 * 60 * 60 * 1000) < new Date().getTime();
+                                    const isCensusOverdue = !dept.last_census_date || 
+                                        new Date(dept.last_census_date).getTime() + (censusFrequency * 365 * 24 * 60 * 60 * 1000) < new Date().getTime();
 
                                     return (
                                         <div key={dept.id} className={`p-4 rounded-xl border ${isCensusOverdue ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800/50'} hover:shadow-md transition-all group relative`}>
@@ -387,11 +383,11 @@ export const InfrastructurePage: React.FC = () => {
                                                     <div>
                                                         <span className="font-bold text-gray-900 dark:text-white block text-sm">Unidad {dept.number}</span>
                                                         <div className="flex items-center gap-1 mt-0.5">
-                                                            <span className="text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded font-bold uppercase tracking-tighter">{getUnitTypeName(dept.unitTypeId)}</span>
+                                                            <span className="text-[9px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded font-bold uppercase tracking-tighter">{getUnitTypeName(dept.unit_type_id)}</span>
                                                             {isCensusOverdue && (
                                                                 <span className="text-[8px] px-1.5 py-0.5 bg-rose-100 text-rose-600 rounded font-black uppercase tracking-widest animate-pulse border border-rose-200">Sin Censo</span>
                                                             )}
-                                                            {!dept.residentId && (
+                                                            {!dept.resident_id && (
                                                                 <span className="text-[8px] px-1.5 py-0.5 bg-amber-100 text-amber-600 rounded font-black uppercase tracking-widest border border-amber-200">Sin Residente</span>
                                                             )}
                                                         </div>
@@ -406,8 +402,8 @@ export const InfrastructurePage: React.FC = () => {
 
                                             <div className="space-y-2 mt-3 text-[11px]">
                                                 <div className="bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg space-y-1">
-                                                    <p className="truncate text-gray-700 dark:text-gray-300 transition-colors"><span className="text-gray-400 font-bold uppercase mr-1">Dueño:</span> {getOwnerName(dept.ownerId)}</p>
-                                                    <p className="truncate text-gray-700 dark:text-gray-300 transition-colors"><span className="text-gray-400 font-bold uppercase mr-1">Res:</span> {getResidentName(dept.residentId)}</p>
+                                                    <p className="truncate text-gray-700 dark:text-gray-300 transition-colors"><span className="text-gray-400 font-bold uppercase mr-1">Dueño:</span> {getOwnerName(dept.owner_id)}</p>
+                                                    <p className="truncate text-gray-700 dark:text-gray-300 transition-colors"><span className="text-gray-400 font-bold uppercase mr-1">Res:</span> {getResidentName(dept.resident_id)}</p>
                                                 </div>
                                                 <div className="flex items-center gap-1.5 px-1">
                                                     {resInfo && (resInfo.conditionIds || []).length > 0 && (
@@ -473,21 +469,21 @@ export const InfrastructurePage: React.FC = () => {
                                         <div className="space-y-1.5">
                                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Edificio</label>
                                             <select
-                                                value={editingDept ? editingDept.towerId : currentTower?.id || ''}
+                                                value={editingDept ? editingDept.tower_id : currentTower?.id || ''}
                                                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCurrentTower(towers.find((t: Tower) => t.id === e.target.value) || null)}
                                                 className="w-full h-[42px] px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none transition-all"
                                                 disabled={!!editingDept}
                                                 required
                                             >
                                                 <option value="">Seleccionar Edificio...</option>
-                                                {towers.filter(t => !t.isArchived).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                                {towers.filter(t => !t.is_archived).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                             </select>
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Tipo de Unidad</label>
-                                            <select value={unitTypeId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setUnitTypeId(e.target.value)} className="w-full h-[42px] px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none transition-all" required>
+                                            <select value={unit_type_id} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setUnitTypeId(e.target.value)} className="w-full h-[42px] px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none transition-all" required>
                                                 <option value="">Seleccionar...</option>
-                                                {unitTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                                {unitTypes.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                                             </select>
                                         </div>
                                     </div>
@@ -495,7 +491,7 @@ export const InfrastructurePage: React.FC = () => {
                                         <Input label="Metros²" type="number" value={m2} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setM2(Number(e.target.value))} required min="0" />
                                         <Input label="Piso" type="number" value={floor} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFloor(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Ej: 5" />
                                     </div>
-                                    <Input label="Rol SII" value={propertyRole} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPropertyRole(e.target.value)} />
+                                    <Input label="Rol SII" value={property_role} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPropertyRole(e.target.value)} />
                                     
                                     <div className="md:col-span-2 pt-4 border-t border-gray-100 dark:border-gray-800">
                                         <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Información Comercial y Portal</h3>
@@ -503,7 +499,7 @@ export const InfrastructurePage: React.FC = () => {
                                             <Input label="Valor Comercial ($)" type="number" value={value} onChange={(e) => setValue(Number(e.target.value))} />
                                             <div className="space-y-1.5">
                                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Tipo Publicación</label>
-                                                <select value={publishType} onChange={(e) => setPublishType(e.target.value as any)} className="w-full h-[42px] px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none transition-all">
+                                                <select value={publish_type} onChange={(e) => setPublishType(e.target.value as any)} className="w-full h-[42px] px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none transition-all">
                                                     <option value="venta">Venta</option>
                                                     <option value="arriendo">Arriendo</option>
                                                 </select>
@@ -511,11 +507,11 @@ export const InfrastructurePage: React.FC = () => {
                                             <Input label="Dormitorios" type="number" value={dormitorios} onChange={(e) => setDormitorios(Number(e.target.value))} min="0" />
                                             <Input label="Baños" type="number" value={banos} onChange={(e) => setBanos(Number(e.target.value))} min="0" />
                                             <Input label="Estacionamientos" type="number" value={estacionamientos} onChange={(e) => setEstacionamientos(Number(e.target.value))} min="0" />
-                                            <Input label="m² Terreno" type="number" value={terrainM2} onChange={(e) => setTerrainM2(Number(e.target.value))} min="0" />
-                                            <Input label="Año Construcción" type="number" value={yearBuilt} onChange={(e) => setYearBuilt(Number(e.target.value))} />
+                                            <Input label="m² Terreno" type="number" value={terrain_m2} onChange={(e) => setTerrainM2(Number(e.target.value))} min="0" />
+                                            <Input label="Año Construcción" type="number" value={year_built} onChange={(e) => setYearBuilt(Number(e.target.value))} />
                                             <div className="flex items-center gap-4 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700/50">
                                                 <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Disponible</label>
-                                                <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                                <input type="checkbox" checked={is_available} onChange={(e) => setIsAvailable(e.target.checked)} className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
                                             </div>
                                         </div>
                                         
@@ -526,7 +522,7 @@ export const InfrastructurePage: React.FC = () => {
                                                     type="text" 
                                                     placeholder="URL Mapa (Google Maps / Waze)" 
                                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
-                                                    value={locationMapUrl}
+                                                    value={location_map_url}
                                                     onChange={(e) => setLocationMapUrl(e.target.value)}
                                                 />
                                             </div>
@@ -575,7 +571,7 @@ export const InfrastructurePage: React.FC = () => {
                                                 type="text"
                                                 placeholder="N° Cliente Agua"
                                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-mono dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                                                value={waterClientId}
+                                                value={water_client_id}
                                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWaterClientId(e.target.value)}
                                             />
                                         </div>
@@ -585,7 +581,7 @@ export const InfrastructurePage: React.FC = () => {
                                                 type="text"
                                                 placeholder="N° Cliente Electricidad"
                                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-mono dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500/20"
-                                                value={electricityClientId}
+                                                value={electricity_client_id}
                                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setElectricityClientId(e.target.value)}
                                             />
                                         </div>
@@ -595,7 +591,7 @@ export const InfrastructurePage: React.FC = () => {
                                                 type="text"
                                                 placeholder="N° Cliente Gas"
                                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-mono dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                                                value={gasClientId}
+                                                value={gas_client_id}
                                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGasClientId(e.target.value)}
                                             />
                                         </div>
@@ -611,11 +607,11 @@ export const InfrastructurePage: React.FC = () => {
                                         </button>
                                     </div>
                                     <div className="relative">
-                                        {ownerId ? (
+                                        {owner_id ? (
                                             <div className="flex items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl">
                                                 <div className="flex items-center gap-2 text-sm font-bold text-indigo-700 dark:text-indigo-300">
                                                     <UserCheck className="w-4 h-4" />
-                                                    {getOwnerName(ownerId)}
+                                                    {getOwnerName(owner_id)}
                                                 </div>
                                                 <button type="button" onClick={() => setOwnerId('')} className="p-1 hover:bg-white dark:hover:bg-gray-800 rounded-full text-indigo-400 transition-colors">
                                                     <X className="w-4 h-4" />
@@ -661,7 +657,7 @@ export const InfrastructurePage: React.FC = () => {
                                     <div className="flex justify-between items-center">
                                         <label className="text-[11px] font-bold uppercase text-gray-400">Residente Actual</label>
                                         <div className="flex gap-3 items-center">
-                                            {ownerId && (
+                                            {owner_id && (
                                                 <button type="button" onClick={handleDuplicateOwnerToResident} className="text-[10px] font-bold text-emerald-600 flex items-center gap-1 hover:underline">
                                                     <UserCheck className="w-3 h-3" /> Mismo Propietario
                                                 </button>
@@ -672,11 +668,11 @@ export const InfrastructurePage: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="relative">
-                                        {residentId ? (
+                                        {resident_id ? (
                                             <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl">
                                                 <div className="flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
                                                     <UserCheck className="w-4 h-4" />
-                                                    {getResidentName(residentId)}
+                                                    {getResidentName(resident_id)}
                                                 </div>
                                                 <button type="button" onClick={() => setResidentId('')} className="p-1 hover:bg-white dark:hover:bg-gray-800 rounded-full text-emerald-400 transition-colors">
                                                     <X className="w-4 h-4" />

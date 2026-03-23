@@ -9,7 +9,7 @@ import { Plus, Search, UserCheck, Edit2, Trash2, X, History, Info, Key, ShieldCh
 import { formatRUT } from '../utils/formatters';
 import type { Owner, HistoryLog } from '../types';
 
-export const OwnersPage: React.FC = () => {
+export const PropietariosPage: React.FC = () => {
     const { owners, addOwner, updateOwner, deleteOwner } = useOwners();
     const { users, addUser, resetPassword, deleteUser } = useUsers();
     const { getLogsByEntity } = useHistoryLogs();
@@ -24,23 +24,23 @@ export const OwnersPage: React.FC = () => {
 
     // Form states
     const [names, setNames] = useState('');
-    const [lastNames, setLastNames] = useState('');
+    const [last_names, setLastNames] = useState('');
     const [dni, setDni] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
-    const [receiveResidentNotifications, setReceiveResidentNotifications] = useState(false);
-    const [canResidentSeeArrears, setCanResidentSeeArrears] = useState(false);
+    const [receive_resident_notifications, setReceiveResidentNotifications] = useState(false);
+    const [can_resident_see_arrears, setCanResidentSeeArrears] = useState(false);
 
     const handleOpenModal = (owner?: Owner) => {
         if (owner) {
             setEditingOwner(owner);
             setNames(owner.names);
-            setLastNames(owner.lastNames);
+            setLastNames(owner.last_names);
             setDni(owner.dni);
             setPhone(owner.phone);
             setEmail(owner.email);
-            setReceiveResidentNotifications(owner.receiveResidentNotifications || false);
-            setCanResidentSeeArrears(owner.canResidentSeeArrears || false);
+            setReceiveResidentNotifications(owner.receive_resident_notifications || false);
+            setCanResidentSeeArrears(owner.can_resident_see_arrears || false);
         } else {
             setEditingOwner(null);
             setNames('');
@@ -56,7 +56,7 @@ export const OwnersPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { names, lastNames, dni, phone, email, receiveResidentNotifications, canResidentSeeArrears };
+        const data = { names, last_names, dni, phone, email, receive_resident_notifications, can_resident_see_arrears };
         if (editingOwner) {
             await updateOwner({ ...editingOwner, ...data });
         } else {
@@ -77,19 +77,18 @@ export const OwnersPage: React.FC = () => {
     };
 
     const filteredOwners = owners.filter(o => {
-        if (o.isArchived) return false;
+        if (o.is_archived) return false;
 
         const cleanSearch = searchTerm.toLowerCase().trim();
         const cleanDniSearch = searchTerm.replace(/[^0-9kK]/g, '').toLowerCase();
 
-        const matchName = `${o.names} ${o.lastNames}`.toLowerCase().includes(cleanSearch);
+        const matchName = `${o.names} ${o.last_names}`.toLowerCase().includes(cleanSearch);
         const matchDni = o.dni.replace(/[^0-9kK]/g, '').toLowerCase().includes(cleanDniSearch);
 
         return matchName || (cleanDniSearch.length > 0 && matchDni);
     });
 
     const cleanRutForPassword = (rut: string) => {
-        // En base a la solicitud: RUT sin puntos ni guiones ni dígito verificador
         const clean = rut.replace(/[^0-9kK]/g, '');
         return clean.slice(0, -1);
     };
@@ -97,7 +96,7 @@ export const OwnersPage: React.FC = () => {
     const handleCreateUser = async (owner: Owner) => {
         const initialPassword = cleanRutForPassword(owner.dni);
         await addUser({
-            name: `${owner.names} ${owner.lastNames}`,
+            name: `${owner.names} ${owner.last_names}`,
             email: owner.email,
             role: 'owner',
             status: 'active',
@@ -155,7 +154,7 @@ export const OwnersPage: React.FC = () => {
                                         {o.names.charAt(0)}
                                     </div>
                                     <div>
-                                        <h3 className="font-black text-gray-900 dark:text-white text-lg">{o.names} {o.lastNames}</h3>
+                                        <h3 className="font-black text-gray-900 dark:text-white text-lg">{o.names} {o.last_names}</h3>
                                         <p className="text-xs font-black text-indigo-500 uppercase tracking-widest">{o.dni}</p>
                                     </div>
                                 </div>
@@ -178,17 +177,17 @@ export const OwnersPage: React.FC = () => {
                                     <span>{o.phone}</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-xs font-bold mt-2">
-                                    <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-widest ${o.receiveResidentNotifications ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800'}`}>
-                                        Notificaciones del Residente: {o.receiveResidentNotifications ? 'Activadas' : 'Inactivas'}
+                                    <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-widest ${o.receive_resident_notifications ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800'}`}>
+                                        Notificaciones del Residente: {o.receive_resident_notifications ? 'Activadas' : 'Inactivas'}
                                     </span>
-                                    <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-widest ${o.canResidentSeeArrears ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800'}`}>
-                                        Ver Mora (Residente): {o.canResidentSeeArrears ? 'Permitido' : 'No Permitido'}
+                                    <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-widest ${o.can_resident_see_arrears ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800'}`}>
+                                        Ver Mora (Residente): {o.can_resident_see_arrears ? 'Permitido' : 'No Permitido'}
                                     </span>
                                 </div>
                             </div>
 
                             <div className="mt-6 pt-6 border-t border-gray-50 dark:border-gray-800 flex justify-between items-center">
-                                <span className="text-[9px] text-gray-400 uppercase tracking-widest font-black opacity-60">Ingreso: {new Date(o.createdAt).toLocaleDateString()}</span>
+                                <span className="text-[9px] text-gray-400 uppercase tracking-widest font-black opacity-60">Ingreso: {new Date(o.created_at).toLocaleDateString()}</span>
                                 <button
                                     onClick={() => handleViewLogs(o)}
                                     className="flex items-center gap-1.5 text-[10px] text-indigo-600 uppercase font-black hover:underline"
@@ -216,7 +215,6 @@ export const OwnersPage: React.FC = () => {
                 ))}
             </div>
 
-            {/* Modals remain similarly structured but with improved aesthetics */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
                     <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] w-full max-w-md shadow-2xl border border-white/20 dark:border-gray-800 overflow-hidden animate-in zoom-in-95 duration-300">
@@ -234,7 +232,7 @@ export const OwnersPage: React.FC = () => {
                         <form onSubmit={handleSubmit} className="p-8 space-y-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <Input label="Nombres" value={names} onChange={(e) => setNames(e.target.value)} required />
-                                <Input label="Apellidos" value={lastNames} onChange={(e) => setLastNames(e.target.value)} required />
+                                <Input label="Apellidos" value={last_names} onChange={(e) => setLastNames(e.target.value)} required />
                             </div>
                             <Input label="DNI / RUT" value={dni} onChange={(e) => setDni(formatRUT(e.target.value))} required />
                             <Input label="Teléfono" value={phone} onChange={(e) => setPhone(e.target.value)} required />
@@ -246,10 +244,10 @@ export const OwnersPage: React.FC = () => {
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => setReceiveResidentNotifications(!receiveResidentNotifications)}
-                                    className={`w-12 h-6 rounded-full transition-all relative shrink-0 ${receiveResidentNotifications ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-700'}`}
+                                    onClick={() => setReceiveResidentNotifications(!receive_resident_notifications)}
+                                    className={`w-12 h-6 rounded-full transition-all relative shrink-0 ${receive_resident_notifications ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-700'}`}
                                 >
-                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${receiveResidentNotifications ? 'right-1' : 'left-1'}`} />
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${receive_resident_notifications ? 'right-1' : 'left-1'}`} />
                                 </button>
                             </div>
                             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
@@ -259,10 +257,10 @@ export const OwnersPage: React.FC = () => {
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => setCanResidentSeeArrears(!canResidentSeeArrears)}
-                                    className={`w-12 h-6 rounded-full transition-all relative shrink-0 ${canResidentSeeArrears ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-700'}`}
+                                    onClick={() => setCanResidentSeeArrears(!can_resident_see_arrears)}
+                                    className={`w-12 h-6 rounded-full transition-all relative shrink-0 ${can_resident_see_arrears ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-700'}`}
                                 >
-                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${canResidentSeeArrears ? 'right-1' : 'left-1'}`} />
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${can_resident_see_arrears ? 'right-1' : 'left-1'}`} />
                                 </button>
                             </div>
                             <div className="flex justify-end gap-3 pt-6 border-t dark:border-gray-800">
@@ -343,7 +341,7 @@ export const OwnersPage: React.FC = () => {
                 }}
                 title="Eliminar Propietario"
                 description="¿Está seguro de eliminar a"
-                itemName={ownerToDelete ? `${ownerToDelete.names} ${ownerToDelete.lastNames}` : ''}
+                itemName={ownerToDelete ? `${ownerToDelete.names} ${ownerToDelete.last_names}` : ''}
                 actionLabel="Eliminar Propietario"
             />
         </div>

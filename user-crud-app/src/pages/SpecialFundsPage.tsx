@@ -136,7 +136,7 @@ export const SpecialFundsPage: React.FC = () => {
                 if (config.isExempt) {
                     targetForThisDept = 0;
                 } else if (config.calculationType === 'percentage' && unitType) {
-                    targetForThisDept = (unitType.baseCommonExpense * config.value) / 100;
+                    targetForThisDept = (unitType.base_common_expense * config.value) / 100;
                 } else {
                     targetForThisDept = config.value;
                 }
@@ -432,7 +432,7 @@ export const SpecialFundsPage: React.FC = () => {
                                                     // Esto asegura un prorrateo equitativo según el tamaño/valor de la unidad
                                                     const totalWeight = activeDepts.reduce((acc, d) => {
                                                         const ut = unitTypes.find(u => u.id === d.unitTypeId);
-                                                        return acc + (ut?.baseCommonExpense || 0);
+                                                        return acc + (ut?.base_common_expense || 0);
                                                     }, 0);
 
                                                     if (totalWeight === 0) {
@@ -444,7 +444,7 @@ export const SpecialFundsPage: React.FC = () => {
                                                             const existing = unitConfigs.find(c => c.unitTypeId === ut.id);
                                                             if (existing?.isExempt) return existing;
 
-                                                            const proportionalValue = Math.round((totalProjectAmount * ut.baseCommonExpense) / totalWeight);
+                                                            const proportionalValue = Math.round((totalProjectAmount * ut.base_common_expense) / totalWeight);
                                                             return {
                                                                 unitTypeId: ut.id,
                                                                 calculationType: 'fixed' as const,
@@ -500,8 +500,8 @@ export const SpecialFundsPage: React.FC = () => {
                                             return (
                                                 <div key={ut.id} className="flex flex-col md:flex-row md:items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
                                                     <div className="flex-1">
-                                                        <p className="text-xs font-black text-gray-900 dark:text-white">{ut.name}</p>
-                                                        <p className="text-[10px] text-gray-400 font-bold uppercase">Base: ${ut.baseCommonExpense.toLocaleString()}</p>
+                                                        <p className="text-xs font-black text-gray-900 dark:text-white">{ut.nombre}</p>
+                                                        <p className="text-[10px] text-gray-400 font-bold uppercase">Base: ${ut.base_common_expense.toLocaleString()}</p>
                                                     </div>
 
                                                     <div className="flex items-center gap-2">

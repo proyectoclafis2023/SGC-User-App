@@ -67,10 +67,10 @@ export const ResidentDashboard: React.FC = () => {
         const currentYearNum = now.getFullYear();
         const currentMonthNum = now.getMonth() + 1;
 
-        const allDepts = towers.flatMap(t => t.departments).filter(d => !d.isArchived);
+        const allDepts = towers.flatMap(t => t.departments).filter(d => !d.is_archived);
         const gcTarget = allDepts.reduce((acc, dept) => {
             const ut = unitTypes.find(u => u.id === dept.unitTypeId);
-            return acc + (ut?.baseCommonExpense || 0);
+            return acc + (ut?.base_common_expense || 0);
         }, 0);
 
         const gcCollected = payments
@@ -80,7 +80,7 @@ export const ResidentDashboard: React.FC = () => {
         const gcPending = Math.max(0, gcTarget - gcCollected);
 
         const monthCommunityExpenses = communityExpenses.filter(e => {
-            if (e.isArchived) return false;
+            if (e.is_archived) return false;
             const d = new Date(e.date);
             return (d.getMonth() + 1) === currentMonthNum && d.getFullYear() === currentYearNum;
         });
@@ -101,7 +101,7 @@ export const ResidentDashboard: React.FC = () => {
     // Avisos dirigidos al residente (Globales o de su Unidad)
     const myAnnouncements = React.useMemo(() => {
         const systemMsg = systemMessages.filter(m => {
-            if (!m.isActive || m.isArchived) return false;
+            if (!m.isActive || m.is_archived) return false;
             // Si no tiene tags, es global
             if (!m.tags || m.tags.length === 0 || m.tags.includes('all')) return true;
             // Si tiene tag de su unidad

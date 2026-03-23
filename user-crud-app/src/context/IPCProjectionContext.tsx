@@ -1,26 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config/api';
-
-export interface IPCProjection {
-    id: string;
-    name: string;
-    ipcRate: number;
-    ponderadoRate: number;
-    description: string;
-    isActive: boolean;
-    createdAt: string;
-}
+import type { IPCProjection } from '../types';
 
 interface IPCProjectionContextType {
     projections: IPCProjection[];
-    addProjection: (p: Omit<IPCProjection, 'id' | 'createdAt'>) => Promise<void>;
+    addProjection: (p: Omit<IPCProjection, 'id' | 'created_at'>) => Promise<void>;
     updateProjection: (p: IPCProjection) => Promise<void>;
     deleteProjection: (id: string) => Promise<void>;
 }
 
 const IPCProjectionContext = createContext<IPCProjectionContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/ipc_projections`;
+const API_URL = `${API_BASE_URL}/maestro_ipc`;
 
 export const IPCProjectionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [projections, setProjections] = useState<IPCProjection[]>([]);
@@ -41,7 +32,7 @@ export const IPCProjectionProvider: React.FC<{ children: React.ReactNode }> = ({
         fetchProjections();
     }, []);
 
-    const addProjection = async (p: Omit<IPCProjection, 'id' | 'createdAt'>) => {
+    const addProjection = async (p: Omit<IPCProjection, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

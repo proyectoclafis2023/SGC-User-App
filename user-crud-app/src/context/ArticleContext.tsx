@@ -13,7 +13,7 @@ export interface ArticleContextType {
 
 const ArticleContext = createContext<ArticleContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/articles`;
+const API_URL = `${API_BASE_URL}/articulos_personal`;
 
 export const ArticleProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [articles, setArticles] = useState<Article[]>([]);

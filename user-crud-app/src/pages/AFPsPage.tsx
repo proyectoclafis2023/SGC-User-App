@@ -37,7 +37,7 @@ export const AFPsPage: React.FC = () => {
     };
 
     const filteredFunds = funds.filter(f =>
-        !f.isArchived && f.name.toLowerCase().includes(searchTerm.toLowerCase())
+        !f.is_archived && f.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -89,7 +89,7 @@ export const AFPsPage: React.FC = () => {
                                         {fund.name}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                        {fund.discountRate}%
+                                        {fund.discount_rate}%
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

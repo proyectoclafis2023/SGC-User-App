@@ -45,7 +45,7 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
 
     const getBankName = (id: string) => {
         const bank = banks.find(b => b.id === id);
-        return bank ? bank.name : 'No registrado';
+        return bank ? bank.nombre : 'No registrado';
     };
 
     const getJornadaName = (id: string) => {

@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const CommunicationContext = createContext<CommunicationContextType | undefined>(undefined);
 
-const TPL_API = `${API_BASE_URL}/communication_templates`;
+const TPL_API = `${API_BASE_URL}/maestro_mensajes`;
 const HIST_API = `${API_BASE_URL}/communication_history`;
 
 export const CommunicationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -30,7 +30,7 @@ export const CommunicationProvider: React.FC<{ children: React.ReactNode }> = ({
         fetchAll();
     }, []);
 
-    const addTemplate = async (template: Omit<CommunicationTemplate, 'id' | 'createdAt'>) => {
+    const addTemplate = async (template: Omit<CommunicationTemplate, 'id' | 'created_at'>) => {
         const response = await fetch(TPL_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -65,7 +65,7 @@ export const CommunicationProvider: React.FC<{ children: React.ReactNode }> = ({
         fetchAll();
     };
 
-    const addHistory = async (item: Omit<CommunicationHistory, 'id' | 'createdAt'>) => {
+    const addHistory = async (item: Omit<CommunicationHistory, 'id' | 'created_at'>) => {
         const response = await fetch(HIST_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

@@ -5,15 +5,15 @@ import { Input } from '../components/Input';
 import { MapPin, Plus, Trash2, Edit2, X, Clock, Banknote, Layout } from 'lucide-react';
 import type { CommonSpace } from '../types';
 
-export const CommonSpacesPage: React.FC = () => {
+export const EspaciosPage: React.FC = () => {
     const { spaces, addSpace, updateSpace, deleteSpace } = useCommonSpaces();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSpace, setEditingSpace] = useState<CommonSpace | null>(null);
 
     const [name, setName] = useState('');
     const [location, setLocation] = useState('');
-    const [rentalValue, setRentalValue] = useState<number>(0);
-    const [durationHours, setDurationHours] = useState<number>(1);
+    const [rental_value, setRentalValue] = useState<number>(0);
+    const [duration_hours, setDurationHours] = useState<number>(1);
     const [conditions, setConditions] = useState('');
 
     const handleOpenModal = (space?: CommonSpace) => {
@@ -21,8 +21,8 @@ export const CommonSpacesPage: React.FC = () => {
             setEditingSpace(space);
             setName(space.name);
             setLocation(space.location);
-            setRentalValue(space.rentalValue);
-            setDurationHours(space.durationHours);
+            setRentalValue(space.rental_value);
+            setDurationHours(space.duration_hours);
             setConditions(space.conditions || '');
         } else {
             setEditingSpace(null);
@@ -38,9 +38,9 @@ export const CommonSpacesPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (editingSpace) {
-            await updateSpace({ ...editingSpace, name, location, rentalValue: Math.floor(rentalValue), durationHours: Math.floor(durationHours), conditions });
+            await updateSpace({ ...editingSpace, name, location, rental_value: Math.floor(rental_value), duration_hours: Math.floor(duration_hours), conditions });
         } else {
-            await addSpace({ name, location, rentalValue: Math.floor(rentalValue), durationHours: Math.floor(durationHours), conditions });
+            await addSpace({ name, location, rental_value: Math.floor(rental_value), duration_hours: Math.floor(duration_hours), conditions });
         }
         setIsModalOpen(false);
     };
@@ -66,7 +66,7 @@ export const CommonSpacesPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {spaces.filter(s => !s.isArchived).map((space) => (
+                {spaces.filter(s => !s.is_archived).map((space) => (
                     <div key={space.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-all">
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
@@ -90,11 +90,11 @@ export const CommonSpacesPage: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                     <Banknote className="w-4 h-4 text-emerald-500" />
-                                    <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(space.rentalValue)}</span>
+                                    <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(space.rental_value)}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                                     <Clock className="w-4 h-4 text-blue-500" />
-                                    <span>{space.durationHours} {space.durationHours === 1 ? 'hora' : 'horas'}</span>
+                                    <span>{space.duration_hours} {space.duration_hours === 1 ? 'hora' : 'horas'}</span>
                                 </div>
                             </div>
                         </div>
@@ -121,14 +121,14 @@ export const CommonSpacesPage: React.FC = () => {
                                 <Input
                                     label="Arriendo ($)"
                                     type="number"
-                                    value={rentalValue}
+                                    value={rental_value}
                                     onChange={(e) => setRentalValue(Math.floor(Number(e.target.value)))}
                                     required
                                 />
                                 <Input
                                     label="Duración (Horas)"
                                     type="number"
-                                    value={durationHours}
+                                    value={duration_hours}
                                     onChange={(e) => setDurationHours(Math.floor(Number(e.target.value)))}
                                 />
                             </div>

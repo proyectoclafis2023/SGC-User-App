@@ -11,15 +11,15 @@ export const SystemMessagesPage: React.FC = () => {
 
     const [text, setText] = useState('');
     const [type, setType] = useState<SystemMessage['type']>('info');
-    const [expiresAt, setExpiresAt] = useState('');
+    const [expires_at, setExpiresAt] = useState('');
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState<string[]>([]);
 
     // Novedades
     const [image, setImage] = useState<string | undefined>(undefined);
-    const [youtubeUrl, setYoutubeUrl] = useState<string | undefined>(undefined);
-    const [durationSeconds, setDurationSeconds] = useState<number>(5);
-    const [isFullImage, setIsFullImage] = useState(false);
+    const [youtube_url, setYoutubeUrl] = useState<string | undefined>(undefined);
+    const [duration_seconds, setDurationSeconds] = useState<number>(5);
+    const [is_full_image, setIsFullImage] = useState(false);
 
     const quickTemplates = [
         { label: 'Hidropack', text: 'Problemas con sistema Hidropack - Técnicos en camino.', type: 'danger' as const },
@@ -33,12 +33,12 @@ export const SystemMessagesPage: React.FC = () => {
             setEditingMessage(msg);
             setText(msg.text);
             setType(msg.type);
-            setExpiresAt(msg.expiresAt || '');
+            setExpiresAt(msg.expires_at || '');
             setTags(msg.tags || []);
             setImage(msg.image);
-            setYoutubeUrl(msg.youtubeUrl);
-            setDurationSeconds(msg.durationSeconds || 5);
-            setIsFullImage(msg.isFullImage || false);
+            setYoutubeUrl(msg.youtube_url);
+            setDurationSeconds(msg.duration_seconds || 5);
+            setIsFullImage(msg.is_full_image || false);
         } else {
             setEditingMessage(null);
             setText('');
@@ -74,13 +74,13 @@ export const SystemMessagesPage: React.FC = () => {
         const data = {
             text,
             type,
-            expiresAt,
+            expires_at,
             tags,
-            isActive: true,
+            is_active: true,
             image,
-            youtubeUrl,
-            durationSeconds,
-            isFullImage
+            youtube_url,
+            duration_seconds,
+            is_full_image
         };
         if (editingMessage) {
             await updateMessage({ ...editingMessage, ...data });
@@ -153,20 +153,20 @@ export const SystemMessagesPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-                {messages.filter(m => !m.isArchived).map((msg) => (
+                {messages.filter(m => !m.is_archived).map((msg) => (
                     <div key={msg.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
                         <div className="flex items-center gap-4 flex-1">
                             <div className={`p-3 rounded-xl shrink-0 ${getTypeColor(msg.type)}`}>
                                 <Bell className="w-6 h-6" />
                             </div>
                             <div className="min-w-0">
-                                <p className={`text-lg font-medium leading-tight ${msg.isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400 line-through'}`}>
+                                <p className={`text-lg font-medium leading-tight ${msg.is_active ? 'text-gray-900 dark:text-white' : 'text-gray-400 line-through'}`}>
                                     {msg.text}
                                 </p>
                                 <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-gray-500">
                                     <span className="capitalize font-bold px-2 py-0.5 rounded-full border border-current opacity-70">{msg.type}</span>
-                                    <span>Creado el {new Date(msg.createdAt).toLocaleDateString()}</span>
-                                    {msg.expiresAt && <span className="text-red-500 font-bold">Vence: {new Date(msg.expiresAt).toLocaleDateString()}</span>}
+                                    <span>Creado el {new Date(msg.created_at).toLocaleDateString()}</span>
+                                    {msg.expires_at && <span className="text-red-500 font-bold">Vence: {new Date(msg.expires_at).toLocaleDateString()}</span>}
                                     {msg.tags?.map((t, idx) => (
                                         <span key={idx} className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 px-2 py-0.5 rounded-md">#{t}</span>
                                     ))}
@@ -176,10 +176,10 @@ export const SystemMessagesPage: React.FC = () => {
                         <div className="flex items-center gap-2 ml-4">
                             <button
                                 onClick={() => toggleMessageStatus(msg.id)}
-                                className={`p-2 rounded-lg transition-colors ${msg.isActive ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-                                title={msg.isActive ? 'Desactivar' : 'Activar'}
+                                className={`p-2 rounded-lg transition-colors ${msg.is_active ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                title={msg.is_active ? 'Desactivar' : 'Activar'}
                             >
-                                {msg.isActive ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                                {msg.is_active ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                             </button>
                             <button
                                 onClick={() => handleOpenModal(msg)}
@@ -247,7 +247,7 @@ export const SystemMessagesPage: React.FC = () => {
                                         type="number"
                                         min="1"
                                         max="60"
-                                        value={durationSeconds}
+                                        value={duration_seconds}
                                         onChange={(e) => setDurationSeconds(parseInt(e.target.value) || 5)}
                                         className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm"
                                     />
@@ -280,12 +280,12 @@ export const SystemMessagesPage: React.FC = () => {
                                             <span className="text-[10px] font-bold text-gray-500 uppercase">Ocupar gran parte del aviso</span>
                                             <button
                                                 type="button"
-                                                onClick={() => setIsFullImage(!isFullImage)}
-                                                className={`w-10 h-5 rounded-full transition-all relative ${isFullImage ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                                onClick={() => setIsFullImage(!is_full_image)}
+                                                className={`w-10 h-5 rounded-full transition-all relative ${is_full_image ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
                                             >
                                                 <button
                                                     type="button"
-                                                    className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${isFullImage ? 'translate-x-5.5' : 'translate-x-0.5'}`}
+                                                    className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${is_full_image ? 'translate-x-5.5' : 'translate-x-0.5'}`}
                                                 />
                                             </button>
                                         </div>
@@ -300,7 +300,7 @@ export const SystemMessagesPage: React.FC = () => {
                                     <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-red-600" />
                                     <input
                                         type="url"
-                                        value={youtubeUrl || ''}
+                                        value={youtube_url || ''}
                                         onChange={(e) => setYoutubeUrl(e.target.value)}
                                         placeholder="https://www.youtube.com/watch?v=..."
                                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
@@ -312,7 +312,7 @@ export const SystemMessagesPage: React.FC = () => {
                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Fecha de Expiración (Opcional)</label>
                                 <input
                                     type="date"
-                                    value={expiresAt}
+                                    value={expires_at}
                                     onChange={(e) => setExpiresAt(e.target.value)}
                                     className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm"
                                 />

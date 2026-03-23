@@ -25,11 +25,11 @@ export const SystemMessageProvider: React.FC<{ children: ReactNode }> = ({ child
         fetchMessages();
     }, []);
 
-    const addMessage = async (message: Omit<SystemMessage, 'id' | 'createdAt'>) => {
+    const addMessage = async (message: Omit<SystemMessage, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...message, createdAt: new Date().toISOString() })
+            body: JSON.stringify({ ...message, created_at: new Date().toISOString() })
         });
         if (!response.ok) {
             const err = await response.json();
@@ -63,7 +63,7 @@ export const SystemMessageProvider: React.FC<{ children: ReactNode }> = ({ child
     const toggleMessageStatus = async (id: string) => {
         const msg = messages.find(m => m.id === id);
         if (msg) {
-            await updateMessage({ ...msg, isActive: !msg.isActive });
+            await updateMessage({ ...msg, is_active: !msg.is_active });
         }
     };
 

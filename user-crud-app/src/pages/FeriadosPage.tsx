@@ -5,7 +5,7 @@ import { Input } from '../components/Input';
 import { Plus, Search, Calendar, Edit2, Trash2, Save, X } from 'lucide-react';
 import type { Holiday } from '../types';
 
-export const HolidaysPage: React.FC = () => {
+export const FeriadosPage: React.FC = () => {
     const { holidays, addHoliday, updateHoliday, deleteHoliday } = useHolidays();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingHoliday, setEditingHoliday] = useState<Holiday | null>(null);

@@ -56,7 +56,7 @@ export const CommunicationsPage: React.FC = () => {
 
     // Filter Logic
     const targetedDepartments = useMemo(() => {
-        let filtered = departments.filter((d: Department) => !d.isArchived);
+        let filtered = departments.filter((d: Department) => !d.is_archived);
         
         if (targetType === 'tower' && selectedTowerId) {
             filtered = filtered.filter((d: Department) => d.towerId === selectedTowerId);
@@ -120,9 +120,9 @@ export const CommunicationsPage: React.FC = () => {
             subject,
             message,
             recipients: recipientSummary.emails,
-            senderId: 'current-user', // Should be dynamic
-            targetFilter: `${targetType} - ${recipientType}`,
-            attachmentUrl: attachment?.name
+            sender_id: 'current-user', // Should be dynamic
+            target_filter: `${targetType} - ${recipientType}`,
+            attachment_url: attachment?.name
         });
 
         setIsSending(false);
@@ -342,7 +342,7 @@ export const CommunicationsPage: React.FC = () => {
                                                     className="w-full h-11 px-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm outline-none dark:text-gray-200"
                                                 >
                                                     <option value="">Elegir Tipo...</option>
-                                                    {unitTypes.map((t: UnitType) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                                    {unitTypes.map((t: UnitType) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                                                 </select>
                                             </div>
                                         )}
@@ -551,8 +551,8 @@ export const CommunicationsPage: React.FC = () => {
                                         <div className="space-y-4 flex-1">
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-600 uppercase tracking-widest">{item.targetFilter}</span>
-                                                    <span className="text-[10px] font-bold text-gray-400">{new Date(item.createdAt).toLocaleString()}</span>
+                                                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-600 uppercase tracking-widest">{item.target_filter}</span>
+                                                    <span className="text-[10px] font-bold text-gray-400">{new Date(item.created_at).toLocaleString()}</span>
                                                 </div>
                                                 <h3 className="text-lg font-black text-gray-900 dark:text-white">{item.subject}</h3>
                                             </div>
@@ -562,10 +562,10 @@ export const CommunicationsPage: React.FC = () => {
                                                     <Users className="w-3.5 h-3.5" />
                                                     {item.recipients.length} Destinatarios
                                                 </div>
-                                                {item.attachmentUrl && (
+                                                {item.attachment_url && (
                                                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500 uppercase">
                                                         <Paperclip className="w-3.5 h-3.5" />
-                                                        {item.attachmentUrl}
+                                                        {item.attachment_url}
                                                     </div>
                                                 )}
                                             </div>

@@ -25,7 +25,7 @@ export const OwnerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         fetchOwners();
     }, []);
 
-    const addOwner = async (owner: Omit<Owner, 'id' | 'createdAt' | 'status'>) => {
+    const addOwner = async (owner: Omit<Owner, 'id' | 'created_at' | 'status'>) => {
         const response = await fetch(`${API_BASE_URL}/owners`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -43,7 +43,7 @@ export const OwnerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             entityType: 'owner',
             entityId: newOwner.id,
             action: 'created',
-            details: `Propietario ${newOwner.names} ${newOwner.lastNames} registrado.`
+            details: `Propietario ${newOwner.names} ${newOwner.last_names} registrado.`
         });
         return newOwner.id;
     };
@@ -63,7 +63,7 @@ export const OwnerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             entityType: 'owner',
             entityId: owner.id,
             action: 'updated',
-            details: `Propietario ${owner.names} ${owner.lastNames} actualizado.`
+            details: `Propietario ${owner.names} ${owner.last_names} actualizado.`
         });
     };
 

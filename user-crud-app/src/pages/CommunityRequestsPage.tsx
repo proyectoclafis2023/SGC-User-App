@@ -43,8 +43,8 @@ export const CommunityRequestsPage: React.FC = () => {
     const [subject, setSubject] = useState('');
     const [type, setType] = useState<'complaint' | 'suggestion'>('suggestion');
     const [description, setDescription] = useState('');
-    const [towerId, setTowerId] = useState('');
-    const [unitId, setUnitId] = useState('');
+    const [tower_id, setTowerId] = useState('');
+    const [unit_id, setUnitId] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -52,17 +52,17 @@ export const CommunityRequestsPage: React.FC = () => {
 
     const filteredTickets = tickets.filter(t => {
         const matchesTab = activeTab === 'active' 
-            ? t.status !== 'solved' && t.status !== 'rejected'
-            : t.status === 'solved' || t.status === 'rejected';
+            ? t.status !== 'resolved' && t.status !== 'rejected'
+            : t.status === 'resolved' || t.status === 'rejected';
         
         const matchesType = filterType === 'all' || t.type === filterType;
-        const reflectsUser = isAdmin || t.userId === user?.id;
+        const reflectsUser = isAdmin || t.resident_id === user?.id;
         
         return matchesTab && matchesType && reflectsUser;
     });
 
-    const pendingCount = tickets.filter(t => t.status === 'pending').length;
-    const solvedTodayCount = tickets.filter(t => t.status === 'solved' && new Date(t.createdAt).toDateString() === new Date().toDateString()).length;
+    const openCount = tickets.filter(t => t.status === 'open').length;
+    const resolvedTodayCount = tickets.filter(t => t.status === 'resolved' && new Date(t.created_at).toDateString() === new Date().toDateString()).length;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -71,12 +71,12 @@ export const CommunityRequestsPage: React.FC = () => {
         setIsSubmitting(true);
         try {
             await addTicket({
-                userId: user.id,
+                resident_id: user.id,
                 type,
                 subject,
                 description,
-                status: 'pending',
-                unitId: unitId ? `${towerId} - ${unitId}` : undefined
+                status: 'open',
+                unit_id: unit_id ? `${tower_id} - ${unit_id}` : undefined
             });
             
             setSubject('');
@@ -94,10 +94,10 @@ export const CommunityRequestsPage: React.FC = () => {
 
     const getStatusStyles = (status: string) => {
         switch (status) {
-            case 'pending': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+            case 'open': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
             case 'read': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
             case 'attended': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400';
-            case 'solved': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+            case 'resolved': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
             default: return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
         }
     };
@@ -141,11 +141,11 @@ export const CommunityRequestsPage: React.FC = () => {
                         <div className="bg-white dark:bg-gray-900 px-6 py-3 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex items-center gap-4">
                             <div className="text-right border-r border-gray-100 dark:border-gray-800 pr-4">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pendientes</p>
-                                <p className="text-xl font-black text-amber-600 leading-none">{pendingCount}</p>
+                                <p className="text-xl font-black text-amber-600 leading-none">{openCount}</p>
                             </div>
                             <div className="text-left">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Resueltos Hoy</p>
-                                <p className="text-xl font-black text-emerald-600 leading-none">{solvedTodayCount}</p>
+                                <p className="text-xl font-black text-emerald-600 leading-none">{resolvedTodayCount}</p>
                             </div>
                         </div>
                     </div>
@@ -255,7 +255,7 @@ export const CommunityRequestsPage: React.FC = () => {
                                     <label className="text-xs font-black text-gray-500 ml-1 uppercase tracking-widest">Torre / Edificio</label>
                                     <select 
                                         className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-bold text-gray-900 dark:text-white"
-                                        value={towerId}
+                                        value={tower_id}
                                         onChange={(e) => setTowerId(e.target.value)}
                                         required
                                     >
@@ -267,13 +267,13 @@ export const CommunityRequestsPage: React.FC = () => {
                                     <label className="text-xs font-black text-gray-500 ml-1 uppercase tracking-widest">Unidad</label>
                                     <select 
                                         className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-bold text-gray-900 dark:text-white"
-                                        value={unitId}
+                                        value={unit_id}
                                         onChange={(e) => setUnitId(e.target.value)}
                                         required
-                                        disabled={!towerId}
+                                        disabled={!tower_id}
                                     >
                                         <option value="">Seleccione...</option>
-                                        {towers.find(t => t.name === towerId)?.departments.map(d => (
+                                        {towers.find(t => t.name === tower_id)?.departments.map(d => (
                                             <option key={d.id} value={d.number}>{d.number}</option>
                                         ))}
                                     </select>
@@ -353,18 +353,18 @@ export const CommunityRequestsPage: React.FC = () => {
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Folio #{ticket.id.slice(0, 4)}</span>
                                                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${getStatusStyles(ticket.status)}`}>
-                                                        {ticket.status === 'pending' ? 'Pendiente' : 
+                                                        {ticket.status === 'open' ? 'Pendiente' : 
                                                          ticket.status === 'read' ? 'Leído' :
                                                          ticket.status === 'attended' ? 'En Curso' :
-                                                         ticket.status === 'solved' ? 'Resuelto' : 'Rechazado'}
+                                                         ticket.status === 'resolved' ? 'Resuelto' : 'Rechazado'}
                                                     </span>
                                                 </div>
                                                 <h3 className="text-xl font-black text-gray-900 dark:text-white mt-1">{ticket.subject}</h3>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(ticket.createdAt).toLocaleDateString()}</p>
-                                            <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase mt-0.5">{ticket.unitId || 'Sector Común'}</p>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(ticket.created_at).toLocaleDateString()}</p>
+                                            <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase mt-0.5">{ticket.unit_id || 'Sector Común'}</p>
                                         </div>
                                     </div>
                                     
@@ -374,13 +374,13 @@ export const CommunityRequestsPage: React.FC = () => {
 
                                     {isAdmin && activeTab === 'active' && (
                                         <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-50 dark:border-gray-800">
-                                            {ticket.status === 'pending' && <Button size="sm" variant="secondary" onClick={() => updateTicketStatus(ticket.id, 'read')} className="text-[9px] h-9">Leído</Button>}
-                                            {(ticket.status === 'read' || ticket.status === 'pending') && <Button size="sm" variant="secondary" onClick={() => updateTicketStatus(ticket.id, 'attended')} className="text-[9px] h-9">Atender</Button>}
+                                            {ticket.status === 'open' && <Button size="sm" variant="secondary" onClick={() => updateTicketStatus(ticket.id, 'read')} className="text-[9px] h-9">Leído</Button>}
+                                            {(ticket.status === 'read' || ticket.status === 'open') && <Button size="sm" variant="secondary" onClick={() => updateTicketStatus(ticket.id, 'attended')} className="text-[9px] h-9">Atender</Button>}
                                             {ticket.status === 'attended' && <Button size="sm" onClick={() => {
                                                 const note = prompt('Nota de resolución:');
                                                 if (note) {
                                                     addSolutionNote(ticket.id, note);
-                                                    updateTicketStatus(ticket.id, 'solved');
+                                                    updateTicketStatus(ticket.id, 'resolved');
                                                 }
                                             }} className="text-[9px] h-9 bg-emerald-600 hover:bg-emerald-700 text-white">Resolver</Button>}
                                         </div>

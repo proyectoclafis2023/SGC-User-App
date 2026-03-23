@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const BankContext = createContext<BankContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/banks`;
+const API_URL = `${API_BASE_URL}/bancos`;
 
 export const BankProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [banks, setBanks] = useState<Bank[]>([]);

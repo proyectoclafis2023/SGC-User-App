@@ -13,9 +13,9 @@ interface BoardMember {
     email?: string;
     phone?: string;
     photo?: string;
-    signaturePhoto?: string;
-    isArchived: boolean;
-    createdAt: string;
+    signature_photo?: string;
+    is_archived: boolean;
+    created_at: string;
 }
 
 export const CondoBoardPage: React.FC = () => {
@@ -30,7 +30,7 @@ export const CondoBoardPage: React.FC = () => {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [photo, setPhoto] = useState('');
-    const [signaturePhoto, setSignaturePhoto] = useState('');
+    const [signature_photo, setSignaturePhoto] = useState('');
 
     const handleOpenModal = (member?: BoardMember) => {
         if (member) {
@@ -42,7 +42,7 @@ export const CondoBoardPage: React.FC = () => {
             setEmail(member.email || '');
             setPhone(member.phone || '');
             setPhoto(member.photo || '');
-            setSignaturePhoto(member.signaturePhoto || '');
+            setSignaturePhoto(member.signature_photo || '');
         } else {
             setEditingMember(null);
             setName('');
@@ -59,7 +59,7 @@ export const CondoBoardPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const data = { name, position, dni, address, email, phone, photo, signaturePhoto };
+        const data = { name, position, dni, address, email, phone, photo, signature_photo };
         
         try {
             if (editingMember) {
@@ -178,10 +178,10 @@ export const CondoBoardPage: React.FC = () => {
                                             <span className="text-sm font-bold">{member.phone}</span>
                                         </div>
                                     )}
-                                    {member.signaturePhoto && (
+                                    {member.signature_photo && (
                                         <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 text-center">Firma Digital</p>
-                                            <img src={member.signaturePhoto} alt="Firma" className="h-12 mx-auto grayscale opacity-50 contrast-125" />
+                                            <img src={member.signature_photo} alt="Firma" className="h-12 mx-auto grayscale opacity-50 contrast-125" />
                                         </div>
                                     )}
                                 </div>
@@ -245,8 +245,8 @@ export const CondoBoardPage: React.FC = () => {
                                 <label className="block text-xs font-black text-gray-500 uppercase tracking-widest ml-1">Firma Digital</label>
                                 <div className="relative group">
                                     <div className="w-full h-24 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden transition-all group-hover:border-indigo-500 bg-gray-50 dark:bg-gray-800/50">
-                                        {signaturePhoto ? (
-                                            <img src={signaturePhoto} alt="Firma Preview" className="h-full object-contain p-2" />
+                                        {signature_photo ? (
+                                            <img src={signature_photo} alt="Firma Preview" className="h-full object-contain p-2" />
                                         ) : (
                                             <div className="flex flex-col items-center gap-1">
                                                 <Edit2 className="w-5 h-5 text-gray-300" />
@@ -262,7 +262,7 @@ export const CondoBoardPage: React.FC = () => {
                                             }
                                         }} className="absolute inset-0 opacity-0 cursor-pointer" />
                                     </div>
-                                    {signaturePhoto && (
+                                    {signature_photo && (
                                         <button type="button" onClick={() => setSignaturePhoto('')} className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full shadow-lg">
                                             <X className="w-3 h-3" />
                                         </button>

@@ -3,19 +3,19 @@ import { API_BASE_URL } from '../config/api';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import {
-    LineChart, Plus, Trash2, Save, X, Edit2, TrendingUp, Info, AlertCircle
+    LineChart, Plus, Trash2, Save, X, Edit2, TrendingUp, AlertCircle
 } from 'lucide-react';
-import type { WeightedIPC } from '../types';
+import type { IPCProjection } from '../types';
 
-export const IPCParametersPage: React.FC = () => {
-    const [parameters, setParameters] = useState<WeightedIPC[]>([]);
+export const MaestroIPCPage: React.FC = () => {
+    const [parameters, setParameters] = useState<IPCProjection[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<Partial<WeightedIPC> | null>(null);
+    const [editingItem, setEditingItem] = useState<Partial<IPCProjection> | null>(null);
 
     const fetchParameters = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/ipc_projections`);
+            const response = await fetch(`${API_BASE_URL}/maestro_ipc`);
             if (response.ok) {
                 const data = await response.json();
                 setParameters(data);
@@ -33,15 +33,15 @@ export const IPCParametersPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!editingItem?.name || editingItem?.ipcRate === undefined) {
+        if (!editingItem?.name || editingItem?.ipc_rate === undefined) {
             alert('Por favor complete todos los campos requeridos');
             return;
         }
 
         const method = editingItem.id ? 'PUT' : 'POST';
         const url = editingItem.id 
-            ? `${API_BASE_URL}/ipc_projections/${editingItem.id}` 
-            : `${API_BASE_URL}/ipc_projections`;
+            ? `${API_BASE_URL}/maestro_ipc/${editingItem.id}` 
+            : `${API_BASE_URL}/maestro_ipc`;
 
         try {
             const response = await fetch(url, {
@@ -63,7 +63,7 @@ export const IPCParametersPage: React.FC = () => {
     const handleDelete = async (id: string) => {
         if (!window.confirm('¿Está seguro de eliminar este parámetro?')) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/ipc_projections/${id}`, {
+            const response = await fetch(`${API_BASE_URL}/maestro_ipc/${id}`, {
                 method: 'DELETE',
             });
             if (response.ok) {
@@ -84,7 +84,7 @@ export const IPCParametersPage: React.FC = () => {
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1 font-bold italic text-sm">Gestiona los índices de inflación oficiales y proyectados para el cálculo de presupuestos.</p>
                 </div>
-                <Button onClick={() => { setEditingItem({ isActive: true }); setIsModalOpen(true); }} className="relative z-10 shadow-lg shadow-indigo-600/20">
+                <Button onClick={() => { setEditingItem({ is_active: true }); setIsModalOpen(true); }} className="relative z-10 shadow-lg shadow-indigo-600/20">
                     <Plus className="w-4 h-4 mr-2" />
                     Nuevo Registro
                 </Button>
@@ -100,7 +100,7 @@ export const IPCParametersPage: React.FC = () => {
                         <div className="relative z-10">
                             <div className="flex items-center gap-3 mb-6">
                                 <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight uppercase tracking-tight">{param.name}</h3>
-                                {!param.isActive && (
+                                {!param.is_active && (
                                     <span className="px-3 py-1 bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 rounded-full text-[8px] font-black uppercase tracking-widest border border-gray-200">Inactivo</span>
                                 )}
                             </div>
@@ -109,21 +109,21 @@ export const IPCParametersPage: React.FC = () => {
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">IPC Real</p>
                                     <div className="flex items-baseline gap-1">
-                                        <span className="text-2xl font-black text-indigo-600">{(param.ipcRate * 100).toFixed(2)}</span>
+                                        <span className="text-2xl font-black text-indigo-600">{(param.ipc_rate * 100).toFixed(2)}</span>
                                         <span className="text-xs font-black text-indigo-400 font-sans">%</span>
                                     </div>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Ponderado</p>
                                     <div className="flex items-baseline gap-1">
-                                        <span className="text-2xl font-black text-purple-600">{(param.ponderadoRate * 100).toFixed(2)}</span>
+                                        <span className="text-2xl font-black text-purple-600">{(param.ponderado_rate * 100).toFixed(2)}</span>
                                         <span className="text-xs font-black text-purple-400 font-sans">%</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="flex items-center justify-between border-t dark:border-gray-800 pt-6">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{new Date(param.createdAt).toLocaleDateString()}</span>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{new Date(param.created_at).toLocaleDateString()}</span>
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => {
@@ -150,7 +150,7 @@ export const IPCParametersPage: React.FC = () => {
                     <div className="col-span-full py-20 bg-gray-50 dark:bg-gray-800/20 rounded-[3rem] border border-dashed border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center text-center opacity-60">
                         <LineChart className="w-16 h-16 text-gray-300 mb-6" />
                         <p className="text-sm font-black text-gray-400 italic">No hay registros de IPC.</p>
-                        <Button onClick={() => { setEditingItem({ isActive: true }); setIsModalOpen(true); }} className="mt-6" variant="secondary">Crear Primer Registro</Button>
+                        <Button onClick={() => { setEditingItem({ is_active: true }); setIsModalOpen(true); }} className="mt-6" variant="secondary">Crear Primer Registro</Button>
                     </div>
                 )}
             </div>
@@ -184,16 +184,16 @@ export const IPCParametersPage: React.FC = () => {
                                     label="IPC Real (%)"
                                     type="number"
                                     step="0.0001"
-                                    value={editingItem?.ipcRate !== undefined ? editingItem.ipcRate : ''}
-                                    onChange={e => setEditingItem({ ...editingItem, ipcRate: Number(e.target.value) })}
+                                    value={editingItem?.ipc_rate !== undefined ? editingItem.ipc_rate : ''}
+                                    onChange={e => setEditingItem({ ...editingItem, ipc_rate: Number(e.target.value) })}
                                     required
                                 />
                                 <Input
                                     label="IPC Ponderado (%)"
                                     type="number"
                                     step="0.0001"
-                                    value={editingItem?.ponderadoRate !== undefined ? editingItem.ponderadoRate : ''}
-                                    onChange={e => setEditingItem({ ...editingItem, ponderadoRate: Number(e.target.value) })}
+                                    value={editingItem?.ponderado_rate !== undefined ? editingItem.ponderado_rate : ''}
+                                    onChange={e => setEditingItem({ ...editingItem, ponderado_rate: Number(e.target.value) })}
                                     required
                                 />
                             </div>

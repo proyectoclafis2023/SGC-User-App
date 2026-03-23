@@ -2,10 +2,10 @@ import React from 'react';
 
 export interface SystemParameter {
     id: string;
-    type: 'job_position' | 'shift' | 'contractor_specialty' | 'ticket_category' | 'article_category' | 'pet_type' | 'vehicle_type';
+    type: 'job_position' | 'shift' | 'contractor_specialty' | 'ticket_category' | 'article_category' | 'pet_type' | 'vehicle_type' | 'camera_request_reason' | 'shift_report_category' | 'jornada_group';
     name: string;
     description?: string;
-    isActive: boolean;
+    is_active: boolean;
 }
 
 export interface SystemParameterContextType {
@@ -92,14 +92,14 @@ export interface SystemSettings {
     censusFrequencyYears?: number; // Frecuencia de censo en años
 }
 
-export interface WeightedIPC {
+export interface IPCProjection {
     id: string;
     name: string;
-    ipcRate: number;      // Valor del IPC Real
-    ponderadoRate: number; // Valor del IPC Ponderado
+    ipc_rate: number;      // Valor del IPC Real
+    ponderado_rate: number; // Valor del IPC Ponderado
     description?: string;
-    isActive: boolean;
-    createdAt: string;
+    is_active: boolean;
+    created_at: string;
 }
 
 export interface SettingsContextType {
@@ -154,7 +154,7 @@ export interface Personnel {
 export interface Bank {
     id: string;
     name: string;
-    isArchived?: boolean;
+    is_archived?: boolean;
 }
 
 export interface BankContextType {
@@ -200,38 +200,38 @@ export interface CommonSpace {
     id: string;
     name: string;
     location: string;
-    rentalValue: number; // Valor entero ($)
-    durationHours: number; // Duración por defecto en horas (entero)
+    rental_value: number; // Valor entero ($)
+    duration_hours: number; // Duración por defecto en horas (entero)
     conditions?: string; // Leyenda con condiciones y reglas
-    isArchived?: boolean;
+    is_archived?: boolean;
 }
 
 export interface Reservation {
     id: string;
     folio: string;
-    spaceId: string;
-    userId: string; // Quien reserva
-    unitId?: string;
-    towerId?: string;
-    date: string; // YYYY-MM-DD
-    startTime: string; // HH:mm
-    endTime: string; // HH:mm (calculado automáticamente)
-    status: 'pending' | 'approved' | 'rejected';
-    paymentStatus: 'pending' | 'paid';
-    createdAt: string; // Timestamp para ver quien reservó primero
-    approvalUserId?: string;
-    approvalDate?: string;
-    signedDocumentUrl?: string; // URL o base64 del documento firmado
+    common_space_id: string;
+    resident_id: string; // Quien reserva
+    unit_id?: string;
+    tower_id?: string;
+    start_at: string; // ISO
+    end_at: string; // ISO
+    status: 'pending' | 'approved' | 'cancelled' | 'completed' | 'rejected';
+    payment_status: 'pending' | 'paid';
+    is_archived?: boolean;
+    created_at: string; // Timestamp
+    approval_user_id?: string;
+    approval_date?: string;
+    signed_document_url?: string;
     notes?: string;
 }
 
 export interface ReservationLog {
     id: string;
-    reservationId: string;
-    userId: string;
-    action: 'created' | 'approved' | 'rejected' | 'payment_confirmed' | 'deleted';
-    timestamp: string;
+    reservation_id: string;
+    resident_id: string; // The person who performed the action
+    action: 'created' | 'approved' | 'rejected' | 'payment_confirmed' | 'cancelled' | 'updated';
     details: string;
+    timestamp: string;
 }
 
 export interface HistoryLog {
@@ -250,99 +250,102 @@ export interface SpecialCondition {
     id: string;
     name: string;
     description?: string;
-    isArchived?: boolean;
+    is_archived?: boolean;
 }
 
 export interface UnitType {
     id: string;
-    name: string;
-    baseCommonExpense: number; // Monto base para gastos comunes
-    defaultM2?: number; // Metraje por defecto
-    isArchived?: boolean;
+    nombre: string;
+    base_common_expense: number; // Monto base para gastos comunes
+    default_m2?: number; // Metraje por defecto
+    is_archived?: boolean;
 }
 
 export interface Department {
     id: string;
-    towerId?: string;
+    tower_id?: string;
     number: string;
     floor?: number;
-    unitTypeId?: string;
-    propertyRole?: string;
+    unit_type_id?: string;
+    property_role?: string;
     m2?: number;
-    terrainM2?: number;
+    terrain_m2?: number;
     value?: number;
     dormitorios?: number;
     banos?: number;
     estacionamientos?: number;
-    yearBuilt?: number;
-    isAvailable?: boolean;
-    publishType?: 'venta' | 'arriendo';
+    year_built?: number;
+    is_available?: boolean;
+    publish_type?: 'venta' | 'arriendo';
     image?: string;
-    locationMapUrl?: string;
-    waterClientId?: string;
-    electricityClientId?: string;
-    gasClientId?: string;
-    ownerId?: string;
-    residentId?: string;
-    lastCensusDate?: string; // Fecha del último censo
-    isArchived?: boolean;
+    location_map_url?: string;
+    water_client_id?: string;
+    electricity_client_id?: string;
+    gas_client_id?: string;
+    owner_id?: string;
+    resident_id?: string;
+    last_census_date?: string; // Fecha del último censo
+    is_archived?: boolean;
     history?: HistoryLog[];
 }
 
 export interface Tower {
     id: string;
     name: string;
-    isArchived?: boolean;
+    is_archived?: boolean;
     departments: Department[];
 }
 
 export interface Owner {
     id: string;
     names: string;
-    lastNames: string;
+    last_names: string;
     dni: string;
     phone: string;
     email: string;
     notes?: string;
     status: 'active' | 'inactive';
-    isArchived?: boolean;
-    receiveResidentNotifications?: boolean;
-    canResidentSeeArrears?: boolean; // Permite que el residente vea el reporte de deudas
-    createdAt: string;
+    is_archived?: boolean;
+    receive_resident_notifications?: boolean;
+    can_resident_see_arrears?: boolean; // Permite que el residente vea el reporte de deudas
+    created_at: string;
+    departments?: Department[];
 }
 
 export interface Parking {
     id: string;
     number: string;
     location?: string;
-    isHandicapped?: boolean;
+    is_handicapped?: boolean;
     notes?: string;
-    departmentId?: string; // Unidad asociada
-    relatedUnit?: string; // Nombre/Número de la unidad (para despliegue rápido)
-    isArchived?: boolean;
-    createdAt: string;
+    department_id?: string; // Unidad asociada
+    related_unit?: string; // Nombre/Número de la unidad (para despliegue rápido)
+    is_archived?: boolean;
+    created_at: string;
+    department?: Department;
 }
 
 export interface Resident {
     id: string;
     names: string;
-    lastNames: string;
+    last_names: string;
     dni: string;
     phone: string;
     email: string;
     photo?: string; // Base64 image
-    towerId?: string;
-    unitId?: string;
-    parkingIds?: string[]; // IDs for associated parking spots
-    familyCount: number;
-    hasPets: boolean;
-    conditionIds: string[]; // Maestra de condiciones especiales
+    tower_id?: string;
+    unit_id?: string;
+    parking_ids?: string[]; // IDs for associated parking spots
+    family_count: number;
+    has_pets: boolean;
+    condition_ids: string[]; // Maestra de condiciones especiales
     notes?: string;
-    isTenant: boolean;
-    rentAmount?: number;
+    is_tenant: boolean;
+    rent_amount?: number;
     status: 'active' | 'inactive';
-    isArchived?: boolean;
-    createdAt: string;
+    is_archived?: boolean;
+    created_at: string;
+    departments?: Department[];
 }
 
 export interface ParkingContextType {
@@ -403,28 +406,50 @@ export interface ReservationContextType {
 export interface Ticket {
     id: string;
     folio: string;
-    userId?: string;
-    unitId?: string;
-    towerId?: string;
+    resident_id: string;
+    unit_id?: string;
+    tower_id?: string;
     type: string;
     subject: string;
     description: string;
     image?: string;
-    status: 'pending' | 'read' | 'attended' | 'solved' | 'acknowledged';
-    adminNotes?: string;
-    acknowledgedAt?: string;
-    acknowledgedBy?: string;
-    createdAt: string;
-    updatedAt: string;
+    status: 'open' | 'in_progress' | 'resolved' | 'closed';
+    admin_notes?: string;
+    acknowledged_at?: string;
+    acknowledged_by?: string;
+    is_archived?: boolean;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface TicketContextType {
     tickets: Ticket[];
-    addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'folio'>) => Promise<Ticket | null>;
-    updateTicket: (id: string, ticket: Partial<Ticket>) => Promise<void>;
+    addTicket: (ticket_data: Omit<Ticket, 'id' | 'created_at' | 'updated_at' | 'folio' | 'is_archived'>) => Promise<Ticket>;
+    updateTicket: (id: string, ticket_data: Partial<Ticket>) => Promise<void>;
     deleteTicket: (id: string) => Promise<void>;
-    acknowledgeTicket: (id: string, adminId: string) => Promise<void>;
+    updateTicketStatus: (id: string, status: Ticket['status']) => Promise<void>;
+    addSolutionNote: (id: string, notes: string) => Promise<void>;
     refreshTickets: () => Promise<void>;
+}
+
+export interface ServiceDirectory {
+    id: string;
+    name: string;
+    category: string;
+    contact_phone?: string;
+    contact_email?: string;
+    description?: string;
+    is_archived: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ServiceDirectoryContextType {
+    services: ServiceDirectory[];
+    addService: (service: Omit<ServiceDirectory, 'id' | 'created_at' | 'updated_at' | 'is_archived'>) => Promise<void>;
+    updateService: (id: string, service: Partial<ServiceDirectory>) => Promise<void>;
+    deleteService: (id: string) => Promise<void>;
+    refreshServices: () => Promise<void>;
 }
 
 export interface CameraRequest {
@@ -467,24 +492,24 @@ export interface HealthProvider {
     id: string;
     name: string;
     type: 'fonasa' | 'isapre';
-    discountRate: number; // % de descuento
-    isArchived?: boolean;
+    discount_rate: number; // % de descuento
+    is_archived?: boolean;
 }
 
 export interface PensionFund {
     id: string;
     name: string;
-    discountRate: number; // % de descuento fijo/variable
-    isArchived?: boolean;
+    discount_rate: number; // % de descuento fijo/variable
+    is_archived?: boolean;
 }
 
 export interface AFC {
     id: string;
     name: string;
-    fixedTermRate: number;    // % Seguro Cesantía Trabajador a Plazo
-    indefiniteTermRate: number; // % Seguro Cesantía Trabajador Indefinido
-    isActive: boolean;
-    createdAt: string;
+    fixed_term_rate: number;    // % Seguro Cesantía Trabajador a Plazo
+    indefinite_term_rate: number; // % Seguro Cesantía Trabajador Indefinido
+    is_active: boolean;
+    created_at: string;
 }
 
 export interface Holiday {
@@ -611,15 +636,15 @@ export interface SystemMessage {
     id: string;
     text: string;
     type: 'info' | 'warning' | 'danger' | 'success';
-    isActive: boolean;
+    is_active: boolean;
     image?: string;
-    youtubeUrl?: string;
-    durationSeconds?: number;
-    isFullImage?: boolean; // Si la imagen debe ocupar gran parte del aviso
-    expiresAt?: string;
+    youtube_url?: string;
+    duration_seconds?: number;
+    is_full_image?: boolean; // Si la imagen debe ocupar gran parte del aviso
+    expires_at?: string;
     tags?: string[];
-    isArchived?: boolean;
-    createdAt: string;
+    is_archived?: boolean;
+    created_at: string;
 }
 
 export interface SystemMessageContextType {
@@ -837,20 +862,21 @@ export interface AuthContextType extends AuthState {
 export interface Correspondence {
     id: string;
     folio: string;
-    departmentId: string;
-    towerId: string;
+    department_id: string;
+    tower_id: string;
     type: 'package' | 'letter' | 'delivery' | 'other';
     addressee: string;
-    receivedBy?: string; // Personnel ID or name
+    received_by?: string; // Personnel ID or name
     courier?: string;
     details?: string;
-    evidenceImage?: string;
+    evidence_image?: string;
     status: 'pending' | 'received' | 'notified' | 'delivered' | 'expected';
-    receivedAt?: string;
-    deliveredAt?: string;
-    expectedDate?: string;
-    expectedTimeRange?: string;
-    createdAt: string;
+    received_at?: string;
+    delivered_at?: string;
+    expected_date?: string;
+    expected_time_range?: string;
+    is_archived?: boolean;
+    created_at: string;
 }
 
 export interface CorrespondenceContextType {
@@ -889,15 +915,18 @@ export interface ContractorContextType {
 export interface ContractorVisit {
     id: string;
     folio: string;
-    contractorId?: string; // If registered in master
+    contractor_id?: string; // If registered in master
     names: string;
     dni: string;
     company: string;
     subject: string;
-    entryTime: string;
-    exitTime?: string;
-    status: 'entered' | 'exited';
-    createdAt: string;
+    entry_at: string;
+    exit_at?: string;
+    allowed_until?: string;
+    department_id?: string;
+    status: 'active' | 'exited' | 'expired';
+    is_archived?: boolean;
+    created_at: string;
 }
 
 export interface ContractorVisitContextType {
@@ -911,17 +940,19 @@ export interface Visitor {
     folio: string;
     names: string;
     dni: string;
-    towerId: string;
-    departmentId: string;
-    visitDate: string;
-    visitTime?: string;
-    isPreRegistered: boolean; // Si fue registrado por el residente
+    tower_id: string;
+    department_id: string;
+    resident_id?: string;
+    visit_date: string;
+    visit_time?: string;
+    is_pre_registered: boolean; // Si fue registrado por el residente
     status: 'scheduled' | 'entered' | 'exited' | 'cancelled';
-    entryTime?: string;
-    exitTime?: string;
-    vehiclePlate?: string;
+    entry_at?: string;
+    exit_at?: string;
+    vehicle_plate?: string;
     notes?: string;
-    createdAt: string;
+    is_archived?: boolean;
+    created_at: string;
 }
 
 export interface VisitorContextType {
@@ -965,9 +996,9 @@ export interface Camera {
     id: string;
     name: string;
     description?: string;
-    backupHours: number;
-    isArchived?: boolean;
-    createdAt: string;
+    backup_hours: number;
+    is_archived?: boolean;
+    created_at: string;
 }
 
 export interface CameraContextType {
@@ -980,39 +1011,54 @@ export interface CameraContextType {
 export interface ShiftReport {
     id: string;
     folio: string;
-    workerId: string;
-    workerName: string;
-    shiftDate: string;
-    shiftType: 'Manana' | 'Tarde' | 'Noche';
+    worker_id: string;
+    worker_name: string;
+    shift_date: string;
+    shift_type: 'Manana' | 'Tarde' | 'Noche';
     status: 'open' | 'closed';
     novedades: string;
-    hasIncidents: boolean;
-    incidentDetails?: string;
-    incidentAttachments?: string[]; // Base64 strings
-    hasInfrastructureIssues: boolean;
-    infrastructureIssueType?: string; // Keep for retrocompatibility if needed
-    infrastructureIssueTypes?: string[]; // Select multiple from master
-    infrastructureIssueDetails?: string;
-    infrastructureAttachments?: string[];
-    hasEquipmentIssues: boolean;
-    equipmentIssueType?: string; // Keep for retrocompatibility
-    equipmentIssueTypes?: string[]; // Select multiple from master
-    equipmentIssueDetails?: string;
-    equipmentAttachments?: string[];
-    closedAt?: string;
-    adminReopenReason?: string;
-    adminReopenedBy?: string;
-    createdAt: string;
+    has_incidents: boolean;
+    incident_details?: string;
+    incident_attachments?: string[]; // Base64 strings
+    has_infrastructure_issues: boolean;
+    infrastructure_issue_type?: string; 
+    infrastructure_issue_types?: string[]; 
+    infrastructure_issue_details?: string;
+    infrastructure_attachments?: string[];
+    has_equipment_issues: boolean;
+    equipment_issue_type?: string; 
+    equipment_issue_types?: string[]; 
+    equipment_issue_details?: string;
+    equipment_attachments?: string[];
+    closed_at?: string;
+    admin_reopen_reason?: string;
+    admin_reopened_by?: string;
+    created_at: string;
+    is_archived?: boolean;
+    resident_id?: string;
+    owner_id?: string;
+    department_id?: string;
 }
 
 export interface ShiftReportContextType {
     reports: ShiftReport[];
-    addReport: (report: Omit<ShiftReport, 'id' | 'folio' | 'createdAt' | 'status' | 'hasIncidents' | 'hasInfrastructureIssues' | 'hasEquipmentIssues'>) => Promise<boolean>;
+    addReport: (report: Omit<ShiftReport, 'id' | 'folio' | 'created_at' | 'status' | 'has_incidents' | 'has_infrastructure_issues' | 'has_equipment_issues'>) => Promise<boolean>;
     updateReport: (id: string, data: Partial<ShiftReport>) => Promise<void>;
     closeShift: (id: string, data: Partial<ShiftReport>) => Promise<void>;
     reopenShift: (id: string, adminName: string, reason: string) => Promise<void>;
-    deleteReport: (id: string) => void;
+    deleteReport: (id: string) => Promise<void>;
     clearAllReports: () => void;
+}
+
+export interface ShiftLog {
+    id: string;
+    daily_report_id: string;
+    timestamp: string;
+    event: string;
+    category?: 'routine' | 'incident' | 'check';
+    worker_id: string;
+    is_archived?: boolean;
+    created_at: string;
 }
 
 export interface EmergencyNumber {
@@ -1021,9 +1067,10 @@ export interface EmergencyNumber {
     name: string;
     phone: string;
     description?: string;
-    webUrl?: string;
-    isArchived?: boolean;
-    createdAt: string;
+    web_url?: string;
+    is_archived?: boolean;
+    created_at: string;
+    updated_at?: string;
 }
 
 export interface EmergencyNumberContextType {
@@ -1108,8 +1155,8 @@ export interface CommunicationTemplate {
     subject: string;
     message: string;
     type: 'general' | 'arrears' | 'emergency';
-    isArchived?: boolean;
-    createdAt: string;
+    is_archived?: boolean;
+    created_at: string;
 }
 
 export interface CommunicationHistory {
@@ -1117,10 +1164,11 @@ export interface CommunicationHistory {
     subject: string;
     message: string;
     recipients: string[]; // Lista de correos
-    senderId: string;
-    attachmentUrl?: string;
-    targetFilter: string; // Resumen del filtro aplicado
-    createdAt: string;
+    sender_id: string;
+    attachment_url?: string;
+    target_filter: string; // Resumen del filtro aplicado
+    is_archived?: boolean;
+    created_at: string;
 }
 
 export interface CommunicationContextType {
@@ -1130,4 +1178,27 @@ export interface CommunicationContextType {
     updateTemplate: (template: CommunicationTemplate) => Promise<void>;
     deleteTemplate: (id: string) => Promise<void>;
     addHistory: (item: Omit<CommunicationHistory, 'id' | 'createdAt'>) => Promise<void>;
+}
+
+export interface SupplyRequest {
+    id: string;
+    folio: string;
+    name: string;
+    description?: string;
+    requested_by: string; // worker_id
+    status: 'pending' | 'approved' | 'rejected' | 'delivered';
+    is_archived?: boolean;
+    created_at: string;
+}
+
+export interface CctvLog {
+    id: string;
+    folio: string;
+    camera_id: string;
+    event_type: 'intrusion' | 'movement' | 'error' | 'routine';
+    description?: string;
+    recorded_at: string;
+    evidence_url?: string;
+    is_archived?: boolean;
+    created_at: string;
 }

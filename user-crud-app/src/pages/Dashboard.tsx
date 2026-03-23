@@ -95,7 +95,7 @@ export const Dashboard: React.FC = () => {
     };
 
     const filteredUsers = users.filter((user: User) =>
-        !user.isArchived && user.status !== 'pending_approval' && user.status !== 'setting_up' &&
+        !user.is_archived && user.status !== 'pending_approval' && user.status !== 'setting_up' &&
         (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.email.toLowerCase().includes(searchTerm.toLowerCase()))
     );
@@ -151,7 +151,7 @@ export const Dashboard: React.FC = () => {
                 
                 const paymentsForDept = payments.filter((p: CommonExpensePayment) => p.departmentId === d.id);
                 const ut = unitTypes.find((u: UnitType) => u.id === d.unitTypeId);
-                const targetAmount = (ut?.baseCommonExpense || 0);
+                const targetAmount = (ut?.base_common_expense || 0);
                 
                 const paidThisMonth = paymentsForDept
                     .filter((p: CommonExpensePayment) => p.periodMonth === currentMonth && p.periodYear === currentYear)
@@ -246,10 +246,10 @@ export const Dashboard: React.FC = () => {
         const currentMonthName = months[now.getMonth()];
         const currentYearNum = now.getFullYear();
 
-        const allDepts = (departments || []).filter((d: Department) => !d.isArchived);
+        const allDepts = (departments || []).filter((d: Department) => !d.is_archived);
         const gcTarget = allDepts.reduce((acc: number, dept: Department) => {
             const ut = unitTypes.find((u: UnitType) => u.id === dept.unitTypeId);
-            return acc + (ut?.baseCommonExpense || 0);
+            return acc + (ut?.base_common_expense || 0);
         }, 0);
 
         const currentMonthNum = now.getMonth() + 1;
@@ -260,7 +260,7 @@ export const Dashboard: React.FC = () => {
         const gcPending = Math.max(0, gcTarget - gcCollected);
 
         const monthCommunityExpenses = communityExpenses.filter((e: CommunityExpense) => {
-            if (e.isArchived) return false;
+            if (e.is_archived) return false;
             const d = new Date(e.date);
             return (d.getMonth() + 1) === currentMonthNum && d.getFullYear() === currentYearNum;
         });

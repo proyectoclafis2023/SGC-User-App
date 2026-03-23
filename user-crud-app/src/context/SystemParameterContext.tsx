@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const SystemParameterContext = createContext<SystemParameterContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/system_parameters`;
+const API_URL = `${API_BASE_URL}/maestros_operativos`;
 
 export const SystemParameterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [parameters, setParameters] = useState<SystemParameter[]>([]);

@@ -112,7 +112,7 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
         const mapped = towers.map(tower => ({
             ...tower,
             departments: (departments || [])
-                .filter(d => d.towerId === tower.id)
+                .filter(d => d.tower_id === tower.id)
                 .sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }))
         }));
         return mapped.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));

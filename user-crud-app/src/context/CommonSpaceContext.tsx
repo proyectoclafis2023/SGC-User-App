@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const CommonSpaceContext = createContext<CommonSpaceContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/common_spaces`;
+const API_URL = `${API_BASE_URL}/espacios`;
 
 export const CommonSpaceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [spaces, setSpaces] = useState<CommonSpace[]>([]);

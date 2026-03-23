@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const InfrastructureItemContext = createContext<InfrastructureItemContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/infrastructure_items`;
+const API_URL = `${API_BASE_URL}/infraestructura`;
 
 export const InfrastructureItemProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [items, setItems] = useState<InfrastructureItem[]>([]);

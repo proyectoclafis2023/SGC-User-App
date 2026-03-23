@@ -268,7 +268,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                             </thead>
                             <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                                 {departments.filter(d => {
-                                    if (d.isArchived) return false;
+                                    if (d.is_archived) return false;
                                     const tower = towers.find(t => t.id === d.towerId);
                                     if (!tower) return false;
                                     const q = searchTerm.toLowerCase();
@@ -299,7 +299,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                             .filter(p => p.periodMonth === m && p.periodYear === y)
                                             .reduce((acc, p) => acc + p.amountPaid, 0);
                                         
-                                        const target = (ut?.baseCommonExpense || 0);
+                                        const target = (ut?.base_common_expense || 0);
                                         if (paid < target) {
                                             arrearsMonths++;
                                             totalDebt += (target - paid);
@@ -392,7 +392,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                                     required
                                                 >
                                                     <option value="">Seleccione...</option>
-                                                    {towers.filter(t => !t.isArchived).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                                    {towers.filter(t => !t.is_archived).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                                 </select>
                                             </div>
                                             <div className="space-y-1.5">
@@ -405,7 +405,7 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                                     disabled={!selectedTowerId}
                                                 >
                                                     <option value="">Seleccione...</option>
-                                                    {selectedTower?.departments.filter(d => !d.isArchived).map(d => <option key={d.id} value={d.id}>{d.number}</option>)}
+                                                    {selectedTower?.departments.filter(d => !d.is_archived).map(d => <option key={d.id} value={d.id}>{d.number}</option>)}
                                                 </select>
                                             </div>
                                         </div>
@@ -435,11 +435,11 @@ export const CommonExpensePaymentsPage: React.FC = () => {
                                             <Input label="Gasto Común Suggested ($)" type="number" value={amountPaid} onChange={(e) => setAmountPaid(Number(e.target.value))} required className="text-xl font-black text-indigo-700" />
                                         </div>
 
-                                        {funds.filter(f => !f.isArchived).length > 0 && (
+                                        {funds.filter(f => !f.is_archived).length > 0 && (
                                             <div className="space-y-3">
                                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Cuotas Especiales / Fondos</p>
                                                 <div className="space-y-2">
-                                                    {funds.filter(f => !f.isArchived).map(fund => {
+                                                    {funds.filter(f => !f.is_archived).map(fund => {
                                                         const contribution = fundContributions.find(c => c.fundId === fund.id);
                                                         return (
                                                             <div key={fund.id} className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">

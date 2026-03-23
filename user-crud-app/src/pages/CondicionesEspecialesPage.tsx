@@ -5,7 +5,7 @@ import { Input } from '../components/Input';
 import { Plus, Trash2, Edit2, X, Heart } from 'lucide-react';
 import type { SpecialCondition } from '../types';
 
-export const SpecialConditionsPage: React.FC = () => {
+export const CondicionesEspecialesPage: React.FC = () => {
     const { conditions, addCondition, updateCondition, deleteCondition } = useSpecialConditions();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCondition, setEditingCondition] = useState<SpecialCondition | null>(null);
@@ -47,7 +47,7 @@ export const SpecialConditionsPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {conditions.filter(c => !c.isArchived).map(c => (
+                {conditions.filter(c => !c.is_archived).map(c => (
                     <div key={c.id} className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm relative group">
                         <div className="absolute top-4 right-4 flex opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={() => handleOpenModal(c)} className="p-2 text-gray-400 hover:text-indigo-600"><Edit2 className="w-4 h-4" /></button>

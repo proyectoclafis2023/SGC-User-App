@@ -10,9 +10,9 @@ interface BoardMember {
     email?: string;
     phone?: string;
     photo?: string;
-    signaturePhoto?: string;
-    isArchived: boolean;
-    createdAt: string;
+    signature_photo?: string;
+    is_archived: boolean;
+    created_at: string;
 }
 
 interface CondoBoardContextType {
@@ -34,7 +34,7 @@ export const CondoBoardProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setLoading(true);
         try {
             const data = await crudService.getAll('condo_board');
-            setMembers((Array.isArray(data) ? data : []).filter((m: any) => !m.isArchived));
+            setMembers((Array.isArray(data) ? data : []).filter((m: any) => !m.is_archived));
         } catch (error) {
             console.error('Error fetching board members:', error);
         } finally {

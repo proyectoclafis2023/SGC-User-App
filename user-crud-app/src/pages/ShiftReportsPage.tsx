@@ -34,23 +34,23 @@ export const ShiftReportsPage: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     // Form fields for report
-    const [shiftType, setShiftType] = useState<'Manana' | 'Tarde' | 'Noche'>('Manana');
+    const [shift_type, setShiftType] = useState<'Manana' | 'Tarde' | 'Noche'>('Manana');
     const [novedades, setNovedades] = useState('');
-    const [hasIncidents, setHasIncidents] = useState(false);
-    const [incidentDetails, setIncidentDetails] = useState('');
-    const [incidentAttachments, setIncidentAttachments] = useState<string[]>([]);
-    const [hasInfrastructureIssues, setHasInfrastructureIssues] = useState(false);
+    const [has_incidents, setHasIncidents] = useState(false);
+    const [incident_details, setIncidentDetails] = useState('');
+    const [incident_attachments, setIncidentAttachments] = useState<string[]>([]);
+    const [has_infrastructure_issues, setHasInfrastructureIssues] = useState(false);
     const [infraIssueTypes, setInfraIssueTypes] = useState<string[]>([]);
     const [infraDetails, setInfraDetails] = useState('');
-    const [infrastructureAttachments, setInfrastructureAttachments] = useState<string[]>([]);
-    const [hasEquipmentIssues, setHasEquipmentIssues] = useState(false);
-    const [equipmentIssueTypes, setEquipmentIssueTypes] = useState<string[]>([]);
+    const [infrastructure_attachments, setInfrastructureAttachments] = useState<string[]>([]);
+    const [has_equipment_issues, setHasEquipmentIssues] = useState(false);
+    const [equipment_issue_types, setEquipmentIssueTypes] = useState<string[]>([]);
     const [equipmentDetails, setEquipmentDetails] = useState('');
-    const [equipmentAttachments, setEquipmentAttachments] = useState<string[]>([]);
+    const [equipment_attachments, setEquipmentAttachments] = useState<string[]>([]);
     const [checkedMandatoryItems, setCheckedMandatoryItems] = useState<string[]>([]);
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const activeReport = reports.find((r: ShiftReport) => r.workerId === user?.id && r.shiftDate === todayStr && r.status === 'open');
+    const activeReport = reports.find((r: ShiftReport) => r.worker_id === user?.id && r.shift_date === todayStr && r.status === 'open');
 
     const getCurrentShift = () => {
         const hour = new Date().getHours();
@@ -77,11 +77,11 @@ export const ShiftReportsPage: React.FC = () => {
     }, [user, personnel, activeReport]);
 
 
-    const infrastructureOptions = infraItems.filter((i: InfrastructureItem) => !i.isArchived).map((i: InfrastructureItem) => i.name);
-    const equipmentOptions = equipItems.filter((i: EquipmentItem) => !i.isArchived).map((i: EquipmentItem) => i.name);
+    const infrastructureOptions = infraItems.filter((i: InfrastructureItem) => !i.is_archived).map((i: InfrastructureItem) => i.name);
+    const equipmentOptions = equipItems.filter((i: EquipmentItem) => !i.is_archived).map((i: EquipmentItem) => i.name);
 
-    const mandatoryInfra = infraItems.filter((i: InfrastructureItem) => !i.isArchived && i.isMandatory);
-    const mandatoryEquip = equipItems.filter((i: EquipmentItem) => !i.isArchived && i.isMandatory);
+    const mandatoryInfra = infraItems.filter((i: InfrastructureItem) => !i.is_archived && i.isMandatory);
+    const mandatoryEquip = equipItems.filter((i: EquipmentItem) => !i.is_archived && i.isMandatory);
     const totalMandatory = mandatoryInfra.length + mandatoryEquip.length;
 
     const resetForm = () => {
@@ -103,28 +103,28 @@ export const ShiftReportsPage: React.FC = () => {
 
     useEffect(() => {
         if (activeReport) {
-            setShiftType(activeReport.shiftType);
+            setShiftType(activeReport.shift_type);
             setNovedades(activeReport.novedades || '');
-            setHasIncidents(activeReport.hasIncidents || false);
-            setIncidentDetails(activeReport.incidentDetails || '');
-            setHasInfrastructureIssues(activeReport.hasInfrastructureIssues || false);
-            setInfraIssueTypes(activeReport.infrastructureIssueTypes || []);
-            setInfraDetails(activeReport.infrastructureIssueDetails || '');
-            setHasEquipmentIssues(activeReport.hasEquipmentIssues || false);
-            setEquipmentIssueTypes(activeReport.equipmentIssueTypes || []);
-            setEquipmentDetails(activeReport.equipmentIssueDetails || '');
-            setIncidentAttachments(activeReport.incidentAttachments || []);
-            setInfrastructureAttachments(activeReport.infrastructureAttachments || []);
-            setEquipmentAttachments(activeReport.equipmentAttachments || []);
+            setHasIncidents(activeReport.has_incidents || false);
+            setIncidentDetails(activeReport.incident_details || '');
+            setHasInfrastructureIssues(activeReport.has_infrastructure_issues || false);
+            setInfraIssueTypes(activeReport.infrastructure_issue_types || []);
+            setInfraDetails(activeReport.infrastructure_issue_details || '');
+            setHasEquipmentIssues(activeReport.has_equipment_issues || false);
+            setEquipmentIssueTypes(activeReport.equipment_issue_types || []);
+            setEquipmentDetails(activeReport.equipment_issue_details || '');
+            setIncidentAttachments(activeReport.incident_attachments || []);
+            setInfrastructureAttachments(activeReport.infrastructure_attachments || []);
+            setEquipmentAttachments(activeReport.equipment_attachments || []);
         }
     }, [activeReport]);
 
     const handleStartShift = async () => {
         const current = getCurrentShift();
         const existing = reports.find((r: ShiftReport) => 
-            r.workerId === user?.id && 
-            r.shiftDate === todayStr && 
-            r.shiftType === current
+            r.worker_id === user?.id && 
+            r.shift_date === todayStr && 
+            r.shift_type === current
         );
 
         if (existing) {
@@ -138,10 +138,10 @@ export const ShiftReportsPage: React.FC = () => {
         }
 
         await addReport({
-            workerId: user?.id || 'unknown',
-            workerName: user?.name || 'Usuario',
-            shiftDate: todayStr,
-            shiftType: current as any,
+            worker_id: user?.id || 'unknown',
+            worker_name: user?.name || 'Usuario',
+            shift_date: todayStr,
+            shift_type: current as any,
             novedades: ''
         });
 
@@ -165,19 +165,19 @@ export const ShiftReportsPage: React.FC = () => {
         if (activeReport) {
             setIsSaving(true);
             await updateReport(activeReport.id, {
-                shiftType,
+                shift_type,
                 novedades,
-                hasIncidents,
-                incidentDetails,
-                incidentAttachments,
-                hasInfrastructureIssues,
-                infrastructureIssueTypes: infraIssueTypes,
-                infrastructureIssueDetails: infraDetails,
-                infrastructureAttachments,
-                hasEquipmentIssues,
-                equipmentIssueTypes,
-                equipmentIssueDetails: equipmentDetails,
-                equipmentAttachments
+                has_incidents,
+                incident_details,
+                incident_attachments,
+                has_infrastructure_issues,
+                infrastructure_issue_types: infraIssueTypes,
+                infrastructure_issue_details: infraDetails,
+                infrastructure_attachments,
+                has_equipment_issues,
+                equipment_issue_types,
+                equipment_issue_details: equipmentDetails,
+                equipment_attachments
             });
 
             // Artificial delay to show "Saved" state since storage is instant
@@ -197,27 +197,27 @@ export const ShiftReportsPage: React.FC = () => {
 
         if (activeReport) {
             await closeShift(activeReport.id, {
-                shiftType,
+                shift_type,
                 novedades,
-                hasIncidents,
-                incidentDetails,
-                incidentAttachments,
-                hasInfrastructureIssues,
-                infrastructureIssueTypes: infraIssueTypes,
-                infrastructureIssueDetails: infraDetails,
-                infrastructureAttachments,
-                hasEquipmentIssues,
-                equipmentIssueTypes,
-                equipmentIssueDetails: equipmentDetails,
-                equipmentAttachments
+                has_incidents,
+                incident_details,
+                incident_attachments,
+                has_infrastructure_issues,
+                infrastructure_issue_types: infraIssueTypes,
+                infrastructure_issue_details: infraDetails,
+                infrastructure_attachments,
+                has_equipment_issues,
+                equipment_issue_types,
+                equipment_issue_details: equipmentDetails,
+                equipment_attachments
             });
             
             // Register Ticket / KPI
             await addTicket({
                 userId: user?.id || 'system',
                 type: 'shift_report',
-                subject: `Cierre Turno ${shiftType} - ${user?.name || 'Funcionario'}`,
-                description: `Folio Turno: ${activeReport.folio}. Novedades: ${novedades || 'Sin novedades'}. Incidencias: ${hasIncidents ? 'Sí' : 'No'}. Instalaciones: ${hasInfrastructureIssues ? 'Revisar' : 'OK'}. Equipamiento: ${hasEquipmentIssues ? 'Revisar' : 'OK'}.`,
+                subject: `Cierre Turno ${shift_type} - ${user?.name || 'Funcionario'}`,
+                description: `Folio Turno: ${activeReport.folio}. Novedades: ${novedades || 'Sin novedades'}. Incidencias: ${has_incidents ? 'Sí' : 'No'}. Instalaciones: ${has_infrastructure_issues ? 'Revisar' : 'OK'}. Equipamiento: ${has_equipment_issues ? 'Revisar' : 'OK'}.`,
                 status: 'pending'
             });
 
@@ -249,15 +249,15 @@ export const ShiftReportsPage: React.FC = () => {
     };
 
     const filteredReports = reports.filter((r: ShiftReport) => {
-        const matchesSearch = r.workerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        const matchesSearch = r.worker_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             r.folio.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesDate = !dateFilter || r.shiftDate === dateFilter;
+        const matchesDate = !dateFilter || r.shift_date === dateFilter;
         return matchesSearch && matchesDate;
-    }).sort((a: ShiftReport, b: ShiftReport) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }).sort((a: ShiftReport, b: ShiftReport) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    const todayReports = reports.filter((r: ShiftReport) => r.shiftDate === todayStr);
+    const todayReports = reports.filter((r: ShiftReport) => r.shift_date === todayStr);
     const currentShiftType = getCurrentShift();
-    const hasClosedCurrentShift = todayReports.some((r: ShiftReport) => r.shiftType === currentShiftType && r.status === 'closed');
+    const hasClosedCurrentShift = todayReports.some((r: ShiftReport) => r.shift_type === currentShiftType && r.status === 'closed');
 
     const AttachmentSection = ({ title, attachments, setter }: { title: string, attachments: string[], setter: React.Dispatch<React.SetStateAction<string[]>> }) => (
         <div className="space-y-4 mb-4">
@@ -290,10 +290,10 @@ export const ShiftReportsPage: React.FC = () => {
         </div>
     );
       const getShiftInfo = (type: 'Manana' | 'Tarde' | 'Noche') => {
-        const report = todayReports.find(r => r.shiftType === type);
+        const report = todayReports.find(r => r.shift_type === type);
         if (!report) return { status: 'pending', label: '⚠ NO INFORMADO', color: 'text-rose-700 dark:text-rose-400', bgColor: 'bg-rose-50/50', iconColor: 'bg-rose-500', subLabel: 'Pendiente de inicio' };
-        if (report.status === 'open') return { status: 'open', label: '● EN CURSO', color: 'text-indigo-700 dark:text-indigo-400', bgColor: 'bg-indigo-50/50', iconColor: 'bg-indigo-500', subLabel: `Por: ${report.workerName}`, report };
-        return { status: 'closed', label: '✓ REPORTADO', color: 'text-emerald-700 dark:text-emerald-400', bgColor: 'bg-emerald-50/50', iconColor: 'bg-emerald-500', subLabel: `Por: ${report.workerName}`, report };
+        if (report.status === 'open') return { status: 'open', label: '● EN CURSO', color: 'text-indigo-700 dark:text-indigo-400', bgColor: 'bg-indigo-50/50', iconColor: 'bg-indigo-500', subLabel: `Por: ${report.worker_name}`, report };
+        return { status: 'closed', label: '✓ REPORTADO', color: 'text-emerald-700 dark:text-emerald-400', bgColor: 'bg-emerald-50/50', iconColor: 'bg-emerald-500', subLabel: `Por: ${report.worker_name}`, report };
     };
 
     return (
@@ -342,7 +342,7 @@ export const ShiftReportsPage: React.FC = () => {
                                 <p className="text-xs font-black uppercase tracking-widest text-indigo-100 mb-1 opacity-80">Funcionario en Turno</p>
                                 <h2 className="text-3xl font-black leading-none">{user?.name}</h2>
                                 <p className="text-xs font-bold text-indigo-200 mt-2 uppercase tracking-widest flex items-center gap-2 bg-white/10 w-fit px-3 py-1 rounded-full border border-white/10">
-                                    <Calendar className="w-3.5 h-3.5" /> {new Date(activeReport.shiftDate).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+                                    <Calendar className="w-3.5 h-3.5" /> {new Date(activeReport.shift_date).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
                                 </p>
                             </div>
                         </div>
@@ -455,9 +455,9 @@ export const ShiftReportsPage: React.FC = () => {
                                             <User className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h4 className="font-black text-gray-900 dark:text-white leading-tight">{report.workerName}</h4>
+                                            <h4 className="font-black text-gray-900 dark:text-white leading-tight">{report.worker_name}</h4>
                                             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                                                <span className="text-indigo-600 font-black">Turno {report.shiftType}</span>
+                                                <span className="text-indigo-600 font-black">Turno {report.shift_type}</span>
                                                 <span>•</span>
                                                 <span>Folio {report.folio}</span>
                                             </p>
@@ -502,11 +502,11 @@ export const ShiftReportsPage: React.FC = () => {
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-8 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b dark:border-gray-800 pb-6 ml-1">
                                         <div className="flex items-center gap-2">
-                                            <Calendar className="w-4 h-4 text-indigo-500" /> {new Date(report.shiftDate).toLocaleDateString()}
+                                            <Calendar className="w-4 h-4 text-indigo-500" /> {new Date(report.shift_date).toLocaleDateString()}
                                         </div>
-                                        {report.closedAt && (
+                                        {report.closed_at && (
                                             <div className="flex items-center gap-2">
-                                                <Clock className="w-4 h-4 text-emerald-500" /> {new Date(report.closedAt).toLocaleTimeString()}
+                                                <Clock className="w-4 h-4 text-emerald-500" /> {new Date(report.closed_at).toLocaleTimeString()}
                                             </div>
                                         )}
                                     </div>
@@ -523,16 +523,16 @@ export const ShiftReportsPage: React.FC = () => {
                                                 </p>
                                             </div>
 
-                                            {report.hasIncidents && (
+                                            {report.has_incidents && (
                                                 <div className="p-6 bg-rose-50 dark:bg-rose-900/10 rounded-[2rem] border border-rose-100 dark:border-rose-900/20">
                                                     <div className="flex items-center gap-2 text-rose-600 mb-3">
                                                         <ShieldAlert className="w-4 h-4" />
                                                         <p className="text-[10px] font-black uppercase tracking-[0.2em]">Incidencias Críticas</p>
                                                     </div>
-                                                    <p className="text-sm font-black text-rose-700 dark:text-rose-400 leading-relaxed">{report.incidentDetails}</p>
-                                                    {report.incidentAttachments && report.incidentAttachments.length > 0 && (
+                                                    <p className="text-sm font-black text-rose-700 dark:text-rose-400 leading-relaxed">{report.incident_details}</p>
+                                                    {report.incident_attachments && report.incident_attachments.length > 0 && (
                                                         <div className="grid grid-cols-4 gap-2 mt-4">
-                                                            {report.incidentAttachments.map((img, i) => (
+                                                            {report.incident_attachments.map((img, i) => (
                                                                 <img key={i} src={img} className="w-full aspect-square object-cover rounded-xl" alt="incidence" />
                                                             ))}
                                                         </div>
@@ -540,25 +540,25 @@ export const ShiftReportsPage: React.FC = () => {
                                                 </div>
                                             )}
 
-                                            {report.adminReopenReason && (
+                                            {report.admin_reopen_reason && (
                                                 <div className="p-6 bg-amber-50 dark:bg-amber-950/20 rounded-[2rem] border border-amber-200 dark:border-amber-900/30">
                                                     <div className="flex items-center gap-2 text-amber-600 mb-3">
                                                         <AlertTriangle className="w-4 h-4" />
                                                         <p className="text-[10px] font-black uppercase tracking-[0.2em]">Observación Administrativa (Devolución para Corrección)</p>
                                                     </div>
-                                                    <p className="text-sm font-bold text-amber-800 dark:text-amber-400 italic">"{report.adminReopenReason}"</p>
-                                                    <p className="text-[8px] font-black text-amber-600 uppercase mt-2">Devuelto por: {report.adminReopenedBy}</p>
+                                                    <p className="text-sm font-bold text-amber-800 dark:text-amber-400 italic">"{report.admin_reopen_reason}"</p>
+                                                    <p className="text-[8px] font-black text-amber-600 uppercase mt-2">Devuelto por: {report.admin_reopened_by}</p>
                                                 </div>
                                             )}
 
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div className={`p-4 rounded-[1.5rem] border ${report.hasInfrastructureIssues ? 'bg-amber-50 border-amber-100 dark:bg-amber-900/10 dark:border-amber-900/20' : 'bg-gray-50 border-gray-100 dark:bg-gray-800/20 dark:border-gray-700'}`}>
+                                                <div className={`p-4 rounded-[1.5rem] border ${report.has_infrastructure_issues ? 'bg-amber-50 border-amber-100 dark:bg-amber-900/10 dark:border-amber-900/20' : 'bg-gray-50 border-gray-100 dark:bg-gray-800/20 dark:border-gray-700'}`}>
                                                     <p className="text-[8px] font-black text-gray-400 uppercase tracking-tighter mb-1">Instalaciones</p>
                                                     <div className="flex items-center gap-2 mb-2">
-                                                        {report.hasInfrastructureIssues ? (
+                                                        {report.has_infrastructure_issues ? (
                                                             <>
                                                                 <Zap className="w-3.5 h-3.5 text-amber-600" />
-                                                                <span className="text-[10px] font-black text-amber-800 dark:text-amber-400">{report.infrastructureIssueTypes?.join(', ') || report.infrastructureIssueType}</span>
+                                                                <span className="text-[10px] font-black text-amber-800 dark:text-amber-400">{report.infrastructure_issue_types?.join(', ') || report.infrastructure_issue_type}</span>
                                                             </>
                                                         ) : (
                                                             <>
@@ -567,21 +567,21 @@ export const ShiftReportsPage: React.FC = () => {
                                                             </>
                                                         )}
                                                     </div>
-                                                    {report.infrastructureAttachments && report.infrastructureAttachments.length > 0 && (
+                                                    {report.infrastructure_attachments && report.infrastructure_attachments.length > 0 && (
                                                         <div className="grid grid-cols-3 gap-1 mt-2">
-                                                            {report.infrastructureAttachments.slice(0, 3).map((img, i) => (
+                                                            {report.infrastructure_attachments.slice(0, 3).map((img, i) => (
                                                                 <img key={i} src={img} className="w-full aspect-square object-cover rounded-lg" alt="infra" />
                                                             ))}
                                                         </div>
                                                     )}
                                                 </div>
-                                                <div className={`p-4 rounded-[1.5rem] border ${report.hasEquipmentIssues ? 'bg-amber-50 border-amber-100 dark:bg-amber-900/10 dark:border-amber-900/20' : 'bg-gray-50 border-gray-100 dark:bg-gray-800/20 dark:border-gray-700'}`}>
+                                                <div className={`p-4 rounded-[1.5rem] border ${report.has_equipment_issues ? 'bg-amber-50 border-amber-100 dark:bg-amber-900/10 dark:border-amber-900/20' : 'bg-gray-50 border-gray-100 dark:bg-gray-800/20 dark:border-gray-700'}`}>
                                                     <p className="text-[8px] font-black text-gray-400 uppercase tracking-tighter mb-1">Equipamiento</p>
                                                     <div className="flex items-center gap-2 mb-2">
-                                                        {report.hasEquipmentIssues ? (
+                                                        {report.has_equipment_issues ? (
                                                             <>
                                                                 <Smartphone className="w-3.5 h-3.5 text-amber-600" />
-                                                                <span className="text-[10px] font-black text-amber-800 dark:text-amber-400">{report.equipmentIssueTypes?.join(', ') || report.equipmentIssueType}</span>
+                                                                <span className="text-[10px] font-black text-amber-800 dark:text-amber-400">{report.equipment_issue_types?.join(', ') || report.equipment_issue_type}</span>
                                                             </>
                                                         ) : (
                                                             <>
@@ -590,9 +590,9 @@ export const ShiftReportsPage: React.FC = () => {
                                                             </>
                                                         )}
                                                     </div>
-                                                    {report.equipmentAttachments && report.equipmentAttachments.length > 0 && (
+                                                    {report.equipment_attachments && report.equipment_attachments.length > 0 && (
                                                         <div className="grid grid-cols-3 gap-1 mt-2">
-                                                            {report.equipmentAttachments.slice(0, 3).map((img, i) => (
+                                                            {report.equipment_attachments.slice(0, 3).map((img, i) => (
                                                                 <img key={i} src={img} className="w-full aspect-square object-cover rounded-lg" alt="equip" />
                                                             ))}
                                                         </div>
@@ -648,7 +648,7 @@ export const ShiftReportsPage: React.FC = () => {
                                                 key={t}
                                                 type="button"
                                                 onClick={() => setShiftType(t as 'Manana' | 'Tarde' | 'Noche')}
-                                                className={`p-6 rounded-[2rem] border-2 transition-all font-black text-sm uppercase tracking-widest flex flex-col items-center gap-3 ${shiftType === t ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-600/20 scale-105' : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-400 hover:border-indigo-200'}`}
+                                                className={`p-6 rounded-[2rem] border-2 transition-all font-black text-sm uppercase tracking-widest flex flex-col items-center gap-3 ${shift_type === t ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-600/20 scale-105' : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-400 hover:border-indigo-200'}`}
                                             >
                                                 <Zap className={`w-6 h-6 ${t === 'Tarde' ? 'rotate-45' : t === 'Noche' ? 'rotate-90' : ''}`} />
                                                 {t}
@@ -679,20 +679,20 @@ export const ShiftReportsPage: React.FC = () => {
                                         <div className="flex items-center justify-between">
                                             <label className="text-lg font-black text-gray-700 dark:text-gray-300">¿Existieron incidencias o emergencias?</label>
                                             <div className="flex gap-2 p-1.5 bg-gray-100 dark:bg-gray-700 rounded-full w-fit border border-gray-200 dark:border-gray-600">
-                                                <button type="button" onClick={() => setHasIncidents(true)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${hasIncidents ? 'bg-rose-600 text-white shadow-lg' : 'text-gray-400'}`}>Sí</button>
-                                                <button type="button" onClick={() => setHasIncidents(false)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${!hasIncidents ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400'}`}>No</button>
+                                                <button type="button" onClick={() => setHasIncidents(true)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${has_incidents ? 'bg-rose-600 text-white shadow-lg' : 'text-gray-400'}`}>Sí</button>
+                                                <button type="button" onClick={() => setHasIncidents(false)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${!has_incidents ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400'}`}>No</button>
                                             </div>
                                         </div>
-                                        {hasIncidents && (
+                                        {has_incidents && (
                                             <div className="animate-in slide-in-from-top-4 fade-in duration-300 space-y-4">
                                                 <textarea
-                                                    value={incidentDetails}
+                                                    value={incident_details}
                                                     onChange={e => setIncidentDetails(e.target.value)}
                                                     className="w-full rounded-3xl border border-rose-100 dark:border-rose-900/30 bg-white dark:bg-gray-900 p-6 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all min-h-[120px]"
                                                     placeholder="Detalle las incidencias ocurridas..."
-                                                    required={hasIncidents}
+                                                    required={has_incidents}
                                                 />
-                                                <AttachmentSection title="Evidencia de Incidencia" attachments={incidentAttachments} setter={setIncidentAttachments} />
+                                                <AttachmentSection title="Evidencia de Incidencia" attachments={incident_attachments} setter={setIncidentAttachments} />
                                             </div>
                                         )}
                                     </div>
@@ -707,11 +707,11 @@ export const ShiftReportsPage: React.FC = () => {
                                         <div className="flex items-center justify-between">
                                             <label className="text-lg font-black text-gray-700 dark:text-gray-300">¿Presentaron inconveniente?</label>
                                             <div className="flex gap-2 p-1.5 bg-gray-100 dark:bg-gray-700 rounded-full w-fit border border-gray-200 dark:border-gray-600">
-                                                <button type="button" onClick={() => setHasInfrastructureIssues(true)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${hasInfrastructureIssues ? 'bg-amber-600 text-white shadow-lg' : 'text-gray-400'}`}>Sí</button>
-                                                <button type="button" onClick={() => setHasInfrastructureIssues(false)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${!hasInfrastructureIssues ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400'}`}>No</button>
+                                                <button type="button" onClick={() => setHasInfrastructureIssues(true)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${has_infrastructure_issues ? 'bg-amber-600 text-white shadow-lg' : 'text-gray-400'}`}>Sí</button>
+                                                <button type="button" onClick={() => setHasInfrastructureIssues(false)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${!has_infrastructure_issues ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400'}`}>No</button>
                                             </div>
                                         </div>
-                                        {hasInfrastructureIssues && (
+                                        {has_infrastructure_issues && (
                                             <div className="animate-in slide-in-from-top-4 fade-in duration-300 space-y-4">
                                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                                     {infrastructureOptions.map(opt => (
@@ -734,9 +734,9 @@ export const ShiftReportsPage: React.FC = () => {
                                                     onChange={e => setInfraDetails(e.target.value)}
                                                     className="w-full rounded-3xl border border-amber-100 dark:border-amber-900/30 bg-white dark:bg-gray-900 p-6 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-amber-500/10 transition-all min-h-[100px]"
                                                     placeholder="Detalle los reportado en instalaciones..."
-                                                    required={hasInfrastructureIssues}
+                                                    required={has_infrastructure_issues}
                                                 />
-                                                <AttachmentSection title="Evidencia Instalaciones" attachments={infrastructureAttachments} setter={setInfrastructureAttachments} />
+                                                <AttachmentSection title="Evidencia Instalaciones" attachments={infrastructure_attachments} setter={setInfrastructureAttachments} />
                                             </div>
                                         )}
                                     </div>
@@ -751,11 +751,11 @@ export const ShiftReportsPage: React.FC = () => {
                                         <div className="flex items-center justify-between">
                                             <label className="text-lg font-black text-gray-700 dark:text-gray-300">¿Algún inconveniente con el equipo?</label>
                                             <div className="flex gap-2 p-1.5 bg-gray-100 dark:bg-gray-700 rounded-full w-fit border border-gray-200 dark:border-gray-600">
-                                                <button type="button" onClick={() => setHasEquipmentIssues(true)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${hasEquipmentIssues ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400'}`}>Sí</button>
-                                                <button type="button" onClick={() => setHasEquipmentIssues(false)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${!hasEquipmentIssues ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400'}`}>No</button>
+                                                <button type="button" onClick={() => setHasEquipmentIssues(true)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${has_equipment_issues ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400'}`}>Sí</button>
+                                                <button type="button" onClick={() => setHasEquipmentIssues(false)} className={`px-6 py-2.5 rounded-full text-xs font-black uppercase transition-all ${!has_equipment_issues ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400'}`}>No</button>
                                             </div>
                                         </div>
-                                        {hasEquipmentIssues && (
+                                        {has_equipment_issues && (
                                             <div className="animate-in slide-in-from-top-4 fade-in duration-300 space-y-4">
                                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                                     {equipmentOptions.map(opt => (
@@ -767,7 +767,7 @@ export const ShiftReportsPage: React.FC = () => {
                                                                     prev.includes(opt) ? prev.filter(x => x !== opt) : [...prev, opt]
                                                                 );
                                                             }}
-                                                            className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-tight border transition-all ${equipmentIssueTypes.includes(opt) ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 text-gray-500 border-gray-100 dark:border-gray-800 hover:border-amber-200'}`}
+                                                            className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-tight border transition-all ${equipment_issue_types.includes(opt) ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 text-gray-500 border-gray-100 dark:border-gray-800 hover:border-amber-200'}`}
                                                         >
                                                             {opt}
                                                         </button>
@@ -778,9 +778,9 @@ export const ShiftReportsPage: React.FC = () => {
                                                     onChange={e => setEquipmentDetails(e.target.value)}
                                                     className="w-full rounded-3xl border border-indigo-100 dark:border-indigo-900/30 bg-white dark:bg-gray-900 p-6 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all min-h-[100px]"
                                                     placeholder="Detalle lo reportado en equipamiento..."
-                                                    required={hasEquipmentIssues}
+                                                    required={has_equipment_issues}
                                                 />
-                                                <AttachmentSection title="Evidencia Equipamiento" attachments={equipmentAttachments} setter={setEquipmentAttachments} />
+                                                <AttachmentSection title="Evidencia Equipamiento" attachments={equipment_attachments} setter={setEquipmentAttachments} />
                                             </div>
                                         )}
                                     </div>
@@ -893,7 +893,7 @@ export const ShiftReportsPage: React.FC = () => {
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-black text-gray-900 dark:text-white leading-tight">Reabrir Turno</h2>
-                                    <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest">{reopeningReport.folio} - {reopeningReport.workerName}</p>
+                                    <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest">{reopeningReport.folio} - {reopeningReport.worker_name}</p>
                                 </div>
                             </div>
                             <button onClick={() => setIsReopenModalOpen(false)} className="p-2 hover:bg-white dark:hover:bg-gray-800 rounded-xl transition-colors text-gray-400">

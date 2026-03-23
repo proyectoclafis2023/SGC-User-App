@@ -25,32 +25,50 @@ export const TicketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         fetchTickets();
     }, []);
 
-    const addTicket = async (ticketData: Omit<Ticket, 'id' | 'createdAt' | 'updatedAt' | 'folio'>) => {
-        // Generate a folio
-        const folio = `REQ-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
-        const payload = { ...ticketData, folio, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-        
+    const addTicket = async (ticket_data: Omit<Ticket, 'id' | 'created_at' | 'updated_at' | 'folio' | 'is_archived'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                ...ticket_data,
+                folio: `REQ-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`,
+                status: 'open'
+            })
         });
-        
         if (!response.ok) {
             const err = await response.json();
-            throw new Error(err.message || 'Error al agregar el ticket');
+            throw new Error(err.error || err.message || 'Error al agregar el ticket');
         }
-        
         const newTicket = await response.json();
         await fetchTickets();
         return newTicket;
     };
 
-    const updateTicket = async (id: string, ticketData: Partial<Ticket>) => {
+    const updateTicketStatus = async (id: string, status: Ticket['status']) => {
         const response = await fetch(`${API_URL}/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...ticketData, updatedAt: new Date().toISOString() })
+            body: JSON.stringify({ 
+                status,
+                acknowledged_at: (status === 'resolved' || status === 'closed') ? new Date().toISOString() : undefined
+            })
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Error al actualizar el estado del ticket');
+        }
+        await fetchTickets();
+    };
+
+    const addSolutionNote = async (id: string, notes: string) => {
+        await updateTicket(id, { admin_notes: notes });
+    };
+
+    const updateTicket = async (id: string, ticket_data: Partial<Ticket>) => {
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(ticket_data)
         });
         if (!response.ok) {
             const err = await response.json();
@@ -60,24 +78,20 @@ export const TicketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
 
     const deleteTicket = async (id: string) => {
-        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.message || 'Error al eliminar el ticket');
-        }
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
         await fetchTickets();
     };
 
-    const acknowledgeTicket = async (id: string, adminId: string) => {
-        await updateTicket(id, {
-            status: 'acknowledged',
-            acknowledgedAt: new Date().toISOString(),
-            acknowledgedBy: adminId
-        });
-    };
-
     return (
-        <TicketContext.Provider value={{ tickets, addTicket, updateTicket, deleteTicket, acknowledgeTicket, refreshTickets: fetchTickets }}>
+        <TicketContext.Provider value={{ 
+            tickets, 
+            addTicket, 
+            updateTicket, 
+            deleteTicket, 
+            updateTicketStatus, 
+            addSolutionNote,
+            refreshTickets: fetchTickets 
+        }}>
             {children}
         </TicketContext.Provider>
     );

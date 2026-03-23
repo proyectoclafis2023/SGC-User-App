@@ -25,7 +25,7 @@ export const CorrespondenceProvider: React.FC<{ children: ReactNode }> = ({ chil
         fetchItems();
     }, []);
 
-    const addItem = async (item: Omit<Correspondence, 'id' | 'folio' | 'createdAt'>) => {
+    const addItem = async (item: Omit<Correspondence, 'id' | 'folio' | 'created_at'>) => {
         const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
         const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
         const folio = `COR-${date}-${rand}`;
@@ -45,14 +45,14 @@ export const CorrespondenceProvider: React.FC<{ children: ReactNode }> = ({ chil
         }
     };
 
-    const updateItemStatus = async (id: string, status: Correspondence['status'], deliveredAt?: string) => {
+    const updateItemStatus = async (id: string, status: Correspondence['status'], delivered_at?: string) => {
         const item = items.find(i => i.id === id);
         if (!item) return;
 
         const updated = { 
             ...item, 
             status, 
-            deliveredAt: status === 'delivered' ? (deliveredAt || new Date().toISOString()) : item.deliveredAt 
+            delivered_at: status === 'delivered' ? (delivered_at || new Date().toISOString()) : item.delivered_at 
         };
 
         try {

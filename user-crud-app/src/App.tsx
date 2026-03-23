@@ -16,26 +16,27 @@ import { LoginPage } from './pages/LoginPage';
 import { Dashboard } from './pages/Dashboard';
 import { SettingsPage } from './pages/SettingsPage';
 import { PersonnelPage } from './pages/PersonnelPage';
-import { ResidentsPage } from './pages/ResidentsPage';
+import { ResidentesPage } from './pages/ResidentesPage';
 import { PrevisionesPage } from './pages/PrevisionesPage';
 import { AFPsPage } from './pages/AFPsPage';
 import { ProfilesPage } from './pages/ProfilesPage';
-import { InfrastructurePage } from './pages/InfrastructurePage';
-import { CommonSpacesPage } from './pages/CommonSpacesPage';
+import { InfraestructuraPage } from './pages/InfraestructuraPage';
+import { EspaciosPage } from './pages/EspaciosPage';
 import { ReservationsPage } from './pages/ReservationsPage';
 import { SystemMessagesPage } from './pages/SystemMessagesPage';
 import { CommunicationsPage } from './pages/CommunicationsPage';
 import { PublicCarouselPage } from './pages/PublicCarouselPage';
-import { OwnersPage } from './pages/OwnersPage';
+import { PropietariosPage } from './pages/PropietariosPage';
+import { MaestroServiciosPage } from './pages/MaestroServiciosPage';
 import { OwnerProvider } from './context/OwnerContext';
 import { SpecialConditionProvider } from './context/SpecialConditionContext';
 import { UnitTypeProvider } from './context/UnitTypeContext';
 import { ParkingProvider } from './context/ParkingContext';
-import { UnitTypesPage } from './pages/UnitTypesPage';
-import { SpecialConditionsPage } from './pages/SpecialConditionsPage';
-import { ParkingPage } from './pages/ParkingPage';
-import { BanksPage } from './pages/BanksPage';
-import { ArticlesPage } from './pages/ArticlesPage';
+import { TiposUnidadPage } from './pages/TiposUnidadPage';
+import { CondicionesEspecialesPage } from './pages/CondicionesEspecialesPage';
+import { EstacionamientosPage } from './pages/EstacionamientosPage';
+import { BancosPage } from './pages/BancosPage';
+import { ArticulosPersonalPage } from './pages/ArticulosPersonalPage';
 import { BankProvider } from './context/BankContext';
 import { ArticleProvider } from './context/ArticleContext';
 import { ArticleDeliveryProvider } from './context/ArticleDeliveryContext';
@@ -56,7 +57,6 @@ import { ContractorProvider } from './context/ContractorContext';
 import { VisitorProvider } from './context/VisitorContext';
 import { ShiftReportProvider } from './context/ShiftReportContext';
 import { CommunityRequestsPage } from './pages/CommunityRequestsPage';
-import { CameraMasterPage } from './pages/CameraMasterPage';
 import { CameraRequestsPage } from './pages/CameraRequestsPage';
 import { CorrespondencePage } from './pages/CorrespondencePage';
 import { EmailSettingsMasterPage } from './pages/EmailSettingsMasterPage';
@@ -70,12 +70,12 @@ import { PayslipsPage } from './pages/PayslipsPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { CommunityExpensesPage } from './pages/CommunityExpensesPage';
 import { ResidentsServicesPage } from './pages/ResidentsServicesPage';
-import { MessageMasterPage } from './pages/MessageMasterPage';
+import { MaestroMensajesPage } from './pages/MaestroMensajesPage';
 import { TicketsPage } from './pages/TicketsPage';
 import { AccountSetupPage } from './pages/AccountSetupPage';
 import { EmergencyNumberProvider } from './context/EmergencyNumberContext';
-import { EmergencyNumbersPage } from './pages/EmergencyNumbersPage';
-import { OperationalMastersPage } from './pages/OperationalMastersPage';
+import { MaestroEmergenciasPage } from './pages/MaestroEmergenciasPage';
+import { MaestrosOperativosPage } from './pages/MaestrosOperativosPage';
 import { InfrastructureItemProvider } from './context/InfrastructureItemContext';
 import { EquipmentItemProvider } from './context/EquipmentItemContext';
 import { CameraProvider } from './context/CameraContext';
@@ -88,18 +88,19 @@ import { SystemParameterProvider } from './context/SystemParameterContext';
 import { JornadaGroupProvider } from './context/JornadaGroupContext';
 import { ParametersPage } from './pages/ParametersPage';
 import { ManagementKPICenter } from './pages/ManagementKPICenter';
-import { IPCParametersPage } from './pages/IPCParametersPage';
+import { MaestroIPCPage } from './pages/MaestroIPCPage';
 import { IPCProjectionProvider } from './context/IPCProjectionContext';
 import { StaffArticleRequestsPage } from './pages/StaffArticleRequestsPage';
 
 import { CondoBoardProvider } from './context/CondoBoardContext';
 import { CondoBoardPage } from './pages/CondoBoardPage';
-import { ArticleCategoriesPage } from './pages/ArticleCategoriesPage';
+import { CategoriasArticulosPage } from './pages/CategoriasArticulosPage';
 import { AvailableUnitsPage } from './pages/AvailableUnitsPage';
 import { AFCProvider } from './context/AFCContext';
 import { HolidayProvider } from './context/HolidayContext';
 import { AFCPage } from './pages/AFCPage';
-import { HolidaysPage } from './pages/HolidaysPage';
+import { FeriadosPage } from './pages/FeriadosPage';
+import { ServiceDirectoryProvider } from './context/ServiceDirectoryContext';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, user } = useAuth();
@@ -161,7 +162,8 @@ function App() {
                                                                                       <CondoBoardProvider>
                                                         <AFCProvider>
                                                           <HolidayProvider>
-                                                            <Routes>
+                                                            <ServiceDirectoryProvider>
+                                                              <Routes>
                                                                                           <Route path="/login" element={<LoginPage />} />
                                                                                           <Route path="/visor-mensajes" element={<PublicCarouselPage />} />
                                                                                           <Route
@@ -175,23 +177,23 @@ function App() {
                                                                                             <Route index element={<Dashboard />} />
                                                                                             <Route path="mensajes-dirigidos" element={<CommunicationsPage />} />
                                                                                             <Route path="personal" element={<PersonnelPage />} />
-                                                                                            <Route path="residentes" element={<ResidentsPage />} />
-                                                                                            <Route path="propietarios" element={<OwnersPage />} />
+                                                                                            <Route path="residentes" element={<ResidentesPage />} />
+                                                                                            <Route path="propietarios" element={<PropietariosPage />} />
                                                                                             <Route path="previsiones" element={<PrevisionesPage />} />
                                                                                             <Route path="afps" element={<AFPsPage />} />
                                                               <Route path="afc" element={<AFCPage />} />
                                                                                             <Route path="perfiles" element={<ProfilesPage />} />
-                                                                                            <Route path="infraestructura" element={<InfrastructurePage />} />
-                                                                                            <Route path="tipos-unidad" element={<UnitTypesPage />} />
-                                                                                            <Route path="condiciones-especiales" element={<SpecialConditionsPage />} />
-                                                                                            <Route path="espacios" element={<CommonSpacesPage />} />
+                                                                                            <Route path="infraestructura" element={<InfraestructuraPage />} />
+                                                                                            <Route path="tipos-unidad" element={<TiposUnidadPage />} />
+                                                                                            <Route path="condiciones-especiales" element={<CondicionesEspecialesPage />} />
+                                                                                            <Route path="espacios" element={<EspaciosPage />} />
                                                                                             <Route path="reservas" element={<ReservationsPage />} />
                                                                                             <Route path="mensajes" element={<SystemMessagesPage />} />
-                                                                                            <Route path="estacionamientos" element={<ParkingPage />} />
-                                                                                            <Route path="bancos" element={<BanksPage />} />
-                                                                                            <Route path="articulos-personal" element={<ArticlesPage />} />
-                                                              <Route path="maestro-categorias-articulos" element={<ArticleCategoriesPage />} />
-                                                              <Route path="feriados" element={<HolidaysPage />} />
+                                                                                            <Route path="estacionamientos" element={<EstacionamientosPage />} />
+                                                                                            <Route path="bancos" element={<BancosPage />} />
+                                                                                            <Route path="articulos-personal" element={<ArticulosPersonalPage />} />
+                                                              <Route path="maestro-categorias-articulos" element={<CategoriasArticulosPage />} />
+                                                              <Route path="feriados" element={<FeriadosPage />} />
                                                               <Route path="solicitud-insumos" element={<StaffArticleRequestsPage />} />
                                                                                             <Route path="entregas-articulos" element={<ArticleDeliveriesPage />} />
                                                                                             <Route path="configuracion" element={<SettingsPage />} />
@@ -205,7 +207,7 @@ function App() {
                                                                                             <Route path="directiva" element={<CondoBoardPage />} />
                                                                                             <Route path="tickets" element={<TicketsPage />} />
                                                                                             <Route path="dashboard-kpi" element={<ManagementKPICenter />} />
-                                                                                            <Route path="maestro-ipc" element={<IPCParametersPage />} />
+                                                                                            <Route path="maestro-ipc" element={<MaestroIPCPage />} />
                                                                                             <Route path="camaras" element={<CameraRequestsPage />} />
                                                                                             <Route path="correspondencia" element={<CorrespondencePage />} />
                                                                                             <Route path="contratistas" element={<ContractorMasterPage />} />
@@ -215,20 +217,22 @@ function App() {
                                                                                             <Route path="reporte-diario" element={<DailyReportPage />} />
                                                                                             <Route path="certificados" element={<CertificatesPage />} />
                                                                                             <Route path="liquidaciones" element={<PayslipsPage />} />
-                                                                                            <Route path="emergencias" element={<EmergencyNumbersPage />} />
-                                                                                            <Route path="maestro-emergencias" element={<EmergencyNumbersPage isMaster />} />
-                                                                                            <Route path="servicios-residentes" element={<ResidentsServicesPage />} />
+                                                                                            <Route path="emergencias" element={<MaestroEmergenciasPage isMaster={false} />} />
+                                                                                            <Route path="maestro-emergencias" element={<MaestroEmergenciasPage isMaster={true} />} />
+                                                              <Route path="maestro-servicios" element={<MaestroServiciosPage />} />
+                                                              <Route path="servicios-residentes" element={<ResidentsServicesPage />} />
                                                                                             <Route path="cambio-clave" element={<ChangePasswordPage />} />
-                                                                                            <Route path="maestros-operativos/:tab?" element={<OperationalMastersPage />} />
+                                                                                            <Route path="maestros-operativos/:tab?" element={<MaestrosOperativosPage />} />
                                                                                             <Route path="maestro-camaras" element={<Navigate to="/maestros-operativos/camaras" replace />} />
                                                                                             <Route path="maestro-correos" element={<EmailSettingsMasterPage />} />
-                                                                                            <Route path="maestro-mensajes" element={<MessageMasterPage />} />
+                                                                                            <Route path="maestro-mensajes" element={<MaestroMensajesPage />} />
                                                                                             <Route path="parametros" element={<ParametersPage />} />
                                                                                             <Route path="unidades-disponibles" element={<AvailableUnitsPage />} />
                                                                                             <Route path="*" element={<Navigate to="/" replace />} />
                                                                                           </Route>
                                                                                         </Routes>
-                                                          </HolidayProvider>
+                                                        </ServiceDirectoryProvider>
+                                                      </HolidayProvider>
                                                         </AFCProvider>
                                                                                       </CondoBoardProvider>
 

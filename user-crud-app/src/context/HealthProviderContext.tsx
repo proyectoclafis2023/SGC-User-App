@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const HealthProviderContext = createContext<HealthProviderContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/health-providers`;
+const API_URL = `${API_BASE_URL}/previsiones`;
 
 export const HealthProviderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [providers, setProviders] = useState<HealthProvider[]>([]);

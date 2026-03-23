@@ -13,12 +13,12 @@ interface PensionFundFormProps {
 
 export const PensionFundForm: React.FC<PensionFundFormProps> = ({ isOpen, onClose, onSubmit, initialData }) => {
     const [name, setName] = useState('');
-    const [discountRate, setDiscountRate] = useState(0);
+    const [discount_rate, setDiscountRate] = useState(0);
 
     useEffect(() => {
         if (initialData) {
             setName(initialData.name);
-            setDiscountRate(initialData.discountRate);
+            setDiscountRate(initialData.discount_rate);
         } else {
             setName('');
             setDiscountRate(0);
@@ -27,7 +27,7 @@ export const PensionFundForm: React.FC<PensionFundFormProps> = ({ isOpen, onClos
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit({ name, discountRate: Number(discountRate) }, initialData?.id);
+        onSubmit({ name, discount_rate: Number(discount_rate) }, initialData?.id);
     };
 
     if (!isOpen) return null;
@@ -57,7 +57,7 @@ export const PensionFundForm: React.FC<PensionFundFormProps> = ({ isOpen, onClos
                         label="% de Descuento"
                         type="number"
                         step="0.01"
-                        value={discountRate}
+                        value={discount_rate}
                         onChange={(e) => setDiscountRate(Number(e.target.value))}
                         required
                         placeholder="ej. 11.45"

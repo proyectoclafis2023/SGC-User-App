@@ -5,22 +5,22 @@ import { Input } from '../components/Input';
 import { Plus, Trash2, Edit2, X, Tag } from 'lucide-react';
 import type { UnitType } from '../types';
 
-export const UnitTypesPage: React.FC = () => {
+export const TiposUnidadPage: React.FC = () => {
     const { unitTypes, addUnitType, updateUnitType, deleteUnitType } = useUnitTypes();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingType, setEditingType] = useState<UnitType | null>(null);
 
-    const [name, setName] = useState('');
+    const [nombre, setNombre] = useState('');
     const [baseCommonExpense, setBaseCommonExpense] = useState(0);
 
     const handleOpenModal = (t?: UnitType) => {
         if (t) {
             setEditingType(t);
-            setName(t.name);
-            setBaseCommonExpense(t.baseCommonExpense);
+            setNombre(t.nombre);
+            setBaseCommonExpense(t.base_common_expense);
         } else {
             setEditingType(null);
-            setName('');
+            setNombre('');
             setBaseCommonExpense(0);
         }
         setIsModalOpen(true);
@@ -29,9 +29,9 @@ export const UnitTypesPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (editingType) {
-            await updateUnitType({ ...editingType, name, baseCommonExpense: Number(baseCommonExpense) });
+            await updateUnitType({ ...editingType, nombre, base_common_expense: Number(baseCommonExpense) });
         } else {
-            await addUnitType({ name, baseCommonExpense: Number(baseCommonExpense) });
+            await addUnitType({ nombre, base_common_expense: Number(baseCommonExpense) });
         }
         setIsModalOpen(false);
     };
@@ -47,16 +47,16 @@ export const UnitTypesPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {unitTypes.filter(t => !t.isArchived).map(t => (
+                {unitTypes.filter(t => !t.is_archived).map(t => (
                     <div key={t.id} className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm relative group">
                         <div className="absolute top-4 right-4 flex opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={() => handleOpenModal(t)} className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"><Edit2 className="w-4 h-4" /></button>
                             <button onClick={() => deleteUnitType(t.id)} className="p-2 text-gray-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t.name}</h3>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t.nombre}</h3>
                         <div className="flex items-center justify-between mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
                             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Base Gasto Común</span>
-                            <span className="text-lg font-bold text-indigo-600">${t.baseCommonExpense.toLocaleString()}</span>
+                            <span className="text-lg font-bold text-indigo-600">${t.base_common_expense.toLocaleString()}</span>
                         </div>
                     </div>
                 ))}
@@ -70,7 +70,7 @@ export const UnitTypesPage: React.FC = () => {
                             <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:bg-gray-100 p-2 rounded-full transition-colors"><X /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            <Input label="Nombre del Tipo" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Ej: Penthouse" />
+                            <Input label="Nombre del Tipo" value={nombre} onChange={(e) => setNombre(e.target.value)} required placeholder="Ej: Penthouse" />
                             <Input label="Monto Base Gasto Común ($)" type="number" value={baseCommonExpense} onChange={(e) => setBaseCommonExpense(Number(e.target.value))} required min="0" />
                             <div className="flex justify-end gap-3 pt-6 border-t">
                                 <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancelar</Button>

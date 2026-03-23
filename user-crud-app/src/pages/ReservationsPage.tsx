@@ -39,9 +39,9 @@ export const ReservationsPage: React.FC = () => {
     const [selectedTower, setSelectedTower] = useState('');
     const [selectedUnit, setSelectedUnit] = useState('');
 
-    const [spaceId, setSpaceId] = useState('');
+    const [common_space_id, setSpaceId] = useState('');
     const [date, setDate] = useState('');
-    const [startTime, setStartTime] = useState('');
+    const [start_at, setStartTime] = useState('');
 
     const [selectedReservationForVoucher, setSelectedReservationForVoucher] = useState<Reservation | null>(null);
 
@@ -55,12 +55,12 @@ export const ReservationsPage: React.FC = () => {
         return `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     };
 
-    const checkConflicts = (spaceId: string, date: string, start: string, end: string) => {
+    const checkConflicts = (common_space_id: string, date: string, start: string, end: string) => {
         return reservations.filter(r =>
-            r.spaceId === spaceId &&
+            r.common_space_id === common_space_id &&
             r.date === date &&
             r.status !== 'rejected' &&
-            (start < r.endTime && end > r.startTime)
+            (start < r.end_at && end > r.start_at)
         );
     };
 
@@ -68,10 +68,10 @@ export const ReservationsPage: React.FC = () => {
         e.preventDefault();
         setError(null);
 
-        const space = spaces.find(s => s.id === spaceId);
+        const space = spaces.find(s => s.id === common_space_id);
         if (!space) return;
 
-        const endTime = calculateEndTime(startTime, space.durationHours);
+        const end_at = calculateEndTime(start_at, space.durationHours);
 
         // Validar fecha futura
         if (new Date(date) < new Date(new Date().setHours(0, 0, 0, 0))) {
@@ -79,9 +79,9 @@ export const ReservationsPage: React.FC = () => {
             return;
         }
 
-        const conflicts = checkConflicts(spaceId, date, startTime, endTime);
+        const conflicts = checkConflicts(common_space_id, date, start_at, end_at);
         if (conflicts.length > 0) {
-            setError(`Ya existe una reserva para este espacio en el horario ${conflicts[0].startTime} - ${conflicts[0].endTime}`);
+            setError(`Ya existe una reserva para este espacio en el horario ${conflicts[0].start_at} - ${conflicts[0].end_at}`);
             return;
         }
 
@@ -89,22 +89,22 @@ export const ReservationsPage: React.FC = () => {
         const reservationUserId = selectedResident ? `${selectedResident.names} ${selectedResident.lastNames}` : (user?.name || 'Sistema');
 
         await addReservation({
-            spaceId,
+            common_space_id,
             date,
-            startTime,
-            endTime,
-            userId: reservationUserId,
+            start_at,
+            end_at,
+            resident_id: reservationUserId,
             notes: '',
-            towerId: selectedTower,
-            unitId: selectedUnit
+            tower_id: selectedTower,
+            unit_id: selectedUnit
         });
 
         // Registrar Ticket/KPI en Centro de Gestiones
         await addTicket({
-            userId: user?.id || 'system',
+            resident_id: user?.id || 'system',
             type: 'reservation',
             subject: `Solicitud Reserva - ${space.name}`,
-            description: `Fecha: ${date}. Horario: ${startTime} - ${endTime}. Solicitante: ${reservationUserId}.`,
+            description: `Fecha: ${date}. Horario: ${start_at} - ${end_at}. Solicitante: ${reservationUserId}.`,
             status: 'pending'
         });
 
@@ -119,14 +119,14 @@ export const ReservationsPage: React.FC = () => {
 
     const getSpaceName = (id: string) => spaces.find(s => s.id === id)?.name || 'Espacio no encontrado';
 
-    const getStatusBadge = (status: string, paymentStatus: string) => {
+    const getStatusBadge = (status: string, payment_status: string) => {
         if (status === 'approved') {
             return (
                 <div className="flex flex-col gap-1">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
                         Aprobada
                     </span>
-                    {paymentStatus === 'paid' ? (
+                    {payment_status === 'paid' ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
                             Pagada
                         </span>
@@ -153,19 +153,19 @@ export const ReservationsPage: React.FC = () => {
     };
 
     const totalRevenue = reservations
-        .filter(r => r.paymentStatus === 'paid')
-        .reduce((sum, r) => sum + (spaces.find(s => s.id === r.spaceId)?.rentalValue || 0), 0);
+        .filter(r => r.payment_status === 'paid')
+        .reduce((sum, r) => sum + (spaces.find(s => s.id === r.common_space_id)?.rentalValue || 0), 0);
 
     const pendingRevenue = reservations
-        .filter(r => r.status === 'approved' && r.paymentStatus === 'pending')
-        .reduce((sum, r) => sum + (spaces.find(s => s.id === r.spaceId)?.rentalValue || 0), 0);
+        .filter(r => r.status === 'approved' && r.payment_status === 'pending')
+        .reduce((sum, r) => sum + (spaces.find(s => s.id === r.common_space_id)?.rentalValue || 0), 0);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(value);
     };
 
     const filteredReservations = reservations.filter(r => {
-        const matchesSearch = getSpaceName(r.spaceId).toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = getSpaceName(r.common_space_id).toLowerCase().includes(searchTerm.toLowerCase());
         return matchesSearch;
     });
 
@@ -229,7 +229,7 @@ export const ReservationsPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredReservations.map((res) => {
-                    const isOwn = res.userId === user?.name;
+                    const isOwn = res.resident_id === user?.name;
                     const canViewDetails = isAdmin || isOwn;
 
                     return (
@@ -245,13 +245,13 @@ export const ReservationsPage: React.FC = () => {
                                             <p className="text-xs font-black text-indigo-600 dark:text-indigo-400 leading-none">{res.folio}</p>
                                         </div>
                                     </div>
-                                    {getStatusBadge(res.status, res.paymentStatus)}
+                                    {getStatusBadge(res.status, res.payment_status)}
                                 </div>
 
                                 <div className="space-y-4">
                                     <div>
                                         <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight">
-                                            {getSpaceName(res.spaceId)}
+                                            {getSpaceName(res.common_space_id)}
                                         </h3>
                                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
                                             {new Date(res.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -261,11 +261,11 @@ export const ReservationsPage: React.FC = () => {
                                     <div className="flex items-center gap-4 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-700">
                                         <div className="flex-1">
                                             <p className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter">Horario</p>
-                                            <p className="text-sm font-black text-gray-900 dark:text-white">{res.startTime} - {res.endTime}</p>
+                                            <p className="text-sm font-black text-gray-900 dark:text-white">{res.start_at} - {res.end_at}</p>
                                         </div>
                                         <div className="flex-1 text-right">
                                             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter">Usuario</p>
-                                            <p className="text-sm font-black text-gray-900 dark:text-white">{canViewDetails ? res.userId : 'Reservado'}</p>
+                                            <p className="text-sm font-black text-gray-900 dark:text-white">{canViewDetails ? res.resident_id : 'Reservado'}</p>
                                         </div>
                                     </div>
 
@@ -300,7 +300,7 @@ export const ReservationsPage: React.FC = () => {
                                         </div>
                                     )}
 
-                                    {isAdmin && res.status === 'approved' && res.paymentStatus === 'pending' && (
+                                    {isAdmin && res.status === 'approved' && res.payment_status === 'pending' && (
                                         <div className="flex gap-2 pt-2">
                                             <button
                                                 onClick={() => confirmPayment(res.id, user?.name || 'admin')}
@@ -334,7 +334,7 @@ export const ReservationsPage: React.FC = () => {
                                             </button>
                                             <label className="flex-1 bg-emerald-50 text-emerald-600 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100 flex items-center justify-center gap-2 cursor-pointer">
                                                 <FileUp className="w-4 h-4" />
-                                                {res.signedDocumentUrl ? 'Actualizar' : 'Subir'}
+                                                {res.signed_document_url ? 'Actualizar' : 'Subir'}
                                                 <input
                                                     type="file"
                                                     className="hidden"
@@ -392,7 +392,7 @@ export const ReservationsPage: React.FC = () => {
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-black text-gray-500 ml-1 uppercase tracking-widest">Espacio Común</label>
                                     <select
-                                        value={spaceId}
+                                        value={common_space_id}
                                         onChange={(e) => setSpaceId(e.target.value)}
                                         className="w-full rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
                                         required
@@ -414,15 +414,15 @@ export const ReservationsPage: React.FC = () => {
                                                 setSelectedResidentId(resId);
                                                 const res = residents.find(r => r.id === resId);
                                                 if (res) {
-                                                    if (res.towerId) setSelectedTower(res.towerId);
-                                                    if (res.unitId) setSelectedUnit(res.unitId);
+                                                    if (res.tower_id) setSelectedTower(res.tower_id);
+                                                    if (res.unit_id) setSelectedUnit(res.unit_id);
                                                 }
                                             }}
                                             className="w-full rounded-2xl border border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/30 dark:bg-indigo-900/10 p-4 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
                                         >
                                             <option value="">Buscar residente...</option>
                                             {residents.filter(r => !r.isArchived).map(r => (
-                                                <option key={r.id} value={r.id}>{r.names} {r.lastNames} ({r.towerId} - {r.unitId})</option>
+                                                <option key={r.id} value={r.id}>{r.names} {r.lastNames} ({r.tower_id} - {r.unit_id})</option>
                                             ))}
                                         </select>
                                     </div>
@@ -476,18 +476,18 @@ export const ReservationsPage: React.FC = () => {
                                     <Input
                                         label="Hora de Inicio"
                                         type="time"
-                                        value={startTime}
+                                        value={start_at}
                                         onChange={(e) => setStartTime(e.target.value)}
                                         required
                                     />
-                                    {spaceId && startTime && (
+                                    {common_space_id && start_at && (
                                         <div className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/20">
                                             <div className="flex justify-between items-center mb-1">
                                                 <p className="text-[10px] font-black text-amber-600 uppercase">Información de Reserva</p>
                                                 <Info className="w-3 h-3 text-amber-600" />
                                             </div>
                                             <p className="text-sm font-bold text-amber-800 dark:text-amber-400">
-                                                La reserva finalizará a las {calculateEndTime(startTime, spaces.find(s => s.id === spaceId)?.durationHours || 0)}
+                                                La reserva finalizará a las {calculateEndTime(start_at, spaces.find(s => s.id === common_space_id)?.durationHours || 0)}
                                             </p>
                                             <p className="text-[10px] text-amber-600/80 mt-2 font-black uppercase">
                                                 * Para garantizar la reserva debe consignar el pago en administración.
@@ -541,7 +541,7 @@ export const ReservationsPage: React.FC = () => {
                                                 {log.details}
                                             </p>
                                             <p className="text-[10px] font-bold text-gray-400 uppercase mt-1">
-                                                {new Date(log.timestamp).toLocaleString()} • {log.userId} • {res ? getSpaceName(res.spaceId) : 'Espacio desconocido'}
+                                                {new Date(log.timestamp).toLocaleString()} • {log.resident_id} • {res ? getSpaceName(res.common_space_id) : 'Espacio desconocido'}
                                             </p>
                                         </div>
                                     </div>
@@ -573,8 +573,8 @@ export const ReservationsPage: React.FC = () => {
                             <div className="space-y-4">
                                 <div>
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Detalle del Espacio</p>
-                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{getSpaceName(selectedReservationForVoucher.spaceId)}</h3>
-                                    <p className="text-sm text-gray-600">{spaces.find(s => s.id === selectedReservationForVoucher.spaceId)?.location}</p>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{getSpaceName(selectedReservationForVoucher.common_space_id)}</h3>
+                                    <p className="text-sm text-gray-600">{spaces.find(s => s.id === selectedReservationForVoucher.common_space_id)?.location}</p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl">
@@ -583,20 +583,20 @@ export const ReservationsPage: React.FC = () => {
                                     </div>
                                     <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl">
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Horario</p>
-                                        <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedReservationForVoucher.startTime} - {selectedReservationForVoucher.endTime}</p>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedReservationForVoucher.start_at} - {selectedReservationForVoucher.end_at}</p>
                                     </div>
                                     <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl col-span-2">
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Usuario</p>
-                                        <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedReservationForVoucher.userId}</p>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white">{selectedReservationForVoucher.resident_id}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {spaces.find(s => s.id === selectedReservationForVoucher.spaceId)?.conditions && (
+                            {spaces.find(s => s.id === selectedReservationForVoucher.common_space_id)?.conditions && (
                                 <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Condiciones y Reglas del Espacio</p>
                                     <div className="text-xs text-gray-600 dark:text-gray-400 bg-amber-50 dark:bg-amber-900/10 p-4 rounded-xl border border-amber-100 dark:border-amber-900/20 whitespace-pre-wrap">
-                                        {spaces.find(s => s.id === selectedReservationForVoucher.spaceId)?.conditions}
+                                        {spaces.find(s => s.id === selectedReservationForVoucher.common_space_id)?.conditions}
                                     </div>
                                 </div>
                             )}

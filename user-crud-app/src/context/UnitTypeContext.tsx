@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const UnitTypeContext = createContext<UnitTypeContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/unit_types`;
+const API_URL = `${API_BASE_URL}/tipos_unidad`;
 
 export const UnitTypeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [unitTypes, setUnitTypes] = useState<UnitType[]>([]);

@@ -32,14 +32,14 @@ export const DailyReportPage: React.FC = () => {
 
         return {
             date: dateStr,
-            shifts: reports.filter((r: ShiftReport) => r.shiftDate === dateStr),
-            visitors: visitors.filter((v: Visitor) => v.visitDate === dateStr),
-            packages: packages.filter((p: Correspondence) => p.createdAt?.startsWith(dateStr)),
-            tickets: tickets.filter((t: Ticket) => t.createdAt?.startsWith(dateStr)),
+            shifts: reports.filter((r: ShiftReport) => r.shift_date === dateStr),
+            visitors: visitors.filter((v: Visitor) => v.visit_date === dateStr),
+            packages: packages.filter((p: Correspondence) => p.created_at?.startsWith(dateStr)),
+            tickets: tickets.filter((t: Ticket) => t.created_at?.startsWith(dateStr)),
             reservations: reservations.filter((r: Reservation) => r.date === dateStr),
             maintenance: assets.flatMap((a: FixedAsset) => a.maintenanceHistory || [])
                 .filter((m: MaintenanceRecord) => m.date === dateStr),
-            contractors: contractors.filter((c: Contractor) => c.createdAt?.startsWith(dateStr) || c.isActive) // simplified for demo
+            contractors: contractors.filter((c: Contractor) => c.created_at?.startsWith(dateStr) || c.isActive) // simplified for demo
         };
     }, [selectedDate, reports, visitors, packages, tickets, reservations, assets, contractors]);
 
@@ -120,7 +120,7 @@ export const DailyReportPage: React.FC = () => {
                             {/* Consolidado de Jornadas en el reporte */}
                             <div className="grid grid-cols-3 gap-3 mb-8">
                                 {(['Mañana', 'Tarde', 'Noche'] as const).map((type) => {
-                                    const reported = data.shifts.find((s: ShiftReport) => s.shiftType === type && s.status === 'closed');
+                                    const reported = data.shifts.find((s: ShiftReport) => s.shift_type === type && s.status === 'closed');
                                     return (
                                         <div key={type} className={`p-4 rounded-2xl border flex items-center justify-between ${reported ? 'bg-emerald-50 border-emerald-100 dark:bg-emerald-900/10' : 'bg-rose-50 border-rose-100 dark:bg-rose-900/10'}`}>
                                             <div>
@@ -144,9 +144,9 @@ export const DailyReportPage: React.FC = () => {
                                                 <Users className="w-6 h-6" />
                                             </div>
                                             <div>
-                                                <h4 className="font-black text-gray-900 dark:text-white leading-tight">{shift.workerName}</h4>
+                                                <h4 className="font-black text-gray-900 dark:text-white leading-tight">{shift.worker_name}</h4>
                                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                                    <span className="text-indigo-600 font-black">Turno {shift.shiftType}</span>
+                                                    <span className="text-indigo-600 font-black">Turno {shift.shift_type}</span>
                                                     <span>•</span>
                                                     <span>{shift.status === 'open' ? 'En curso' : 'Cerrado'}</span>
                                                 </p>
@@ -159,33 +159,33 @@ export const DailyReportPage: React.FC = () => {
                                             "{shift.novedades || 'Sin novedades reportadas'}"
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            {shift.hasIncidents && (
+                                            {shift.has_incidents && (
                                                 <div className="p-4 bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 rounded-2xl text-sm italic font-black text-rose-600">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <AlertTriangle className="w-4 h-4" />
                                                         <span className="text-[10px] uppercase tracking-widest text-rose-500">Incidencia Crítica</span>
                                                     </div>
-                                                    {shift.incidentDetails}
+                                                    {shift.incident_details}
                                                 </div>
                                             )}
-                                            {shift.hasInfrastructureIssues && (
+                                            {shift.has_infrastructure_issues && (
                                                 <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-2xl text-sm italic font-black text-amber-600">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <Building2 className="w-4 h-4" />
                                                         <span className="text-[10px] uppercase tracking-widest text-amber-500">Instalaciones</span>
                                                     </div>
-                                                    <p className="text-[10px] font-black uppercase mb-1">{shift.infrastructureIssueTypes?.join(', ') || shift.infrastructureIssueType}</p>
-                                                    {shift.infrastructureIssueDetails}
+                                                    <p className="text-[10px] font-black uppercase mb-1">{shift.infrastructure_issue_types?.join(', ') || shift.infrastructure_issue_type}</p>
+                                                    {shift.infrastructure_issue_details}
                                                 </div>
                                             )}
-                                            {shift.hasEquipmentIssues && (
+                                            {shift.has_equipment_issues && (
                                                 <div className="p-4 bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/30 rounded-2xl text-sm italic font-black text-indigo-600">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <Smartphone className="w-4 h-4" />
                                                         <span className="text-[10px] uppercase tracking-widest text-indigo-500">Equipamiento</span>
                                                     </div>
-                                                    <p className="text-[10px] font-black uppercase mb-1">{shift.equipmentIssueTypes?.join(', ') || shift.equipmentIssueType}</p>
-                                                    {shift.equipmentIssueDetails}
+                                                    <p className="text-[10px] font-black uppercase mb-1">{shift.equipment_issue_types?.join(', ') || shift.equipment_issue_type}</p>
+                                                    {shift.equipment_issue_details}
                                                 </div>
                                             )}
                                         </div>
@@ -250,7 +250,7 @@ export const DailyReportPage: React.FC = () => {
                                     className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-between group hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
                                 >
                                     <div>
-                                        <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-1">U: {v.towerId} - {v.departmentId}</p>
+                                        <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-1">U: {v.tower_id} - {v.department_id}</p>
                                         <p className="text-sm font-black text-gray-900 dark:text-white leading-tight">{v.names}</p>
                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">{v.status === 'entered' ? 'En Recinto' : v.status === 'exited' ? 'Salió' : 'Esperada'}</p>
                                     </div>
@@ -307,7 +307,7 @@ export const DailyReportPage: React.FC = () => {
                                     className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-between group hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
                                 >
                                     <div>
-                                        <p className="text-xs font-black text-amber-600 uppercase tracking-widest mb-1">U: {p.departmentId}</p>
+                                        <p className="text-xs font-black text-amber-600 uppercase tracking-widest mb-1">U: {p.department_id}</p>
                                         <p className="text-sm font-black text-gray-900 dark:text-white leading-tight">{p.addressee}</p>
                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">{p.courier || 'Courier no espec.'}</p>
                                     </div>

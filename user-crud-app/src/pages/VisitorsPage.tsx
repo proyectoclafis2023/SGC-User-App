@@ -27,11 +27,11 @@ export const VisitorsPage: React.FC = () => {
     // Form fields
     const [names, setNames] = useState('');
     const [dni, setDni] = useState('');
-    const [towerId, setTowerId] = useState('');
-    const [departmentId, setDepartmentId] = useState('');
-    const [visitDate, setVisitDate] = useState(new Date().toISOString().split('T')[0]);
-    const [visitTime, setVisitTime] = useState('Mañana');
-    const [vehiclePlate, setVehiclePlate] = useState('');
+    const [tower_id, setTowerId] = useState('');
+    const [department_id, setDepartmentId] = useState('');
+    const [visit_date, setVisitDate] = useState(new Date().toISOString().split('T')[0]);
+    const [visit_time, setVisitTime] = useState('Mañana');
+    const [vehicle_plate, setVehiclePlate] = useState('');
     const [notes, setNotes] = useState('');
 
     const filteredVisitors = visitors.filter(v => {
@@ -44,20 +44,20 @@ export const VisitorsPage: React.FC = () => {
         } else {
             return matchesSearch && (v.status === 'exited' || v.status === 'cancelled');
         }
-    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     const filteredDepartments = departments
-        .filter(d => d.towerId === towerId)
+        .filter(d => d.tower_id === tower_id)
         .sort((a, b) => {
             // Sort by tower name first, then by unit number
-            const towerA = towers.find(t => t.id === a.towerId)?.name || '';
-            const towerB = towers.find(t => t.id === b.towerId)?.name || '';
+            const towerA = towers.find(t => t.id === a.tower_id)?.name || '';
+            const towerB = towers.find(t => t.id === b.tower_id)?.name || '';
             if (towerA !== towerB) return towerA.localeCompare(towerB, undefined, { numeric: true });
             return a.number.localeCompare(b.number, undefined, { numeric: true });
         });
 
     // Check if selected department has parking associated
-    const selectedResident = residents.find(r => r.unitId === departmentId);
+    const selectedResident = residents.find(r => r.unitId === department_id);
     const hasParking = selectedResident ? (selectedResident.parkingIds?.length || 0) > 0 : true;
 
     const resetForm = () => {
@@ -76,13 +76,13 @@ export const VisitorsPage: React.FC = () => {
         await addVisitor({
             names,
             dni,
-            towerId,
-            departmentId,
-            visitDate,
-            visitTime,
-            vehiclePlate,
+            tower_id,
+            department_id,
+            visit_date,
+            visit_time,
+            vehicle_plate,
             notes,
-            isPreRegistered: !isAdmin,
+            is_pre_registered: !isAdmin,
             status: 'scheduled'
         });
 
@@ -91,7 +91,7 @@ export const VisitorsPage: React.FC = () => {
             userId: user?.id || 'system',
             type: 'visit_registration',
             subject: `Ingreso Visita - ${names} (${dni})`,
-            description: `Destino: Torre ${towers.find(t => t.id === towerId)?.name} - ${filteredDepartments.find(d => d.id === departmentId)?.number}. Jornada: ${visitTime}. ${notes}`,
+            description: `Destino: Torre ${towers.find(t => t.id === tower_id)?.name} - ${filteredDepartments.find(d => d.id === department_id)?.number}. Jornada: ${visit_time}. ${notes}`,
             status: 'pending'
         });
 
@@ -162,7 +162,7 @@ export const VisitorsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredVisitors.map(v => (
                     <div key={v.id} className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden group hover:shadow-xl transition-all relative">
-                        {v.isPreRegistered && v.status === 'scheduled' && (
+                        {v.is_pre_registered && v.status === 'scheduled' && (
                             <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-bl-2xl uppercase tracking-tighter shadow-lg">
                                 Pre-Registrada
                             </div>
@@ -190,36 +190,36 @@ export const VisitorsPage: React.FC = () => {
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="font-black text-gray-400 uppercase tracking-widest">Destino</span>
                                     <span className="font-bold text-gray-900 dark:text-white">
-                                        Torre {towers.find(t => t.id === v.towerId)?.name} - {departments.find(d => d.id === v.departmentId)?.number}
+                                        Torre {towers.find(t => t.id === v.tower_id)?.name} - {departments.find(d => d.id === v.department_id)?.number}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="font-black text-gray-400 uppercase tracking-widest">Fecha Visita</span>
                                     <span className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-                                        {new Date(v.visitDate).toLocaleDateString()}
-                                        <span className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[9px]">{v.visitTime}</span>
+                                        {new Date(v.visit_date).toLocaleDateString()}
+                                        <span className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[9px]">{v.visit_time}</span>
                                     </span>
                                 </div>
-                                {v.vehiclePlate && (
+                                {v.vehicle_plate && (
                                     <div className="flex items-center justify-between text-xs">
                                         <span className="font-black text-gray-400 uppercase tracking-widest">Vehículo</span>
-                                        <span className="font-bold text-indigo-600 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg uppercase tracking-wider border border-indigo-100 dark:border-indigo-800">{v.vehiclePlate}</span>
+                                        <span className="font-bold text-indigo-600 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg uppercase tracking-wider border border-indigo-100 dark:border-indigo-800">{v.vehicle_plate}</span>
                                     </div>
                                 )}
                             </div>
 
-                            {(v.entryTime || v.exitTime) && (
+                            {(v.entry_at || v.exit_at) && (
                                 <div className="mt-4 grid grid-cols-2 gap-2">
-                                    {v.entryTime && (
+                                    {v.entry_at && (
                                         <div className="p-2 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-900/30 text-center">
                                             <p className="text-[8px] font-black text-emerald-600 uppercase mb-0.5">Ingreso</p>
-                                            <p className="text-xs font-black text-emerald-700 dark:text-emerald-400">{v.entryTime}</p>
+                                            <p className="text-xs font-black text-emerald-700 dark:text-emerald-400">{v.entry_at}</p>
                                         </div>
                                     )}
-                                    {v.exitTime && (
+                                    {v.exit_at && (
                                         <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 text-center">
                                             <p className="text-[8px] font-black text-gray-400 uppercase mb-0.5">Salida</p>
-                                            <p className="text-xs font-black text-gray-500">{v.exitTime}</p>
+                                            <p className="text-xs font-black text-gray-500">{v.exit_at}</p>
                                         </div>
                                     )}
                                 </div>
@@ -297,7 +297,7 @@ export const VisitorsPage: React.FC = () => {
                                     <div className="md:col-span-1">
                                         <Input
                                             label="Patente Vehículo"
-                                            value={vehiclePlate}
+                                            value={vehicle_plate}
                                             onChange={e => setVehiclePlate(e.target.value.toUpperCase())}
                                             placeholder="ABCD12"
                                             maxLength={6}
@@ -309,7 +309,7 @@ export const VisitorsPage: React.FC = () => {
                                     <label className="text-xs font-black text-gray-500 ml-1 uppercase tracking-widest">Torre / Bloque</label>
                                     <select
                                         className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-gray-900 dark:text-white"
-                                        value={towerId}
+                                        value={tower_id}
                                         onChange={e => setTowerId(e.target.value)}
                                         required
                                     >
@@ -324,10 +324,10 @@ export const VisitorsPage: React.FC = () => {
                                     <label className="text-xs font-black text-gray-500 ml-1 uppercase tracking-widest">Unidad</label>
                                     <select
                                         className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-gray-900 dark:text-white"
-                                        value={departmentId}
+                                        value={department_id}
                                         onChange={e => setDepartmentId(e.target.value)}
                                         required
-                                        disabled={!towerId}
+                                        disabled={!tower_id}
                                     >
                                         <option value="">Seleccionar...</option>
                                         {filteredDepartments.map((d: any) => (
@@ -339,7 +339,7 @@ export const VisitorsPage: React.FC = () => {
                                 <Input
                                     label="Fecha de Visita"
                                     type="date"
-                                    value={visitDate}
+                                    value={visit_date}
                                     onChange={e => setVisitDate(e.target.value)}
                                     required
                                     min={todayStr}
@@ -352,7 +352,7 @@ export const VisitorsPage: React.FC = () => {
                                     </div>
                                     <select
                                         className="w-full p-4 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                                        value={visitTime}
+                                        value={visit_time}
                                         onChange={e => setVisitTime(e.target.value)}
                                         required
                                     >
