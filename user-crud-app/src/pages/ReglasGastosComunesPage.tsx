@@ -7,7 +7,7 @@ import { Plus, Gavel, Calendar, Home, X, CheckCircle2, Percent, Calculator, Tras
 import type { UnitType, ChargeRule } from '../types';
 import { useInfrastructure } from '../context/InfrastructureContext';
 
-export const CommonExpenseRulesPage: React.FC = () => {
+export const ReglasGastosComunesPage: React.FC = () => {
     const { unitTypes } = useUnitTypes();
     const { departments } = useInfrastructure();
     const { rules, chargeRules, addRule, addChargeRule, deleteChargeRule } = useCommonExpenses();

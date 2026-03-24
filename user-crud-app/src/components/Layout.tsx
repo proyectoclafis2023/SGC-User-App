@@ -3,8 +3,10 @@ import { Outlet, useNavigate, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { EmergencyTicker } from './EmergencyTicker';
+import { usePermissions } from '../hooks/usePermissions';
 import {
     LogOut,
+    // ... rest of imports
     LayoutDashboard,
     Settings,
     Users,
@@ -44,6 +46,7 @@ interface SubMenuItem {
     path?: string;
     icon?: any;
     isHeader?: boolean;
+    permission?: string;
 }
 
 interface NavItemProps {
@@ -52,34 +55,41 @@ interface NavItemProps {
     label: string;
     isCollapsed: boolean;
     children?: SubMenuItem[];
+    permission?: string;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, children }) => {
+const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, children, permission }) => {
+    const { hasPermission } = usePermissions();
+    if (permission && !hasPermission(permission)) return null;
+    
     const [isOpen, setIsOpen] = useState(false);
     const [expandedHeaders, setExpandedHeaders] = useState<string[]>([]);
     const { settings } = useSettings();
     const location = useLocation();
-    const hasChildren = children && children.length > 0;
 
-    const isChildActive = hasChildren && children.some(child => child.path && location.pathname === child.path);
+    // Filter children by permissions
+    const filteredChildren = children?.filter(child => !child.permission || hasPermission(child.permission));
+    const hasChildren = filteredChildren && filteredChildren.length > 0;
+
+    const isChildActive = hasChildren && filteredChildren.some(child => child.path && location.pathname === child.path);
     const isActive = to ? location.pathname === to : isChildActive;
 
     useEffect(() => {
         if (isChildActive) {
             setIsOpen(true);
             // Auto-expand the header containing the active child
-            const activeChild = children?.find(child => child.path && location.pathname === child.path);
+            const activeChild = filteredChildren?.find(child => child.path && location.pathname === child.path);
             if (activeChild) {
                 // Find the header preceding this child
                 let headerFound = '';
-                for (const child of children || []) {
+                for (const child of filteredChildren || []) {
                     if (child.isHeader) headerFound = child.label;
                     if (child.path && location.pathname === child.path) break;
                 }
                 if (headerFound) setExpandedHeaders(prev => prev.includes(headerFound) ? prev : [...prev, headerFound]);
             }
         }
-    }, [isChildActive, children, location.pathname]);
+    }, [isChildActive, filteredChildren, location.pathname]);
 
     const toggleHeader = (headerLabel: string) => {
         setExpandedHeaders(prev =>
@@ -93,12 +103,12 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, isCollapsed, c
     const activeClasses = `shadow-lg shadow-indigo-500/30 ${settings.theme === 'modern' ? 'bg-white text-indigo-900' : 'bg-indigo-600 text-white'}`;
     const inactiveClasses = `${settings.theme === 'modern' ? 'text-indigo-200 hover:bg-white/10 hover:text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 hover:text-indigo-600 dark:hover:text-indigo-400'}`;
 
-    if (hasChildren && !isCollapsed) {
+    if (hasChildren && !isCollapsed && filteredChildren) {
         // Group items by header
         const sections: { header?: SubMenuItem; items: SubMenuItem[] }[] = [];
         let currentSection: { header?: SubMenuItem; items: SubMenuItem[] } = { items: [] };
 
-        children.forEach(child => {
+        filteredChildren.forEach(child => {
             if (child.isHeader) {
                 if (currentSection.items.length > 0 || currentSection.header) {
                     sections.push(currentSection);
@@ -253,15 +263,15 @@ export const Layout: React.FC = () => {
                             label="Operaciones"
                             isCollapsed={isCollapsed}
                             children={[
-                                { label: 'Reporte Diario', path: '/reporte-diario', icon: FileText },
-                                { label: 'Libro de Novedades', path: '/bitacora-turnos', icon: History },
+                                { label: 'Reporte Diario', path: '/reporte-diario', icon: FileText, permission: 'reports:view' },
+                                { label: 'Libro de Novedades', path: '/bitacora-turnos', icon: History, permission: 'shift_logs:view' },
                                 { label: 'Controles', isHeader: true, icon: ShieldCheck },
-                                { label: 'Visitas', path: '/visitas', icon: Users },
-                                { label: 'Encomiendas', path: '/correspondencia', icon: Package },
-                                { label: 'Contratistas', path: '/registro-contratistas', icon: HardHat },
+                                { label: 'Visitas', path: '/visitas', icon: Users, permission: 'visits:view' },
+                                { label: 'Encomiendas', path: '/correspondencia', icon: Package, permission: 'correspondence:view' },
+                                { label: 'Contratistas', path: '/registro-contratistas', icon: HardHat, permission: 'contractors:view' },
                                 { label: 'Gestión', isHeader: true, icon: ClipboardCheck },
-                                { label: 'Solicitud Insumos', path: '/solicitud-insumos', icon: Package },
-                                { label: 'Gestión Registros CCTV', path: '/camaras', icon: Video },
+                                { label: 'Solicitud Insumos', path: '/solicitud-insumos', icon: Package, permission: 'supplies:manage' },
+                                { label: 'Gestión Registros CCTV', path: '/camaras', icon: Video, permission: 'cctv:view' },
                             ]}
                         />
                     )}
@@ -273,7 +283,7 @@ export const Layout: React.FC = () => {
                             label="Mi Hogar"
                             isCollapsed={isCollapsed}
                             children={[
-                                { label: 'Mis Pagos', path: '/mis-pagos', icon: Wallet },
+                                { label: 'Mis Pagos', path: '/mis-pagos', icon: Wallet, permission: 'payments:view' },
                             ]}
                         />
                     )}
@@ -284,10 +294,10 @@ export const Layout: React.FC = () => {
                         label="Soporte y Servicios"
                         isCollapsed={isCollapsed}
                         children={[
-                            { label: 'Atención y Soporte', path: '/reclamos', icon: LifeBuoy },
-                            { label: 'Reserva Espacios Comunes', path: '/reservas', icon: Calendar },
-                            { label: 'Directorio de Servicios', path: '/servicios-residentes', icon: HardHat },
-                            { label: 'Números Emergencia', path: '/emergencias', icon: Phone },
+                            { label: 'Atención y Soporte', path: '/reclamos', icon: LifeBuoy, permission: 'tickets:view' },
+                            { label: 'Reserva Espacios Comunes', path: '/reservas', icon: Calendar, permission: 'reservations:view' },
+                            { label: 'Directorio de Servicios', path: '/servicios-residentes', icon: HardHat, permission: 'services:view' },
+                            { label: 'Números Emergencia', path: '/emergencias', icon: Phone, permission: 'emergencies:view' },
                         ]}
                     />
 
@@ -298,29 +308,29 @@ export const Layout: React.FC = () => {
                             label="Administración"
                             isCollapsed={isCollapsed}
                             children={[
-                                { label: 'Gestión Estratégica', path: '/dashboard-kpi', icon: BarChart3 },
-                                { label: 'Centro de Gestiones', path: '/tickets', icon: ClipboardCheck },
+                                { label: 'Gestión Estratégica', path: '/dashboard-kpi', icon: BarChart3, permission: 'admin:stats' },
+                                { label: 'Centro de Gestiones', path: '/tickets', icon: ClipboardCheck, permission: 'admin:tickets' },
 
                                 { label: 'Comunidad', isHeader: true, icon: Building2 },
-                                { label: 'Residentes', path: '/residentes', icon: Users },
-                                { label: 'Propietarios', path: '/propietarios', icon: ShieldCheck },
-                                { label: 'Directiva', path: '/directiva', icon: Landmark },
-                                { label: 'Mensajes Dirigidos (Email)', path: '/mensajes-dirigidos', icon: Mail },
-                                { label: 'Avisos del Sistema (Visor)', path: '/mensajes', icon: Bell },
+                                { label: 'Residentes', path: '/residentes', icon: Users, permission: 'residents:manage' },
+                                { label: 'Propietarios', path: '/propietarios', icon: ShieldCheck, permission: 'owners:manage' },
+                                { label: 'Directiva', path: '/directiva', icon: Landmark, permission: 'comite:manage' },
+                                { label: 'Mensajes Dirigidos (Email)', path: '/mensajes-dirigidos', icon: Mail, permission: 'email:manage' },
+                                { label: 'Avisos del Sistema (Visor)', path: '/mensajes', icon: Bell, permission: 'announcements:manage' },
 
                                 { label: 'Recursos Humanos', isHeader: true, icon: Users },
-                                { label: 'Maestro Personal', path: '/personal', icon: Briefcase },
-                                { label: 'Servicios / Contratistas', path: '/contratistas', icon: HardHat },
-                                { label: 'Gestión de Nómina', path: '/liquidaciones', icon: Banknote },
-                                { label: 'Entrega de EPP', path: '/entregas-articulos', icon: Package },
-                                { label: 'Certificados', path: '/certificados', icon: FileText },
+                                { label: 'Maestro Personal', path: '/personal', icon: Briefcase, permission: 'personnel:manage' },
+                                { label: 'Servicios / Contratistas', path: '/contratistas', icon: HardHat, permission: 'contractors:manage' },
+                                { label: 'Gestión de Nómina', path: '/liquidaciones', icon: Banknote, permission: 'payroll:manage' },
+                                { label: 'Entrega de EPP', path: '/entregas-articulos', icon: Package, permission: 'epp:manage' },
+                                { label: 'Certificados', path: '/certificados', icon: FileText, permission: 'certificates:manage' },
 
                                 { label: 'Finanzas', isHeader: true, icon: Landmark },
-                                { label: 'Gastos Comunes Admin', path: '/gastos-comunes', icon: Banknote },
-                                { label: 'Registro de Egresos', path: '/registro-gastos', icon: Wallet },
-                                { label: 'Reglas de Cobro', path: '/reglas-gastos-comunes', icon: Settings },
-                                { label: 'Fondos Especiales', path: '/maestro-fondos', icon: Database },
-                                { label: 'Activo Fijo', path: '/activo-fijo', icon: Landmark },
+                                { label: 'Gastos Comunes Admin', path: '/gastos-comunes', icon: Banknote, permission: 'finances:manage' },
+                                { label: 'Registro de Egresos', path: '/registro-gastos', icon: Wallet, permission: 'finances:manage' },
+                                { label: 'Reglas de Cobro', path: '/reglas-gastos-comunes', icon: Settings, permission: 'finances:manage' },
+                                { label: 'Fondos Especiales', path: '/maestro-fondos', icon: Database, permission: 'finances:manage' },
+                                { label: 'Activo Fijo', path: '/activo-fijo', icon: Landmark, permission: 'assets:manage' },
                             ]}
                         />
                     )}

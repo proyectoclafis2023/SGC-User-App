@@ -4,7 +4,7 @@ import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { Mail, CheckCircle2, ShieldCheck, MailWarning, BellRing, UserCheck, Package, CalendarDays, Wallet } from 'lucide-react';
 
-export const EmailSettingsMasterPage: React.FC = () => {
+export const MaestroCorreosPage: React.FC = () => {
     const { settings, updateSettings } = useSettings();
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState('');

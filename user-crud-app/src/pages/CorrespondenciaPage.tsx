@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import type { Correspondence } from '../types';
 
-export const CorrespondencePage: React.FC = () => {
+export const CorrespondenciaPage: React.FC = () => {
     const { user } = useAuth();
     const { towers, departments } = useInfrastructure();
     const { items, addItem, updateItemStatus } = useCorrespondence();

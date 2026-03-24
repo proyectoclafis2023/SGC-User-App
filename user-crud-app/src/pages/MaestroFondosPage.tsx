@@ -9,7 +9,7 @@ import { useUnitTypes } from '../context/UnitTypeContext';
 import { useInfrastructure } from '../context/InfrastructureContext';
 import { SecurityModal } from '../components/SecurityModal';
 
-export const SpecialFundsPage: React.FC = () => {
+export const MaestroFondosPage: React.FC = () => {
     const { towers } = useInfrastructure();
     const { unitTypes } = useUnitTypes();
     const { payments, funds, addFund, updateFund, deleteFund, restoreFund, fetchFunds } = useCommonExpenses();

@@ -8,7 +8,7 @@ import {
     Search, Clock, Edit2
 } from 'lucide-react';
 
-export const CameraMasterPage: React.FC = () => {
+export const CamarasPage: React.FC = () => {
     const { cameras, addCamera, updateCamera, deleteCamera } = useCameras();
 
     const [searchTerm, setSearchTerm] = useState('');

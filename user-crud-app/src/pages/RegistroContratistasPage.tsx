@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 
-export const ContractorsPage: React.FC = () => {
+export const RegistroContratistasPage: React.FC = () => {
     const { visits, addVisit, updateVisitStatus } = useContractorVisits();
     const { contractors } = useContractors();
     const { settings } = useSettings();

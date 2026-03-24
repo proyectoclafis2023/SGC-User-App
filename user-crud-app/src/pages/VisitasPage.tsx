@@ -12,7 +12,7 @@ import {
     LogIn, Clock, History, ClipboardList, Trash2
 } from 'lucide-react';
 
-export const VisitorsPage: React.FC = () => {
+export const VisitasPage: React.FC = () => {
     const { visitors, addVisitor, updateVisitorStatus, deleteVisitor } = useVisitors();
     const { towers, departments } = useInfrastructure();
     const { residents } = useResidents();

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import type { ArticleDelivery } from '../types';
 
-export const ArticleDeliveriesPage: React.FC = () => {
+export const EntregasArticulosPage: React.FC = () => {
     const { personnel } = usePersonnel();
     const { articles, decreaseStock } = useArticles();
     const { deliveries, addDelivery, updateDelivery, setDeliveries } = useArticleDeliveries();

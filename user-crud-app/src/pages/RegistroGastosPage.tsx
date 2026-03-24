@@ -8,7 +8,7 @@ import { SecurityModal } from '../components/SecurityModal';
 import type { CommunityExpense } from '../types';
 import { compressImage } from '../utils/imageCompression';
 
-export const CommunityExpensesPage: React.FC = () => {
+export const RegistroGastosPage: React.FC = () => {
     const { communityExpenses, addCommunityExpense, deleteCommunityExpense, funds } = useCommonExpenses();
     const { settings } = useSettings();
     const [searchTerm, setSearchTerm] = useState('');

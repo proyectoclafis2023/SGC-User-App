@@ -7,6 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// @module bancos
 model Banco {
   id         String      @id @default(cuid())
   nombre     String      @unique @map("name")
@@ -17,6 +18,7 @@ model Banco {
   @@map("Bank")
 }
 
+/// @module afps
 model PensionFund {
   id           String      @id @default(cuid())
   name         String      @unique
@@ -26,6 +28,7 @@ model PensionFund {
   personnel    Personnel[]
 }
 
+/// @module previsiones
 model HealthProvider {
   id           String      @id @default(cuid())
   name         String      @unique
@@ -36,6 +39,7 @@ model HealthProvider {
   personnel    Personnel[]
 }
 
+/// @module tipos_unidad
 model TipoUnidad {
   id                 String              @id @default(cuid())
   nombre             String              @unique @map("name")
@@ -49,6 +53,7 @@ model TipoUnidad {
   @@map("UnitType")
 }
 
+/// @module torres
 model Tower {
   id          String       @id @default(cuid())
   name        String       @unique
@@ -57,6 +62,7 @@ model Tower {
   departments Department[]
 }
 
+/// @module unidades
 model Department {
   id                    String                 @id @default(cuid())
   towerId               String?
@@ -98,6 +104,7 @@ model Department {
   @@unique([number, towerId])
 }
 
+/// @module propietarios
 model Propietario {
   id                           String        @id @default(cuid())
   names                        String
@@ -117,6 +124,8 @@ model Propietario {
   @@map("Owner")
 }
 
+/// @module residentes
+/// @module dashboard_kpi
 model Residente {
   id           String        @id @default(cuid())
   names        String
@@ -146,6 +155,10 @@ model Residente {
   @@map("Resident")
 }
 
+/// @module personal
+/// @module liquidaciones
+/// @module certificados
+/// @module mensajes_dirigidos
 model Personnel {
   id                          String            @id @default(cuid())
   names                       String
@@ -192,6 +205,7 @@ model Personnel {
   supplyRequests              SupplyRequest[]
 }
 
+/// @module perfiles
 model Role {
   id          String           @id @default(cuid())
   name        String           @unique
@@ -232,6 +246,8 @@ model AuditLog {
   @@map("AuditLog")
 }
 
+/// @module jornadas
+/// @module maestros_operativos
 model JornadaGroup {
   id           String      @id @default(cuid())
   name         String
@@ -247,6 +263,7 @@ model JornadaGroup {
   personnel    Personnel[]
 }
 
+/// @module maestro_ipc
 model ProyeccionIPC {
   id            String   @id @default(cuid())
   nombre        String   @map("name")
@@ -259,6 +276,7 @@ model ProyeccionIPC {
   @@map("IPCProjection")
 }
 
+/// @module infraestructura
 model ItemInfraestructura {
   id          String   @id @default(cuid())
   nombre      String   @map("name")
@@ -281,6 +299,9 @@ model ItemEquipamiento {
   @@map("EquipmentItem")
 }
 
+/// @module articulos_personal
+/// @module articulos_personal
+/// @module maestro_categorias_articulos
 model Articulo {
   id                    String   @id @default(cuid())
   nombre                String   @unique @map("name")
@@ -298,6 +319,7 @@ model Articulo {
   @@map("Article")
 }
 
+/// @module correspondencia
 model Correspondence {
   id           String     @id @default(cuid())
   folio        String     @unique
@@ -313,6 +335,7 @@ model Correspondence {
   department   Department @relation(fields: [departmentId], references: [id])
 }
 
+/// @module estacionamientos
 model Estacionamiento {
   id            String      @id @default(cuid())
   number        String      @unique
@@ -337,6 +360,7 @@ model CommonExpenseRule {
   unitType      TipoUnidad? @relation(fields: [unitTypeId], references: [id])
 }
 
+/// @module gastos_comunes
 model CommonExpense {
   id           String                 @id @default(cuid())
   totalAmount  Float
@@ -347,6 +371,7 @@ model CommonExpense {
   payments     CommonExpensePayment[]
 }
 
+/// @module pagos_gastos_comunes
 model CommonExpensePayment {
   id                    String         @id @default(cuid())
   departmentId          String
@@ -368,6 +393,7 @@ model CommonExpensePayment {
   department            Department     @relation(fields: [departmentId], references: [id])
 }
 
+/// @module maestro_fondos
 model SpecialFund {
   id                 String   @id @default(cuid())
   name               String
@@ -384,6 +410,7 @@ model SpecialFund {
   createdAt          DateTime @default(now())
 }
 
+/// @module maestro_emergencias
 model NumeroEmergencia {
   id          String   @id @default(cuid())
   category    String
@@ -397,6 +424,7 @@ model NumeroEmergencia {
   @@map("EmergencyNumber")
 }
 
+/// @module maestro_correos
 model PlantillaComunicacion {
   id         String   @id @default(cuid())
   nombre     String   @map("name")
@@ -421,6 +449,7 @@ model CommunicationHistory {
   createdAt     DateTime @default(now())
 }
 
+/// @module parametros
 model ParametroSistema {
   id          String   @id @default(cuid())
   type        String
@@ -433,6 +462,7 @@ model ParametroSistema {
   @@map("SystemParameter")
 }
 
+/// @module feriados
 model Feriado {
   id          String   @id @default(cuid())
   date        DateTime
@@ -443,6 +473,7 @@ model Feriado {
   @@map("Holiday")
 }
 
+/// @module afc
 model Afc {
   id                 String   @id @default(cuid())
   name               String   @default("AFC")
@@ -452,6 +483,7 @@ model Afc {
   createdAt          DateTime @default(now())
 }
 
+/// @module condiciones_especiales
 model CondicionEspecial {
   id          String   @id @default(cuid())
   nombre      String   @map("name")
@@ -462,6 +494,7 @@ model CondicionEspecial {
   @@map("SpecialCondition")
 }
 
+/// @module espacios
 model EspacioComun {
   id            String    @id @default(cuid())
   nombre        String    @map("name")
@@ -476,6 +509,7 @@ model EspacioComun {
   @@map("CommonSpace")
 }
 
+/// @module registro_gastos
 model CommunityExpense {
   id            String   @id @default(cuid())
   description   String
@@ -491,6 +525,7 @@ model CommunityExpense {
   reference     String?
 }
 
+/// @module reglas_gastos_comunes
 model ChargeRule {
   id         String   @id @default(cuid())
   name       String
@@ -516,6 +551,7 @@ model Payment {
   createdAt              DateTime @default(now())
 }
 
+/// @module configuracion
 model SystemSettings {
   id                    String   @id @default(cuid())
   systemName            String   @default("Administración GAG")
@@ -550,6 +586,7 @@ model SystemSettings {
   updatedAt             DateTime @updatedAt
 }
 
+/// @module entregas_articulos
 model EntregaArticulo {
   id             String    @id @default(cuid())
   folio          String    @unique
@@ -565,6 +602,7 @@ model EntregaArticulo {
   @@map("ArticleDelivery")
 }
 
+/// @module camaras
 model Camera {
   id          String    @id @default(cuid())
   name        String
@@ -576,6 +614,7 @@ model Camera {
   logs        CctvLog[]
 }
 
+/// @module activo_fijo
 model FixedAsset {
   id               String   @id @default(cuid())
   description      String   @unique
@@ -590,6 +629,7 @@ model FixedAsset {
   createdAt        DateTime @default(now())
 }
 
+/// @module carga_masiva
 model BulkUploadLog {
   id         String   @id @default(cuid())
   module     String
@@ -602,6 +642,7 @@ model BulkUploadLog {
   createdAt  DateTime @default(now())
 }
 
+/// @module directiva
 model Comite {
   id             String   @id @default(cuid())
   name           String
@@ -618,6 +659,8 @@ model Comite {
   @@map("CommitteeMember")
 }
 
+/// @module mensajes
+/// @module maestro_mensajes
 model Aviso {
   id              String    @id @default(cuid())
   text            String
@@ -635,6 +678,7 @@ model Aviso {
   @@map("SystemAnnouncement")
 }
 
+/// @module reporte_diario
 model DailyReport {
   id                         String       @id @default(cuid())
   folio                      String       @unique
@@ -673,6 +717,7 @@ model DailyReport {
   @@map("DailyReport")
 }
 
+/// @module bitacora_turnos
 model ShiftLog {
   id            String      @id @default(cuid())
   dailyReportId String
@@ -687,6 +732,7 @@ model ShiftLog {
   @@map("ShiftLog")
 }
 
+/// @module visitas
 model Visita {
   id              String      @id @default(cuid())
   folio           String      @unique
@@ -711,6 +757,7 @@ model Visita {
   @@map("Visitor")
 }
 
+/// @module registro_contratistas
 model ContratistaVisita {
   id           String      @id @default(cuid())
   folio        String      @unique
@@ -731,6 +778,7 @@ model ContratistaVisita {
   @@map("ContractorAccess")
 }
 
+/// @module solicitud_insumos
 model SupplyRequest {
   id          String    @id @default(cuid())
   folio       String    @unique
@@ -760,6 +808,7 @@ model CctvLog {
   @@map("CctvLog")
 }
 
+/// @module reservas
 model Reserva {
   id            String       @id @default(cuid())
   folio         String       @unique
@@ -776,6 +825,8 @@ model Reserva {
   @@map("Reservation")
 }
 
+/// @module reclamos
+/// @module tickets
 model Ticket {
   id             String    @id @default(cuid())
   folio          String    @unique
@@ -798,6 +849,7 @@ model Ticket {
   @@map("SupportTicket")
 }
 
+/// @module servicios_residentes
 model DirectorioServicio {
   id           String   @id @default(cuid())
   name         String

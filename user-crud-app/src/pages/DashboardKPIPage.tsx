@@ -16,7 +16,7 @@ import {
 import { Button } from '../components/Button';
 import type { Department, Article, Personnel, ShiftReport, ArticleDelivery, CommonExpensePayment, CommunityExpense } from '../types';
 
-export const ManagementKPICenter: React.FC = () => {
+export const DashboardKPIPage: React.FC = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'general' | 'residencia' | 'personal' | 'inventario' | 'finanzas'>('general');
     const { towers, departments } = useInfrastructure();

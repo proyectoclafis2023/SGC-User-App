@@ -18,7 +18,7 @@ interface BoardMember {
     created_at: string;
 }
 
-export const CondoBoardPage: React.FC = () => {
+export const DirectivaPage: React.FC = () => {
     const { members, loading: isLoading, addMember, updateMember, deleteMember } = useCondoBoard();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMember, setEditingMember] = useState<BoardMember | null>(null);

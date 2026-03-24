@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import type { Reservation } from '../types';
 
-export const ReservationsPage: React.FC = () => {
+export const ReservasPage: React.FC = () => {
     const { user } = useAuth();
     const { spaces } = useCommonSpaces();
     const {

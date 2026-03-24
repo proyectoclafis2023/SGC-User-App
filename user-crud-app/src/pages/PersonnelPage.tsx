@@ -9,8 +9,12 @@ import type { Personnel, AssignedArticle } from '../types';
 import { SecurityModal } from '../components/SecurityModal';
 import { useArticleDeliveries } from '../context/ArticleDeliveryContext';
 import { useArticles } from '../context/ArticleContext';
+import { usePermissions } from '../hooks/usePermissions';
 
 export const PersonnelPage: React.FC = () => {
+    const { hasPermission } = usePermissions();
+    const canManage = hasPermission('personnel:manage');
+    
     const { personnel, addPersonnel, updatePersonnel, deletePersonnel, uploadPersonnel } = usePersonnel();
     const { users, deleteUser } = useUsers();
     const { addDelivery } = useArticleDeliveries();
@@ -192,17 +196,21 @@ export const PersonnelPage: React.FC = () => {
                             }
                         }}
                     />
-                    <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Carga Masiva
-                    </Button>
+                    {canManage && (
+                        <>
+                            <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Carga Masiva
+                            </Button>
+                            <Button onClick={handleAddPerson} className="shadow-xl shadow-indigo-500/20 bg-indigo-600 hover:bg-indigo-700 text-white border-0">
+                                <Plus className="w-4 h-4 mr-2" />
+                                Nuevo Trabajador
+                            </Button>
+                        </>
+                    )}
                     <Button variant="secondary" onClick={() => window.print()}>
                         <Download className="w-4 h-4 mr-2" />
                         Exportar
-                    </Button>
-                    <Button onClick={handleAddPerson} className="shadow-xl shadow-indigo-500/20 bg-indigo-600 hover:bg-indigo-700 text-white border-0">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Nuevo Trabajador
                     </Button>
                 </div>
             </div>
@@ -255,6 +263,7 @@ export const PersonnelPage: React.FC = () => {
                 onEdit={handleEditPerson}
                 onDelete={handleDeletePerson}
                 viewMode={viewMode}
+                canManage={canManage}
             />
 
             <PersonnelForm

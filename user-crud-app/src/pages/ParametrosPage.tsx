@@ -3,7 +3,7 @@ import { useSystemParameters } from '../context/SystemParameterContext';
 import { Settings } from 'lucide-react';
 import type { SystemParameter } from '../types';
 
-export const ParametersPage: React.FC = () => {
+export const ParametrosPage: React.FC = () => {
     const { parameters } = useSystemParameters();
     
     // Simplest possible mock for now to clear the error

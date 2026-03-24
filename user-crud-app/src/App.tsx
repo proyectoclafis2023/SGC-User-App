@@ -14,17 +14,17 @@ import { SystemMessageProvider } from './context/SystemMessageContext';
 import { ResidentProvider } from './context/ResidentContext';
 import { LoginPage } from './pages/LoginPage';
 import { Dashboard } from './pages/Dashboard';
-import { SettingsPage } from './pages/SettingsPage';
+import { ConfiguracionPage } from './pages/ConfiguracionPage';
 import { PersonnelPage } from './pages/PersonnelPage';
 import { ResidentesPage } from './pages/ResidentesPage';
 import { PrevisionesPage } from './pages/PrevisionesPage';
 import { AFPsPage } from './pages/AFPsPage';
-import { ProfilesPage } from './pages/ProfilesPage';
+import { PerfilesPage } from './pages/PerfilesPage';
 import { InfraestructuraPage } from './pages/InfraestructuraPage';
 import { EspaciosPage } from './pages/EspaciosPage';
-import { ReservationsPage } from './pages/ReservationsPage';
-import { SystemMessagesPage } from './pages/SystemMessagesPage';
-import { CommunicationsPage } from './pages/CommunicationsPage';
+import { ReservasPage } from './pages/ReservasPage';
+import { VisorPage } from './pages/VisorPage';
+import { MensajesDirigidosPage } from './pages/MensajesDirigidosPage';
 import { PublicCarouselPage } from './pages/PublicCarouselPage';
 import { PropietariosPage } from './pages/PropietariosPage';
 import { MaestroServiciosPage } from './pages/MaestroServiciosPage';
@@ -42,34 +42,34 @@ import { ArticleProvider } from './context/ArticleContext';
 import { ArticleDeliveryProvider } from './context/ArticleDeliveryContext';
 import { HistoryLogProvider } from './context/HistoryLogContext';
 import { Layout } from './components/Layout';
-import { ArticleDeliveriesPage } from './pages/ArticleDeliveriesPage';
+import { EntregasArticulosPage } from './pages/EntregasArticulosPage';
 import { CommonExpenseProvider } from './context/CommonExpenseContext';
-import { CommonExpensePaymentsPage } from './pages/CommonExpensePaymentsPage';
-import { CommonExpenseRulesPage } from './pages/CommonExpenseRulesPage';
-import { SpecialFundsPage } from './pages/SpecialFundsPage';
+import { GastosComunesPage } from './pages/GastosComunesPage';
+import { ReglasGastosComunesPage } from './pages/ReglasGastosComunesPage';
+import { MaestroFondosPage } from './pages/MaestroFondosPage';
 import { FixedAssetProvider } from './context/FixedAssetContext';
-import { FixedAssetsPage } from './pages/FixedAssetsPage';
-import { MassiveUploadPage } from './pages/MassiveUploadPage';
+import { ActivoFijoPage } from './pages/ActivoFijoPage';
+import { CargaMasivaPage } from './pages/CargaMasivaPage';
 import { TicketProvider } from './context/TicketContext';
 import { CameraRequestProvider } from './context/CameraRequestContext';
 import { CorrespondenceProvider } from './context/CorrespondenceContext';
 import { ContractorProvider } from './context/ContractorContext';
 import { VisitorProvider } from './context/VisitorContext';
 import { ShiftReportProvider } from './context/ShiftReportContext';
-import { CommunityRequestsPage } from './pages/CommunityRequestsPage';
+import { ReclamosPage } from './pages/ReclamosPage';
 import { CameraRequestsPage } from './pages/CameraRequestsPage';
-import { CorrespondencePage } from './pages/CorrespondencePage';
-import { EmailSettingsMasterPage } from './pages/EmailSettingsMasterPage';
-import { ContractorsPage } from './pages/ContractorsPage';
-import { ContractorMasterPage } from './pages/ContractorMasterPage';
-import { VisitorsPage } from './pages/VisitorsPage';
+import { CorrespondenciaPage } from './pages/CorrespondenciaPage';
+import { MaestroCorreosPage } from './pages/MaestroCorreosPage';
+import { RegistroContratistasPage } from './pages/RegistroContratistasPage';
+import { ContratistasPage } from './pages/ContratistasPage';
+import { VisitasPage } from './pages/VisitasPage';
 import { ShiftReportsPage } from './pages/ShiftReportsPage';
-import { DailyReportPage } from './pages/DailyReportPage';
-import { CertificatesPage } from './pages/CertificatesPage';
-import { PayslipsPage } from './pages/PayslipsPage';
+import { ReporteDiarioPage } from './pages/ReporteDiarioPage';
+import { CertificadosPage } from './pages/CertificadosPage';
+import { LiquidacionesPage } from './pages/LiquidacionesPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
-import { CommunityExpensesPage } from './pages/CommunityExpensesPage';
-import { ResidentsServicesPage } from './pages/ResidentsServicesPage';
+import { RegistroGastosPage } from './pages/RegistroGastosPage';
+import { ServiciosResidentesPage } from './pages/ServiciosResidentesPage';
 import { MaestroMensajesPage } from './pages/MaestroMensajesPage';
 import { TicketsPage } from './pages/TicketsPage';
 import { AccountSetupPage } from './pages/AccountSetupPage';
@@ -79,6 +79,7 @@ import { MaestrosOperativosPage } from './pages/MaestrosOperativosPage';
 import { InfrastructureItemProvider } from './context/InfrastructureItemContext';
 import { EquipmentItemProvider } from './context/EquipmentItemContext';
 import { CameraProvider } from './context/CameraContext';
+import { CamarasPage } from './pages/CamarasPage';
 import { CourierProvider } from './context/CourierContext';
 import { ContractorVisitProvider } from './context/ContractorVisitContext';
 import { CertificateProvider } from './context/CertificateContext';
@@ -86,16 +87,16 @@ import { PayslipProvider } from './context/PayslipContext';
 import { CommunicationProvider } from './context/CommunicationContext';
 import { SystemParameterProvider } from './context/SystemParameterContext';
 import { JornadaGroupProvider } from './context/JornadaGroupContext';
-import { ParametersPage } from './pages/ParametersPage';
-import { ManagementKPICenter } from './pages/ManagementKPICenter';
+import { ParametrosPage } from './pages/ParametrosPage';
+import { DashboardKPIPage } from './pages/DashboardKPIPage';
 import { MaestroIPCPage } from './pages/MaestroIPCPage';
 import { IPCProjectionProvider } from './context/IPCProjectionContext';
-import { StaffArticleRequestsPage } from './pages/StaffArticleRequestsPage';
+import { SolicitudInsumosPage } from './pages/SolicitudInsumosPage';
 import { MyPaymentsPage } from './pages/MyPaymentsPage';
 
 import { CondoBoardProvider } from './context/CondoBoardContext';
-import { CondoBoardPage } from './pages/CondoBoardPage';
-import { CategoriasArticulosPage } from './pages/CategoriasArticulosPage';
+import { DirectivaPage } from './pages/DirectivaPage';
+import { MaestroCategoriasArticulosPage } from './pages/MaestroCategoriasArticulosPage';
 import { AvailableUnitsPage } from './pages/AvailableUnitsPage';
 import { AFCProvider } from './context/AFCContext';
 import { HolidayProvider } from './context/HolidayContext';
@@ -103,14 +104,21 @@ import { AFCPage } from './pages/AFCPage';
 import { FeriadosPage } from './pages/FeriadosPage';
 import { ServiceDirectoryProvider } from './context/ServiceDirectoryContext';
 
-const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+import { usePermissions } from './hooks/usePermissions';
+
+const PrivateRoute: React.FC<{ children: React.ReactNode; permission?: string }> = ({ children, permission }) => {
   const { isAuthenticated, user } = useAuth();
+  const { hasPermission } = usePermissions();
   const location = useLocation();
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (user?.status === 'setting_up') return <AccountSetupPage />;
   if (user?.mustChangePassword && location.pathname !== '/cambio-clave') {
     return <Navigate to="/cambio-clave" replace />;
+  }
+
+  if (permission && !hasPermission(permission)) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -176,58 +184,58 @@ function App() {
                                                                                             }
                                                                                           >
                                                                                             <Route index element={<Dashboard />} />
-                                                                                            <Route path="mensajes-dirigidos" element={<CommunicationsPage />} />
-                                                                                            <Route path="personal" element={<PersonnelPage />} />
-                                                                                            <Route path="residentes" element={<ResidentesPage />} />
-                                                                                            <Route path="propietarios" element={<PropietariosPage />} />
+                                                                                            <Route path="mensajes-dirigidos" element={<MensajesDirigidosPage />} />
+                                                                                            <Route path="personal" element={<PrivateRoute permission="personnel:manage"><PersonnelPage /></PrivateRoute>} />
+                                                                                            <Route path="residentes" element={<PrivateRoute permission="residents:manage"><ResidentesPage /></PrivateRoute>} />
+                                                                                            <Route path="propietarios" element={<PrivateRoute permission="owners:manage"><PropietariosPage /></PrivateRoute>} />
                                                                                             <Route path="previsiones" element={<PrevisionesPage />} />
                                                                                             <Route path="afps" element={<AFPsPage />} />
                                                               <Route path="afc" element={<AFCPage />} />
-                                                                                            <Route path="perfiles" element={<ProfilesPage />} />
+                                                                                            <Route path="perfiles" element={<PerfilesPage />} />
                                                                                             <Route path="infraestructura" element={<InfraestructuraPage />} />
                                                                                             <Route path="tipos-unidad" element={<TiposUnidadPage />} />
                                                                                             <Route path="condiciones-especiales" element={<CondicionesEspecialesPage />} />
                                                                                             <Route path="espacios" element={<EspaciosPage />} />
-                                                                                            <Route path="reservas" element={<ReservationsPage />} />
-                                                                                            <Route path="mensajes" element={<SystemMessagesPage />} />
+                                                                                            <Route path="reservas" element={<ReservasPage />} />
+                                                                                            <Route path="mensajes" element={<VisorPage />} />
                                                                                             <Route path="estacionamientos" element={<EstacionamientosPage />} />
                                                                                             <Route path="bancos" element={<BancosPage />} />
                                                                                             <Route path="articulos-personal" element={<ArticulosPersonalPage />} />
-                                                              <Route path="maestro-categorias-articulos" element={<CategoriasArticulosPage />} />
+                                                              <Route path="maestro-categorias-articulos" element={<MaestroCategoriasArticulosPage />} />
                                                               <Route path="feriados" element={<FeriadosPage />} />
-                                                              <Route path="solicitud-insumos" element={<StaffArticleRequestsPage />} />
-                                                                                            <Route path="entregas-articulos" element={<ArticleDeliveriesPage />} />
-                                                                                            <Route path="configuracion" element={<SettingsPage />} />
-                                                                                            <Route path="gastos-comunes" element={<CommonExpensePaymentsPage />} />
-                                                                                            <Route path="registro-gastos" element={<CommunityExpensesPage />} />
-                                                                                            <Route path="reglas-gastos-comunes" element={<CommonExpenseRulesPage />} />
-                                                                                            <Route path="maestro-fondos" element={<SpecialFundsPage />} />
-                                                                                            <Route path="activo-fijo" element={<FixedAssetsPage />} />
-                                                                                            <Route path="carga-masiva" element={<MassiveUploadPage />} />
-                                                                                            <Route path="reclamos" element={<CommunityRequestsPage />} />
-                                                                                            <Route path="directiva" element={<CondoBoardPage />} />
+                                                              <Route path="solicitud-insumos" element={<PrivateRoute permission="supplies:manage"><SolicitudInsumosPage /></PrivateRoute>} />
+                                                                                            <Route path="entregas-articulos" element={<EntregasArticulosPage />} />
+                                                                                            <Route path="configuracion" element={<PrivateRoute permission="settings:manage"><ConfiguracionPage /></PrivateRoute>} />
+                                                                                            <Route path="gastos-comunes" element={<PrivateRoute permission="finances:manage"><GastosComunesPage /></PrivateRoute>} />
+                                                                                            <Route path="registro-gastos" element={<PrivateRoute permission="finances:manage"><RegistroGastosPage /></PrivateRoute>} />
+                                                                                            <Route path="reglas-gastos-comunes" element={<ReglasGastosComunesPage />} />
+                                                                                            <Route path="maestro-fondos" element={<MaestroFondosPage />} />
+                                                                                            <Route path="activo-fijo" element={<PrivateRoute permission="assets:manage"><ActivoFijoPage /></PrivateRoute>} />
+                                                                                            <Route path="carga-masiva" element={<CargaMasivaPage />} />
+                                                                                            <Route path="reclamos" element={<ReclamosPage />} />
+                                                                                            <Route path="directiva" element={<DirectivaPage />} />
                                                                                             <Route path="tickets" element={<TicketsPage />} />
-                                                                                            <Route path="dashboard-kpi" element={<ManagementKPICenter />} />
+                                                                                            <Route path="dashboard-kpi" element={<DashboardKPIPage />} />
                                                                                             <Route path="maestro-ipc" element={<MaestroIPCPage />} />
                                                                                             <Route path="camaras" element={<CameraRequestsPage />} />
-                                                                                            <Route path="correspondencia" element={<CorrespondencePage />} />
-                                                                                            <Route path="contratistas" element={<ContractorMasterPage />} />
-                                                                                            <Route path="registro-contratistas" element={<ContractorsPage />} />
-                                                                                            <Route path="visitas" element={<VisitorsPage />} />
-                                                                                            <Route path="bitacora-turnos" element={<ShiftReportsPage />} />
-                                                                                            <Route path="reporte-diario" element={<DailyReportPage />} />
-                                                                                            <Route path="certificados" element={<CertificatesPage />} />
-                                                                                            <Route path="liquidaciones" element={<PayslipsPage />} />
+                                                                                            <Route path="correspondencia" element={<CorrespondenciaPage />} />
+                                                                                            <Route path="contratistas" element={<ContratistasPage />} />
+                                                                                            <Route path="registro-contratistas" element={<RegistroContratistasPage />} />
+                                                                                            <Route path="visitas" element={<PrivateRoute permission="visits:view"><VisitasPage /></PrivateRoute>} />
+                                                                                            <Route path="bitacora-turnos" element={<PrivateRoute permission="shift_logs:view"><ShiftReportsPage /></PrivateRoute>} />
+                                                                                            <Route path="reporte-diario" element={<PrivateRoute permission="reports:view"><ReporteDiarioPage /></PrivateRoute>} />
+                                                                                            <Route path="certificados" element={<CertificadosPage />} />
+                                                                                            <Route path="liquidaciones" element={<LiquidacionesPage />} />
                                                                                             <Route path="emergencias" element={<MaestroEmergenciasPage isMaster={false} />} />
                                                                                             <Route path="maestro-emergencias" element={<MaestroEmergenciasPage isMaster={true} />} />
                                                               <Route path="maestro-servicios" element={<MaestroServiciosPage />} />
-                                                              <Route path="servicios-residentes" element={<ResidentsServicesPage />} />
+                                                              <Route path="servicios-residentes" element={<ServiciosResidentesPage />} />
                                                                                             <Route path="cambio-clave" element={<ChangePasswordPage />} />
                                                                                             <Route path="maestros-operativos/:tab?" element={<MaestrosOperativosPage />} />
-                                                                                            <Route path="maestro-camaras" element={<Navigate to="/maestros-operativos/camaras" replace />} />
-                                                                                            <Route path="maestro-correos" element={<EmailSettingsMasterPage />} />
+                                                                                            <Route path="maestro-camaras" element={<CamarasPage />} />
+                                                                                            <Route path="maestro-correos" element={<MaestroCorreosPage />} />
                                                                                             <Route path="maestro-mensajes" element={<MaestroMensajesPage />} />
-                                                                                            <Route path="parametros" element={<ParametersPage />} />
+                                                                                            <Route path="parametros" element={<ParametrosPage />} />
                                                                                             <Route path="unidades-disponibles" element={<AvailableUnitsPage />} />
                                                                                             <Route path="mis-pagos" element={<MyPaymentsPage />} />
                                                                                             <Route path="*" element={<Navigate to="/" replace />} />

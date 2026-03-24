@@ -6,7 +6,7 @@ import { Package, Search, ShoppingCart, CheckCircle2, LayoutGrid, List } from 'l
 import { useNavigate } from 'react-router-dom';
 import { useTickets } from '../context/TicketContext';
 
-export const StaffArticleRequestsPage: React.FC = () => {
+export const SolicitudInsumosPage: React.FC = () => {
     const navigate = useNavigate();
     const { articles } = useArticles();
     const { addDelivery } = useArticleDeliveries();

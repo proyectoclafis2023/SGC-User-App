@@ -13,7 +13,7 @@ import { useUnitTypes } from '../context/UnitTypeContext';
 import { useOwners } from '../context/OwnerContext';
 import { useResidents } from '../context/ResidentContext';
 
-export const CommonExpensePaymentsPage: React.FC = () => {
+export const GastosComunesPage: React.FC = () => {
     const { towers, departments } = useInfrastructure();
     const { payments, funds, addPayment, deletePayment, calculateAmount } = useCommonExpenses();
     const { settings } = useSettings();

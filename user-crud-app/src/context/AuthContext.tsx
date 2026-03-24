@@ -53,7 +53,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             if (response.ok) {
                 const data = await response.json();
-                setAuth(data);
+                setAuth({
+                    isAuthenticated: true,
+                    user: data.user
+                });
                 return true;
             }
             return false;

@@ -58,7 +58,7 @@ const LOAD_HIERARCHY = [
     { step: 4, title: 'Módulos Dependientes', entities: ['personnel', 'articles', 'assets'], description: 'Operaciones diarias y equipamiento.' }
 ];
 
-export const MassiveUploadPage: React.FC = () => {
+export const CargaMasivaPage: React.FC = () => {
     // Entities and Icons (Keep for UI selection and template generation)
     const { articles } = useArticles();
     const { personnel } = usePersonnel();

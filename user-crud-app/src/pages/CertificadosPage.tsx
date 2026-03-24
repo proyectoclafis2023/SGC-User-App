@@ -33,7 +33,7 @@ interface ResidentData {
     address: string;
 }
 
-export const CertificatesPage: React.FC = () => {
+export const CertificadosPage: React.FC = () => {
     const { settings } = useSettings();
     const { towers } = useInfrastructure();
     const { payments } = useCommonExpenses();

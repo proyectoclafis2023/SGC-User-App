@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import type { FixedAsset, MaintenanceRecord } from '../types';
 
-export const FixedAssetsPage: React.FC = () => {
+export const ActivoFijoPage: React.FC = () => {
     const { assets, addAsset, updateAsset, deleteAsset } = useFixedAssets();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingAsset, setEditingAsset] = useState<FixedAsset | null>(null);

@@ -5,7 +5,7 @@ import { Input } from '../components/Input';
 import { Plus, Trash2, Edit2, X, Tag, Search, Package } from 'lucide-react';
 import type { SystemParameter } from '../types';
 
-export const CategoriasArticulosPage: React.FC = () => {
+export const MaestroCategoriasArticulosPage: React.FC = () => {
     const { parameters, addParameter, updateParameter, deleteParameter } = useSystemParameters();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<SystemParameter | null>(null);

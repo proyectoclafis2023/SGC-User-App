@@ -40,6 +40,7 @@ export interface AuthState {
         relatedId?: string;
         profileId?: string;
         mustChangePassword?: boolean;
+        permissions?: string[];
     } | null;
 }
 

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-export const ResidentsServicesPage: React.FC = () => {
+export const ServiciosResidentesPage: React.FC = () => {
     const { services } = useServiceDirectory();
     const [searchTerm, setSearchTerm] = useState('');
 

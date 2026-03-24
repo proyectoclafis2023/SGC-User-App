@@ -6,7 +6,7 @@ import { ShieldCheck, Plus, Search, Shield, Save, X, Trash2, Edit2, Check, Lock 
 import { useSettings } from '../context/SettingsContext';
 import type { Profile, ProfilePermissions } from '../types';
 
-export const ProfilesPage: React.FC = () => {
+export const PerfilesPage: React.FC = () => {
     const { profiles, addProfile, updateProfile, deleteProfile } = useProfiles();
     const { settings } = useSettings();
     const [isModalOpen, setIsModalOpen] = useState(false);

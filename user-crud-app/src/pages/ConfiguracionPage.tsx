@@ -21,7 +21,7 @@ const TEMPLATES = [
     { id: 'emergencias', name: 'Emergencias', desc: 'Números útiles' }
 ];
 
-export const SettingsPage: React.FC = () => {
+export const ConfiguracionPage: React.FC = () => {
     const { settings, updateSettings } = useSettings();
     const [name, setName] = useState(settings.systemName);
     const [icon, setIcon] = useState(settings.systemIcon);

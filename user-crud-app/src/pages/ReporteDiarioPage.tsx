@@ -16,7 +16,7 @@ import {
 import { useContractors } from '../context/ContractorContext';
 import type { ShiftReport, Visitor, Correspondence, Ticket, Reservation, FixedAsset, Contractor, MaintenanceRecord } from '../types';
 
-export const DailyReportPage: React.FC = () => {
+export const ReporteDiarioPage: React.FC = () => {
     const { reports } = useShiftReport();
     const { visitors } = useVisitors();
     const { items: packages } = useCorrespondence();

@@ -25,7 +25,7 @@ import { PayslipDocument } from '../components/PayslipDocument';
 import { AdvanceReceipt } from '../components/AdvanceReceipt';
 import type { Payslip, Advance } from '../types';
 
-export const PayslipsPage: React.FC = () => {
+export const LiquidacionesPage: React.FC = () => {
     const { personnel } = usePersonnel();
     const { providers } = useHealthProviders();
     const { funds } = usePensionFunds();

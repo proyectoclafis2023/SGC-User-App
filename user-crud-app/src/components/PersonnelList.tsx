@@ -12,9 +12,10 @@ interface PersonnelListProps {
     onEdit: (person: Personnel) => void;
     onDelete: (id: string, name: string) => void;
     viewMode?: 'cards' | 'grid';
+    canManage?: boolean;
 }
 
-export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit, onDelete, viewMode = 'cards' }) => {
+export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit, onDelete, viewMode = 'cards', canManage = true }) => {
     const { providers } = useHealthProviders();
     const { funds } = usePensionFunds();
     const { banks } = useBanks();
@@ -129,22 +130,24 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                onClick={() => onEdit(person)}
-                                                className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
-                                                title="Editar"
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => onDelete(person.id, `${person.names} ${person.last_names}`)}
-                                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-                                                title="Eliminar"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
+                                        {canManage && (
+                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => onEdit(person)}
+                                                    className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
+                                                    title="Editar"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => onDelete(person.id, `${person.names} ${person.last_names}`)}
+                                                    className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                                                    title="Eliminar"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -188,22 +191,24 @@ export const PersonnelList: React.FC<PersonnelListProps> = ({ personnel, onEdit,
                                         )}
                                     </div>
 
-                                    <div className="flex mt-4 gap-2">
-                                        <button
-                                            onClick={() => onEdit(person)}
-                                            className="p-1 px-3 text-[10px] font-black uppercase tracking-widest bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg transition-all hover:bg-indigo-600 hover:text-white flex items-center gap-1.5"
-                                        >
-                                            <Edit2 className="w-3 h-3" />
-                                            Editar Ficha
-                                        </button>
-                                        <button
-                                            onClick={() => onDelete(person.id, `${person.names} ${person.last_names}`)}
-                                            className="p-1 px-3 text-[10px] font-black uppercase tracking-widest bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg transition-all hover:bg-red-600 hover:text-white flex items-center gap-1.5"
-                                        >
-                                            <Trash2 className="w-3 h-3" />
-                                            Borrar
-                                        </button>
-                                    </div>
+                                    {canManage && (
+                                        <div className="flex mt-4 gap-2">
+                                            <button
+                                                onClick={() => onEdit(person)}
+                                                className="p-1 px-3 text-[10px] font-black uppercase tracking-widest bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg transition-all hover:bg-indigo-600 hover:text-white flex items-center gap-1.5"
+                                            >
+                                                <Edit2 className="w-3 h-3" />
+                                                Editar Ficha
+                                            </button>
+                                            <button
+                                                onClick={() => onDelete(person.id, `${person.names} ${person.last_names}`)}
+                                                className="p-1 px-3 text-[10px] font-black uppercase tracking-widest bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg transition-all hover:bg-red-600 hover:text-white flex items-center gap-1.5"
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                                Borrar
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

@@ -4,7 +4,7 @@ import { Button } from '../components/Button';
 import { Plus, Trash2, Edit2, X, Bell, Eye, EyeOff, MessageSquare, Bookmark, Camera, Youtube } from 'lucide-react';
 import type { SystemMessage } from '../types';
 
-export const SystemMessagesPage: React.FC = () => {
+export const VisorPage: React.FC = () => {
     const { messages, addMessage, updateMessage, deleteMessage, toggleMessageStatus } = useSystemMessages();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMessage, setEditingMessage] = useState<SystemMessage | null>(null);

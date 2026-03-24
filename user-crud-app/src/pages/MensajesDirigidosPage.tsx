@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import type { DirectedMessage } from '../types';
 
-export const DirectedMessagesPage: React.FC = () => {
+export const MensajesDirigidosPage: React.FC = () => {
     const { messages, addMessage, deleteMessage } = useDirectedMessages();
     const { departments } = useInfrastructure();
     const [isModalOpen, setIsModalOpen] = useState(false);

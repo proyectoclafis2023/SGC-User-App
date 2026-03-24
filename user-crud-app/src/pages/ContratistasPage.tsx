@@ -10,7 +10,7 @@ import {
 import type { Contractor } from '../types';
 import { useSettings } from '../context/SettingsContext';
 
-export const ContractorMasterPage: React.FC = () => {
+export const ContratistasPage: React.FC = () => {
     const { contractors, addContractor, updateContractor, deleteContractor } = useContractors();
     const { settings } = useSettings();
     const [searchTerm, setSearchTerm] = useState('');
