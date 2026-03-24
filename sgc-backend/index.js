@@ -612,6 +612,7 @@ app.post('/api/assets/upload', async (req, res) => {
 /**
  * @api {get} /api/common-expenses/payments Obtener Pagos de GGCC
  * @apiDescription Filtra pagos por año, mes o // --- Gastos Comunes (Debts) ---
+ */
 app.get('/api/common_expense_payments', authorize('common_expenses:view'), async (req, res) => {
     let { year, month, dept_id } = req.query;
     const where = { isArchived: false };
