@@ -59,6 +59,18 @@ Este script valida:
 - Bloqueo de accesos no autorizados (403 Forbidden).
 - Control de tasa de peticiones (Rate Limiting).
 
+### 2. SGC Doctor (Auditor de Consistencia)
+Herramienta de diagnóstico que valida la alineación canónica entre el Frontend, Backend y la Base de Datos.
+
+- **Ubicación**: `/scripts/sgc-doctor.js`
+- **Ejecución**: `node scripts/sgc-doctor.js`
+- **Función**: 
+  - Escanea los 49+ módulos del sistema.
+  - Verifica la existencia de rutas API y componentes UI.
+  - Valida el etiquetado `@module` en Prisma.
+  - Asegura que los módulos maestros tengan endpoints de `/upload`.
+  - Se utiliza como gatekeeper antes de realizar commits críticos.
+
 ## 🐳 Docker
 ```bash
 docker-compose up --build
