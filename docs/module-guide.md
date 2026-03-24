@@ -22,7 +22,7 @@
 ## Automated RBAC Testing
 
 ### Propósito
-Garantizar que las restricciones de control de acceso basado en roles (RBAC) se cumplan estrictamente y que no existan fugas de permisos entre perfiles.
+Garantizar que las restricciones de control de acceso basado en roles (RBAC) se cumplan estrictamente y que no existan fugas de permisos entre perfiles. Para más detalles técnicos sobre la implementación y lógica funcional, consulte [automation.md](./automation.md).
 
 ### Ejecución
 Para ejecutar la suite de pruebas automatizadas:
