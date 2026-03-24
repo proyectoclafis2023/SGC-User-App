@@ -1,8 +1,9 @@
-# SGC - Sistema de Gestión de Condominios v2.4.0
+# SGC - Sistema de Gestión de Condominios v2.5.1
 
-Sistema integral para la administración de edificios y condominios, con motor financiero avanzado, control de acceso RBAC y auditoría.
+Sistema integral para la administración de edificios y condominios, con motor financiero avanzado, control de acceso RBAC, auditoría y pruebas automatizadas.
 
 ## 🚀 Funcionalidades Principales
+- **Pruebas Automatizadas (RBAC)**: Suite de simulación de tráfico multi-rol para validación de permisos.
 - **Motor Financiero**: Cálculo automático de gastos comunes, fondos especiales y reglas de cobro.
 - **Ciclo de Pagos**: Registro de abonos por residentes con actualización automática de estado (Parcial/Pagado).
 - **Seguridad (RBAC)**: Control de acceso basado en roles (Admin, Residente, Conserje).
@@ -12,14 +13,14 @@ Sistema integral para la administración de edificios y condominios, con motor f
 
 ## 🛠️ Requisitos
 - Node.js v18+
-- SQLite (Integrado) o MySQL (Configurable)
+- SQLite (Integrado)
 - Docker & Docker Compose (Opcional para despliegue rápido)
 
 ## 📦 Instalación (Modo Manual)
 
 ### 1. Clonar el repositorio
 ```bash
-git clone -b release/v2.4.0 https://github.com/proyectoclafis2023/SGC-User-App.git
+git clone -b release/v2.5.1 https://github.com/proyectoclafis2023/SGC-User-App.git
 cd SGC-User-App
 ```
 
@@ -27,11 +28,10 @@ cd SGC-User-App
 ```bash
 cd sgc-backend
 npm install
-cp .env.example .env
-# Editar .env con tu JWT_SECRET
+# Configura .env con JWT_SECRET, ADMIN_PASSWORD y DEFAULT_USER_PASSWORD
 npx prisma generate
 npx prisma db push
-node seed_rbac.js
+npx prisma db seed
 npm run dev
 ```
 
@@ -42,13 +42,32 @@ npm install
 npm run dev
 ```
 
+## 🧪 Scripts y Automatización
+
+El sistema incluye una carpeta `/scripts/testing` con herramientas de validación continua:
+
+### 1. RBAC Test Runner
+Simula el comportamiento de diferentes roles (Admin, Residente, Conserje, Propietario) para verificar la seguridad del backend.
+
+- **Ubicación**: `/scripts/testing/rbac-test-runner.js`
+- **Ejecución**: `npm run test:rbac` (desde `sgc-backend`)
+- **Logs**: Resultados detallados en `/logs/rbac-test.log`
+
+Este script valida:
+- Login exitoso por rol.
+- Acceso a módulos permitidos.
+- Bloqueo de accesos no autorizados (403 Forbidden).
+- Control de tasa de peticiones (Rate Limiting).
+
 ## 🐳 Docker
 ```bash
 docker-compose up --build
 ```
 
 ## 🔐 Credenciales de Prueba (Demo)
-- **Admin**: `test@sgc.cl` / `admin123`
+- **Admin**: `gdcuentas@sgc.cl` / `admin123` (Configurable en `.env`)
+- **Residente**: `residente@sgc.cl` / `sgc123`
+- **Conserje**: `conserje@sgc.cl` / `sgc123`
 - **Frontend URL**: `http://localhost:5173`
 - **Backend API**: `http://localhost:3001/api`
 
