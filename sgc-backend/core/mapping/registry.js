@@ -11,8 +11,8 @@ const registry = {
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'folio', bd: 'folio', excel: 'folio' },
-            { api: 'worker_id', bd: 'workerId', excel: 'funcionario_id' },
-            { api: 'worker_name', bd: 'workerName', excel: 'funcionario_nombre' },
+            { api: 'concierge_id', bd: 'conciergeId', excel: 'funcionario_id' },
+            { api: 'concierge_name', bd: 'conciergeName', excel: 'funcionario_nombre' },
             { api: 'shift_date', bd: 'shiftDate', excel: 'fecha_turno' },
             { api: 'shift_type', bd: 'shiftType', excel: 'tipo_turno' },
             { api: 'novedades', bd: 'novedades', excel: 'novedades' },
@@ -54,7 +54,7 @@ const registry = {
             { api: 'timestamp', bd: 'timestamp', excel: 'timestamp' },
             { api: 'event', bd: 'event', excel: 'evento' },
             { api: 'category', bd: 'category', excel: 'categoria' },
-            { api: 'worker_id', bd: 'workerId', excel: 'funcionario_id' },
+            { api: 'concierge_id', bd: 'conciergeId', excel: 'funcionario_id' },
             { api: 'is_archived', bd: 'isArchived', excel: 'archivado' },
             { api: 'created_at', bd: 'createdAt', excel: 'fecha_creacion' }
         ],
@@ -149,7 +149,7 @@ const registry = {
             { api: 'created_at', bd: 'createdAt', excel: 'fecha_creacion' }
         ],
         relations: {
-            worker: 'personal' // requestedBy points to Personnel
+            concierge: 'personal' // requestedBy points to Personnel
         }
     },
 

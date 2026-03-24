@@ -60,7 +60,7 @@ export const LiquidacionesPage: React.FC = () => {
     const workedDaysFromReports = useMemo(() => {
         if (!selectedPersonId) return 0;
         return reports.filter(r => 
-            r.worker_id === selectedPersonId && 
+            r.concierge_id === selectedPersonId && 
             r.status === 'closed' &&
             new Date(r.shift_date).getMonth() + 1 === month &&
             new Date(r.shift_date).getFullYear() === year
@@ -86,11 +86,11 @@ export const LiquidacionesPage: React.FC = () => {
     const calculateDeductions = (gross: number) => {
         if (!selectedPerson) return { health: 0, pension: 0, apv: 0, insurance: 0, total: 0 };
 
-        const healthProvider = providers.find(p => p.id === selectedPerson.health_provider_id);
-        const pensionFund = funds.find(f => f.id === selectedPerson.pension_fund_id);
+        const health_provider = providers.find(p => p.id === selectedPerson.health_provider_id);
+        const pension_fund = funds.find(f => f.id === selectedPerson.pension_fund_id);
 
-        const healthRate = healthProvider?.discount_rate || 7; 
-        const pensionRate = pensionFund?.discount_rate || 10; 
+        const healthRate = health_provider?.discount_rate || 7; 
+        const pensionRate = pension_fund?.discount_rate || 10; 
 
         const healthDiscount = Math.round(gross * (healthRate / 100));
         const pensionDiscount = Math.round(gross * (pensionRate / 100));

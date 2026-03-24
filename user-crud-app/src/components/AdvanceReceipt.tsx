@@ -15,8 +15,8 @@ export const AdvanceReceipt: React.FC<Props> = ({ advance, person, settings }) =
         <div id="print-receipt" className="bg-white p-12 shadow-2xl w-full max-w-[600px] mx-auto text-gray-900 border-2 border-dashed border-gray-200 print:shadow-none print:border-none print:m-0">
             <div className="flex justify-between items-start border-b border-gray-100 pb-4 mb-6">
                 <div>
-                    <h2 className="text-lg font-black uppercase text-indigo-600">{settings.systemName}</h2>
-                    <p className="text-[8px] font-bold text-gray-500 uppercase">{settings.condoAddress}</p>
+                    <h2 className="text-lg font-black uppercase text-indigo-600">{settings.system_name}</h2>
+                    <p className="text-[8px] font-bold text-gray-500 uppercase">{settings.condo_address}</p>
                 </div>
                 <div className="text-right">
                     <h1 className="text-xl font-black uppercase tracking-tight">Comprobante de Egreso</h1>

@@ -28,7 +28,7 @@ export const ServiceDirectoryProvider: React.FC<{ children: ReactNode }> = ({ ch
     const addService = async (service: Omit<ServiceDirectory, 'id' | 'created_at' | 'updated_at' | 'is_archived'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(service)
         });
         if (!response.ok) {
@@ -41,7 +41,7 @@ export const ServiceDirectoryProvider: React.FC<{ children: ReactNode }> = ({ ch
     const updateService = async (id: string, service: Partial<ServiceDirectory>) => {
         const response = await fetch(`${API_URL}/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(service)
         });
         if (!response.ok) {

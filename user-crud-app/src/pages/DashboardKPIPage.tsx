@@ -30,13 +30,13 @@ export const DashboardKPIPage: React.FC = () => {
 
     // -- RESIDENCIA CALCULATIONS --
     const totalUnits = departments.length;
-    const occupiedUnits = departments.filter((d: Department) => d.residentId).length;
+    const occupiedUnits = departments.filter((d: Department) => d.resident_id).length;
     const vacantUnits = totalUnits - occupiedUnits;
     const occupancyRate = totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0;
 
     const censusFrequency = settings.censusFrequencyYears || 1;
     const needsCensus = departments.filter((d: Department) => {
-        if (!d.residentId) return false;
+        if (!d.resident_id) return false;
         if (!d.lastCensusDate) return true;
         const last = new Date(d.lastCensusDate);
         const diffYears = (new Date().getTime() - last.getTime()) / (1000 * 60 * 60 * 24 * 365);
@@ -46,7 +46,7 @@ export const DashboardKPIPage: React.FC = () => {
     // -- PERSONAL CALCULATIONS --
     const totalStaff = personnel.length;
     const activeStaff = personnel.filter((p: Personnel) => p.status === 'active').length;
-    const pendingSignatures = deliveries.filter((d: ArticleDelivery) => !d.signedDocument).length;
+    const pendingSignatures = deliveries.filter((d: ArticleDelivery) => !d.signed_document).length;
 
     const today = new Date().toISOString().split('T')[0];
     const todayReports = shiftReports.filter((r: ShiftReport) => r.shiftDate === today);
@@ -305,13 +305,13 @@ export const DashboardKPIPage: React.FC = () => {
                         </div>
                         
                         <div className="flex-1 overflow-y-auto max-h-[500px] custom-scrollbar space-y-3">
-                            {departments.filter(d => !d.residentId).length === 0 ? (
+                            {departments.filter(d => !d.resident_id).length === 0 ? (
                                 <div className="text-center py-20 opacity-40">
                                     <CheckCircle2 className="w-12 h-12 mx-auto mb-4" />
                                     <p className="text-xs font-bold uppercase tracking-widest">Todas las unidades tienen residente asignado</p>
                                 </div>
                             ) : (
-                                departments.filter(d => !d.residentId).map(unit => (
+                                departments.filter(d => !d.resident_id).map(unit => (
                                     <div key={unit.id} className="p-5 bg-gray-50 dark:bg-gray-800/40 rounded-3xl border border-gray-100 dark:border-gray-800 flex items-center justify-between group">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-white dark:bg-gray-900 rounded-2xl flex items-center justify-center text-amber-500 shadow-sm border border-amber-100 dark:border-amber-900/30">
@@ -320,7 +320,7 @@ export const DashboardKPIPage: React.FC = () => {
                                             <div>
                                                 <p className="text-lg font-black text-gray-900 dark:text-white leading-none">Unidad {unit.number}</p>
                                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-                                                    Piso {unit.floor} • Torre {towers.find(t => t.id === unit.towerId)?.name || 'N/A'}
+                                                    Piso {unit.floor} • Torre {towers.find(t => t.id === unit.tower_id)?.name || 'N/A'}
                                                 </p>
                                             </div>
                                         </div>

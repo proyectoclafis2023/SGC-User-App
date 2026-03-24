@@ -8,7 +8,7 @@ import type { UnitType, ChargeRule } from '../types';
 import { useInfrastructure } from '../context/InfrastructureContext';
 
 export const ReglasGastosComunesPage: React.FC = () => {
-    const { unitTypes } = useUnitTypes();
+    const { unit_types } = useUnitTypes();
     const { departments } = useInfrastructure();
     const { rules, chargeRules, addRule, addChargeRule, deleteChargeRule } = useCommonExpenses();
     const [activeTab, setActiveTab] = useState<'base' | 'charges'>('base');
@@ -108,7 +108,7 @@ export const ReglasGastosComunesPage: React.FC = () => {
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Aplica para</p>
                                         <p className="text-xl font-black text-gray-900 dark:text-white">
-                                            {rule.unit_type_id ? unitTypes.find(ut => ut.id === rule.unit_type_id)?.nombre : 'Todas las Unidades (Global)'}
+                                            {rule.unit_type_id ? unit_types.find(ut => ut.id === rule.unit_type_id)?.nombre : 'Todas las Unidades (Global)'}
                                         </p>
                                     </div>
 
@@ -204,7 +204,7 @@ export const ReglasGastosComunesPage: React.FC = () => {
                                     onChange={(e) => setUnitTypeId(e.target.value)}
                                 >
                                     <option value="">Todas las Unidades (Global)</option>
-                                    {unitTypes.map((t: UnitType) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+                                    {unit_types.map((t: UnitType) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                                 </select>
                             </div>
 
@@ -284,7 +284,7 @@ export const ReglasGastosComunesPage: React.FC = () => {
                                         value={chargeTargetId} onChange={(e) => setChargeTargetId(e.target.value)} required
                                     >
                                         <option value="">Seleccione Categoría...</option>
-                                        {unitTypes.map(ut => <option key={ut.id} value={ut.id}>{ut.nombre}</option>)}
+                                        {unit_types.map(ut => <option key={ut.id} value={ut.id}>{ut.nombre}</option>)}
                                     </select>
                                 </div>
                             )}

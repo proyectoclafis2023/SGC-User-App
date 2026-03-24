@@ -28,7 +28,7 @@ export const AFCProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const addAFC = async (afc: Omit<AFC, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(afc)
         });
         if (!response.ok) {
@@ -41,7 +41,7 @@ export const AFCProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updateAFC = async (afc: AFC) => {
         const response = await fetch(`${API_URL}/${afc.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(afc)
         });
         if (!response.ok) {

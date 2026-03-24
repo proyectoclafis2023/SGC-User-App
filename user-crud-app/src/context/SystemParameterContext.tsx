@@ -28,7 +28,7 @@ export const SystemParameterProvider: React.FC<{ children: ReactNode }> = ({ chi
     const addParameter = async (parameter: Omit<SystemParameter, 'id'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(parameter)
         });
         if (!response.ok) {
@@ -41,7 +41,7 @@ export const SystemParameterProvider: React.FC<{ children: ReactNode }> = ({ chi
     const updateParameter = async (parameter: SystemParameter) => {
         const response = await fetch(`${API_URL}/${parameter.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(parameter)
         });
         if (!response.ok) {

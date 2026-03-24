@@ -22,7 +22,7 @@ export const PublicCarouselPage: React.FC = () => {
         const nextWeek = new Date(today);
         nextWeek.setDate(today.getDate() + 7);
         return resDate >= today && resDate <= nextWeek;
-    }).sort((a, b) => new Date(`${a.date}T${a.startTime}`).getTime() - new Date(`${b.date}T${b.startTime}`).getTime());
+    }).sort((a, b) => new Date(`${a.date}T${a.start_time}`).getTime() - new Date(`${b.date}T${b.start_time}`).getTime());
 
     const activeMessages = messages.filter(m => m.isActive && !m.is_archived);
     if (upcomingReservations.length > 0) {
@@ -111,7 +111,7 @@ export const PublicCarouselPage: React.FC = () => {
                     <div className="w-24 h-24 bg-gray-800 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
                         <Bell className="w-12 h-12 text-gray-500" />
                     </div>
-                    <h1 className="text-4xl font-black tracking-tight">{settings.systemName}</h1>
+                    <h1 className="text-4xl font-black tracking-tight">{settings.system_name}</h1>
                     <p className="text-xl text-gray-400">Sin avisos pendientes por mostrar en este momento.</p>
                 </div>
             </div>
@@ -141,7 +141,7 @@ export const PublicCarouselPage: React.FC = () => {
                         </div>
                     )}
                     <div>
-                        <h1 className="text-3xl font-black tracking-tighter uppercase">{settings.systemName}</h1>
+                        <h1 className="text-3xl font-black tracking-tighter uppercase">{settings.system_name}</h1>
                         <p className="text-sm font-bold tracking-widest opacity-80 uppercase">Plataforma de Comunicación Comunitaria</p>
                     </div>
                 </div>
@@ -177,7 +177,7 @@ export const PublicCarouselPage: React.FC = () => {
                                         </div>
                                         <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/5 w-full flex items-center gap-3">
                                             <Clock className="w-5 h-5 text-indigo-300" />
-                                            <p className="text-lg font-bold tracking-widest">{res.startTime} - {res.endTime}</p>
+                                            <p className="text-lg font-bold tracking-widest">{res.start_time} - {res.end_time}</p>
                                         </div>
                                     </div>
                                 ))}

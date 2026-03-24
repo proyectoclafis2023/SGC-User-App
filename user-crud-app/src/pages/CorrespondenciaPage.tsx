@@ -40,7 +40,7 @@ export const CorrespondenciaPage: React.FC = () => {
     // Get resident properties if applicable
     const residentProperties = useMemo(() => {
         if (!isResident || !user?.relatedId) return [];
-        return departments.filter(d => d.residentId === user.relatedId || d.ownerId === user.relatedId);
+        return departments.filter(d => d.resident_id === user.relatedId || d.owner_id === user.relatedId);
     }, [isResident, user?.relatedId, departments]);
 
     // Effect to pre-select unit if resident has only one property

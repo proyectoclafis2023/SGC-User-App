@@ -9,7 +9,7 @@ export const VisitorProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const fetchVisitors = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/visitors`);
+            const response = await fetch(`${API_BASE_URL}/visitors`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
             if (response.ok) {
                 const data = await response.json();
                 setVisitors(Array.isArray(data) ? data : []);
@@ -40,7 +40,7 @@ export const VisitorProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         const response = await fetch(`${API_BASE_URL}/visitors`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(newRecord)
         });
         if (!response.ok) {
@@ -60,7 +60,7 @@ export const VisitorProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         const response = await fetch(`${API_BASE_URL}/visitors/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(updated)
         });
         if (!response.ok) {

@@ -29,36 +29,36 @@ export const ResidentDashboard: React.FC = () => {
     const { requests: cameraRequests } = useCameraRequests();
     const { towers, departments } = useInfrastructure();
     const { payments, communityExpenses } = useCommonExpenses();
-    const { unitTypes } = useUnitTypes();
+    const { unit_types } = useUnitTypes();
     const { messages: systemMessages } = useSystemMessages(); // Renamed to avoid conflict with directedMessages
     const { owners } = useOwners();
 
-    const activeUserId = user?.name || '';
+    const activeUserId = user?.id || '';
     const isOwner = user?.role === 'owner';
 
     // Gastos comunes mockeados para residente
     const hasDeudamora = false;
 
-    const myReservations = reservations.filter((r: any) => r.userId === activeUserId);
-    const myTickets = allTickets.filter((t: any) => t.userId === activeUserId);
+    const myReservations = reservations.filter((r: any) => r.resident_id === user?.relatedId);
+    const myTickets = allTickets.filter((t: any) => t.resident_id === user?.relatedId);
 
     const pendingTickets = myTickets.filter((t: any) => t.status !== 'solved').length;
     const approvedReservations = myReservations.filter((r: any) => r.status === 'approved').length;
 
     const myUnits = isOwner
-        ? departments.filter((d: any) => d.ownerId === user?.relatedId)
-        : departments.filter((d: any) => d.residentId === user?.relatedId);
+        ? departments.filter((d: any) => d.owner_id === user?.relatedId)
+        : departments.filter((d: any) => d.resident_id === user?.relatedId);
 
     const canSeeFinancials = isOwner || myUnits.some((unit: any) => {
-        const owner = owners.find((o: any) => o.id === unit.ownerId);
+        const owner = owners.find((o: any) => o.id === unit.owner_id);
         return owner?.canResidentSeeArrears;
     });
 
     const myCorrespondence = correspondence.filter((i: any) =>
-        myUnits.some((u: any) => u.id === i.departmentId) && i.status !== 'delivered'
+        myUnits.some((u: any) => u.id === i.department_id) && i.status !== 'delivered'
     );
 
-    const myRequests = cameraRequests.filter((r: any) => r.userId === user?.name);
+    const myRequests = cameraRequests.filter((r: any) => r.user_id === user?.name);
 
     const financials = (() => {
         const now = new Date();
@@ -69,7 +69,7 @@ export const ResidentDashboard: React.FC = () => {
 
         const allDepts = towers.flatMap(t => t.departments).filter(d => !d.is_archived);
         const gcTarget = allDepts.reduce((acc, dept) => {
-            const ut = unitTypes.find(u => u.id === dept.unit_type_id);
+            const ut = unit_types.find(u => u.id === dept.unit_type_id);
             return acc + (ut?.base_common_expense || 0);
         }, 0);
 
@@ -407,7 +407,7 @@ export const ResidentDashboard: React.FC = () => {
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1">{spaces.find(s => s.id === res.spaceId)?.name}</p>
                                     <p className="text-base font-black text-gray-900 dark:text-white">{new Date(res.date).toLocaleDateString()}</p>
-                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{res.startTime} a {res.endTime}</p>
+                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{res.start_time} a {res.end_time}</p>
                                 </div>
                                 <span className="inline-flex items-center px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800/50">
                                     <CheckCircle className="w-3 h-3 mr-2" /> Aprobado

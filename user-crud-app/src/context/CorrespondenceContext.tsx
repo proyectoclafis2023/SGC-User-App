@@ -33,7 +33,7 @@ export const CorrespondenceProvider: React.FC<{ children: ReactNode }> = ({ chil
         try {
             const resp = await fetch(BACKEND_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...item, folio })
             });
 
@@ -58,7 +58,7 @@ export const CorrespondenceProvider: React.FC<{ children: ReactNode }> = ({ chil
         try {
             const resp = await fetch(`${BACKEND_URL}/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify(updated)
             });
 

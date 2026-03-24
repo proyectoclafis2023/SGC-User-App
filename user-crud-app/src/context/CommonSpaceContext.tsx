@@ -28,7 +28,7 @@ export const CommonSpaceProvider: React.FC<{ children: ReactNode }> = ({ childre
     const addSpace = async (space: Omit<CommonSpace, 'id'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(space)
         });
         if (!response.ok) {
@@ -41,7 +41,7 @@ export const CommonSpaceProvider: React.FC<{ children: ReactNode }> = ({ childre
     const updateSpace = async (space: CommonSpace) => {
         const response = await fetch(`${API_URL}/${space.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(space)
         });
         if (!response.ok) {

@@ -77,7 +77,7 @@ export const LoginPage: React.FC = () => {
                                 {settings.systemIcon}
                             </div>
                         )}
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white text-center">{settings.systemName}</h1>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white text-center">{settings.system_name}</h1>
                         <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">Por favor, inicia sesión para continuar</p>
                     </div>
 

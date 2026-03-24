@@ -35,7 +35,7 @@ export const IPCProjectionProvider: React.FC<{ children: React.ReactNode }> = ({
     const addProjection = async (p: Omit<IPCProjection, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(p)
         });
         if (!response.ok) {
@@ -48,7 +48,7 @@ export const IPCProjectionProvider: React.FC<{ children: React.ReactNode }> = ({
     const updateProjection = async (p: IPCProjection) => {
         const response = await fetch(`${API_URL}/${p.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(p)
         });
         if (!response.ok) {

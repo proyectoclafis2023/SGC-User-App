@@ -47,7 +47,7 @@ export const ArticleProvider: React.FC<{ children: ReactNode }> = ({ children })
     const addArticle = async (article: Omit<Article, 'id'>) => {
         const resp = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(article)
         });
         if (!resp.ok) {
@@ -60,7 +60,7 @@ export const ArticleProvider: React.FC<{ children: ReactNode }> = ({ children })
     const updateArticle = async (article: Article) => {
         const resp = await fetch(`${API_URL}/${article.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(article)
         });
         if (!resp.ok) {

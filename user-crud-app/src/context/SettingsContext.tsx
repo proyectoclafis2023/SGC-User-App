@@ -5,15 +5,15 @@ import { API_BASE_URL } from '../config/api';
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 const DEFAULT_SETTINGS: SystemSettings = {
-    systemName: 'Administración GAG',
+    system_name: 'Administración GAG',
     systemIcon: 'G',
     cameraBackupDays: 7,
     darkMode: false,
     theme: 'light',
-    adminName: '',
+    admin_name: '',
     adminRut: '',
-    condoRut: '',
-    condoAddress: '',
+    condo_rut: '',
+    condo_address: '',
     adminPhone: '',
     adminSignature: '',
     deletionPassword: '',
@@ -44,7 +44,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }, []);
 
     useEffect(() => {
-        document.title = settings.systemName;
+        document.title = settings.system_name;
         if (settings.theme === 'dark') {
             document.documentElement.classList.add('dark');
             document.documentElement.classList.remove('modern');
@@ -77,7 +77,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             
             const response = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify(newSettings)
             });
             

@@ -35,7 +35,7 @@ export const CameraRequestProvider: React.FC<{ children: ReactNode }> = ({ child
         try {
             await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...request,
                     folio: generateFolio('CAM'),
@@ -49,14 +49,14 @@ export const CameraRequestProvider: React.FC<{ children: ReactNode }> = ({ child
         }
     };
 
-    const updateRequestStatus = async (id: string, status: CameraRequest['status'], adminNotes?: string) => {
+    const updateRequestStatus = async (id: string, status: CameraRequest['status'], admin_notes?: string) => {
         try {
             const req = requests.find(r => r.id === id);
             if (req) {
                 await fetch(`${API_URL}/${id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...req, status, adminNotes })
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...req, status, admin_notes })
                 });
                 await fetchRequests();
             }

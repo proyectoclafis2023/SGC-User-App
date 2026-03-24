@@ -98,7 +98,7 @@ export const CertificadosPage: React.FC = () => {
         return certificates.filter((c: any) => {
             const cleanCertRut = c.residentRut.replace(/[^0-9kK]/g, '').toLowerCase();
             const matchesRut = cleanFilter !== '' && cleanCertRut.includes(cleanFilter);
-            const matchesName = lowerFilter !== '' && c.residentName.toLowerCase().includes(lowerFilter);
+            const matchesName = lowerFilter !== '' && c.resident_name.toLowerCase().includes(lowerFilter);
 
             return matchesRut || matchesName;
         });
@@ -135,16 +135,16 @@ export const CertificadosPage: React.FC = () => {
 
         if (selectedType === 'estado_cuenta' && selectedUnit) {
             // Snapshot simple of debt
-            const unitTypeDebt = 55000;
+            const unit_typeDebt = 55000;
             const extraDebt = 25000;
             const resDebt = 10000;
 
             financialData = {
-                commonExpenseDebt: unitTypeDebt,
+                commonExpenseDebt: unit_typeDebt,
                 extraordinaryDebt: extraDebt,
                 reserveDebt: resDebt,
-                totalDebt: unitTypeDebt + extraDebt + resDebt,
-                last_payment_date: payments.filter(p => p.departmentId === selectedUnit).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.paymentDate
+                totalDebt: unit_typeDebt + extraDebt + resDebt,
+                last_payment_date: payments.filter(p => p.department_id === selectedUnit).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.paymentDate
             };
         }
 
@@ -153,11 +153,11 @@ export const CertificadosPage: React.FC = () => {
             resident_name: resident.name,
             resident_rut: resident.rut,
             resident_address: resident.address,
-            admin_name: settings.adminName || '',
+            admin_name: settings.admin_name || '',
             admin_rut: settings.adminRut || '',
-            condo_name: settings.systemName || '',
-            condo_rut: settings.condoRut || '',
-            condo_address: settings.condoAddress || '',
+            condo_name: settings.system_name || '',
+            condo_rut: settings.condo_rut || '',
+            condo_address: settings.condo_address || '',
             financial_data: financialData
         });
 
@@ -179,19 +179,19 @@ export const CertificadosPage: React.FC = () => {
             admin: cert.admin_name,
             adminRut: cert.admin_rut,
             condo: cert.condo_name,
-            condoRut: cert.condo_rut,
-            condoAddress: cert.condo_address
+            condo_rut: cert.condo_rut,
+            condo_address: cert.condo_address
         } : {
             name: previewData?.name || '',
             rut: previewData?.rut || '',
             address: previewData?.address || '',
             date: today,
             folio: 'PREVIEW',
-            admin: settings.adminName || '',
+            admin: settings.admin_name || '',
             adminRut: settings.adminRut || '',
-            condo: settings.systemName || '',
-            condoRut: settings.condoRut || '',
-            condoAddress: settings.condoAddress || ''
+            condo: settings.system_name || '',
+            condo_rut: settings.condo_rut || '',
+            condo_address: settings.condo_address || ''
         };
 
         const d = data.date.getDate();
@@ -217,8 +217,8 @@ export const CertificadosPage: React.FC = () => {
                         )}
                         <div>
                             <h2 className="text-xl font-black uppercase tracking-widest">{data.condo || 'CONDOMINIO'}</h2>
-                            <p className="text-xs text-gray-700 font-sans font-bold">RUT: {data.condoRut || '76.XXX.XXX-X'}</p>
-                            <p className="text-[10px] text-gray-500 font-sans font-bold uppercase">{data.condoAddress || 'Dirección no especificada'}</p>
+                            <p className="text-xs text-gray-700 font-sans font-bold">RUT: {data.condo_rut || '76.XXX.XXX-X'}</p>
+                            <p className="text-[10px] text-gray-500 font-sans font-bold uppercase">{data.condo_address || 'Dirección no especificada'}</p>
                             <p className="text-[10px] text-indigo-600 font-bold font-sans">{settings.adminPhone || 'Teléfono no especificado'}</p>
                         </div>
                     </div>

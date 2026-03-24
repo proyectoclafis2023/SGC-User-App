@@ -18,3 +18,27 @@
 - **API Estandarizada:** El backend nunca debe exponer campos en `camelCase`.
 - **UI Pura:** El frontend no debe transformar campos; si recibe `amount_paid`, usa `amount_paid`.
 - **Lógica Centralizada:** Toda lógica de negocio pesada, validación y cálculos críticos deben residir en el backend.
+
+## Automated RBAC Testing
+
+### Propósito
+Garantizar que las restricciones de control de acceso basado en roles (RBAC) se cumplan estrictamente y que no existan fugas de permisos entre perfiles.
+
+### Ejecución
+Para ejecutar la suite de pruebas automatizadas:
+```bash
+cd sgc-backend
+npm run test:rbac
+```
+
+### Interpretación de Logs
+Los resultados se almacenan en `/logs/rbac-test.log` con el formato:
+`[ISO_DATE] [ROLE] [ACTION] [RESULT]`
+
+- **OK:** La acción se completó según lo esperado.
+- **ACCESS DENIED (EXPECTED):** El sistema bloqueó correctamente un intento de acceso no autorizado.
+- **ACCESS GRANTED (DANGER):** Se permitió el acceso a un recurso restringido (requiere revisión inmediata).
+
+### Limitaciones
+- **Rate Limiting:** El script incluye delays (800ms-1200ms) para evitar bloqueos por `429 Too Many Requests`.
+- **Threshold:** Máximo ~40 requests por minuto. Si se excede, el script esperará automáticamente 30s.

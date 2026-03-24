@@ -35,7 +35,7 @@ export const JornadaGroupProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const addGroup = async (group: Omit<JornadaGroup, 'id'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(group)
         });
         if (!response.ok) {
@@ -48,7 +48,7 @@ export const JornadaGroupProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const updateGroup = async (group: JornadaGroup) => {
         const response = await fetch(`${API_URL}/${group.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(group)
         });
         if (!response.ok) {

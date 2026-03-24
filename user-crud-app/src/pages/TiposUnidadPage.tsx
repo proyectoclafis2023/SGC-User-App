@@ -6,7 +6,7 @@ import { Plus, Trash2, Edit2, X, Tag } from 'lucide-react';
 import type { UnitType } from '../types';
 
 export const TiposUnidadPage: React.FC = () => {
-    const { unitTypes, addUnitType, updateUnitType, deleteUnitType } = useUnitTypes();
+    const { unit_types, addUnitType, updateUnitType, deleteUnitType } = useUnitTypes();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingType, setEditingType] = useState<UnitType | null>(null);
 
@@ -47,7 +47,7 @@ export const TiposUnidadPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {unitTypes.filter(t => !t.is_archived).map(t => (
+                {unit_types.filter(t => !t.is_archived).map(t => (
                     <div key={t.id} className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm relative group">
                         <div className="absolute top-4 right-4 flex opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={() => handleOpenModal(t)} className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"><Edit2 className="w-4 h-4" /></button>

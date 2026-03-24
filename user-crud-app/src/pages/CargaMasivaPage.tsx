@@ -68,7 +68,7 @@ export const CargaMasivaPage: React.FC = () => {
     const { assets } = useFixedAssets();
     const { providers } = useHealthProviders();
     const { funds } = usePensionFunds();
-    const { unitTypes } = useUnitTypes();
+    const { unit_types } = useUnitTypes();
     const { towers, departments } = useInfrastructure();
     const { spaces } = useCommonSpaces();
     const { parkings } = useParkings();
@@ -224,7 +224,7 @@ export const CargaMasivaPage: React.FC = () => {
                 break;
             case 'personnel': 
                 headers = ['nombres', 'apellidos', 'rut', 'cargo', 'direccion', 'honorario', 'sueldo_base', 'dias_vacaciones', 'telefono', 'email']; 
-                personnel?.forEach((p: any) => data.push([p.names, p.lastNames, p.dni, p.position, p.address, p.isHonorary ? 'SI' : 'NO', p.baseSalary, p.vacationDays, p.phone, p.email]));
+                personnel?.forEach((p: any) => data.push([p.names, p.lastNames, p.dni, p.position, p.address, p.isHonorary ? 'SI' : 'NO', p.base_salary, p.vacation_days, p.phone, p.email]));
                 break;
             case 'residents': 
                 headers = ['nombres', 'apellidos', 'rut', 'email', 'telefono', 'integrantes', 'mascotas', 'arrendatario', 'monto_arriendo', 'observaciones'];
@@ -240,20 +240,20 @@ export const CargaMasivaPage: React.FC = () => {
                 break;
             case 'tipos_unidad': 
                 headers = ['nombre', 'gasto_base', 'm2_defecto'];
-                unitTypes?.forEach((u: any) => data.push([u.name, u.baseCommonExpense, u.defaultM2]));
+                unit_types?.forEach((u: any) => data.push([u.name, u.baseCommonExpense, u.defaultM2]));
                 break;
             case 'departments': 
                 headers = ['numero', 'piso', 'torre', 'tipo_unidad', 'm2', 'm2_terreno', 'valor', 'dormitorios', 'banos', 'estacionamientos', 'ano_construccion', 'disponible', 'tipo_publicacion', 'rol_sii'];
                 departments?.forEach((d: any) => {
-                    const towerName = towers?.find((t: any) => t.id === d.towerId)?.name || '';
-                    const unitTypeName = unitTypes?.find((u: any) => u.id === d.unit_type_id)?.name || '';
-                    data.push([ d.number, d.floor, towerName, unitTypeName, d.m2, d.terrainM2, d.value, d.dormitorios, d.banos, d.estacionamientos, d.yearBuilt, d.isAvailable ? 'SI' : 'NO', d.publishType, d.propertyRole ]);
+                    const towerName = towers?.find((t: any) => t.id === d.tower_id)?.name || '';
+                    const unit_typeName = unit_types?.find((u: any) => u.id === d.unit_type_id)?.name || '';
+                    data.push([ d.number, d.floor, towerName, unit_typeName, d.m2, d.terrainM2, d.value, d.dormitorios, d.banos, d.estacionamientos, d.yearBuilt, d.isAvailable ? 'SI' : 'NO', d.publishType, d.propertyRole ]);
                 });
                 break;
             case 'estacionamientos': 
                 headers = ['numero', 'ubicacion', 'discapacitado', 'unidad'];
                 parkings?.forEach((p: any) => {
-                    const deptNum = departments?.find((d: any) => d.id === p.departmentId)?.number || '';
+                    const deptNum = departments?.find((d: any) => d.id === p.department_id)?.number || '';
                     data.push([p.number, p.location, p.isHandicapped ? 'SI' : 'NO', deptNum]);
                 });
                 break;

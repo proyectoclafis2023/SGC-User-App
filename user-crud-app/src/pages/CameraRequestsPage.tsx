@@ -32,15 +32,15 @@ export const CameraRequestsPage: React.FC = () => {
     const [isAttentionModalOpen, setIsAttentionModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<any>(null);
     const [attentionStatus, setAttentionStatus] = useState<'attended' | 'rejected'>('attended');
-    const [adminNotes, setAdminNotes] = useState('');
+    const [admin_notes, setAdminNotes] = useState('');
 
     // Form fields
     const [cameraId, setCameraId] = useState('');
-    const [residentName, setResidentName] = useState(user?.name || '');
+    const [resident_name, setResidentName] = useState(user?.name || '');
     const [unitId, setUnitId] = useState('');
     const [date, setDate] = useState('');
-    const [startTime, setStartTime] = useState('');
-    const [endTime, setEndTime] = useState('');
+    const [start_time, setStartTime] = useState('');
+    const [end_time, setEndTime] = useState('');
     const [reason, setReason] = useState('');
 
     const isAdmin = user?.role === 'admin' || user?.role === 'global_admin';
@@ -73,14 +73,14 @@ export const CameraRequestsPage: React.FC = () => {
 
         const matchesSearch = cameraName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             r.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (r.residentName || r.userId).toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (r.resident_name || r.user_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
             (r.unitId || '').toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesDate = !filterDate || r.date === filterDate;
         const matchesUnit = !filterUnit || (r.unitId || '').toLowerCase().includes(filterUnit.toLowerCase());
-        const matchesResident = !filterResident || (r.residentName || r.userId).toLowerCase().includes(filterResident.toLowerCase());
+        const matchesResident = !filterResident || (r.resident_name || r.user_id).toLowerCase().includes(filterResident.toLowerCase());
 
-        const isOwner = r.userId === activeUserId;
+        const isOwner = r.user_id === activeUserId;
         const hasAccess = isAdmin || isOwner;
 
         return matchesSearch && matchesDate && matchesUnit && matchesResident && hasAccess;
@@ -91,13 +91,13 @@ export const CameraRequestsPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         await addRequest({
-            userId: activeUserId,
-            residentName: isAdmin ? residentName : (user?.name || ''),
+            user_id: activeUserId,
+            resident_name: isAdmin ? resident_name : (user?.name || ''),
             unitId,
             cameraId,
             date,
-            startTime,
-            endTime,
+            start_time,
+            end_time,
             reason
         });
         setIsModalOpen(false);
@@ -130,7 +130,7 @@ export const CameraRequestsPage: React.FC = () => {
     const handleAttentionSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (selectedRequest) {
-            await updateRequestStatus(selectedRequest.id, attentionStatus, adminNotes);
+            await updateRequestStatus(selectedRequest.id, attentionStatus, admin_notes);
             setIsAttentionModalOpen(false);
             setAdminNotes('');
             setSelectedRequest(null);
@@ -281,7 +281,7 @@ export const CameraRequestsPage: React.FC = () => {
                                         </div>
                                         <div>
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Solicitante</p>
-                                            <h4 className="text-lg font-black text-gray-900 dark:text-white">{req.residentName || req.userId}</h4>
+                                            <h4 className="text-lg font-black text-gray-900 dark:text-white">{req.resident_name || req.user_id}</h4>
                                             {req.unitId && <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">{req.unitId}</p>}
                                         </div>
                                     </div>
@@ -299,7 +299,7 @@ export const CameraRequestsPage: React.FC = () => {
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Horario</p>
-                                                    <p className="text-sm font-black text-gray-900 dark:text-white">{req.startTime} - {req.endTime}</p>
+                                                    <p className="text-sm font-black text-gray-900 dark:text-white">{req.start_time} - {req.end_time}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -319,10 +319,10 @@ export const CameraRequestsPage: React.FC = () => {
                                             <p className="text-sm font-bold text-gray-700 dark:text-gray-300 line-clamp-2">{req.reason}</p>
                                         </div>
 
-                                        {req.adminNotes && (
+                                        {req.admin_notes && (
                                             <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-900/30">
                                                 <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Respuesta Administración</p>
-                                                <p className="text-xs font-bold text-amber-800 dark:text-amber-400">{req.adminNotes}</p>
+                                                <p className="text-xs font-bold text-amber-800 dark:text-amber-400">{req.admin_notes}</p>
                                             </div>
                                         )}
                                     </div>
@@ -332,13 +332,13 @@ export const CameraRequestsPage: React.FC = () => {
                             {isAdmin && (
                                 <div className="p-4 bg-gray-50 dark:bg-gray-800/20 border-t dark:border-gray-800 flex gap-2">
                                     <button
-                                        onClick={() => { setSelectedRequest(req); setAttentionStatus('attended'); setAdminNotes(req.adminNotes || ''); setIsAttentionModalOpen(true); }}
+                                        onClick={() => { setSelectedRequest(req); setAttentionStatus('attended'); setAdminNotes(req.admin_notes || ''); setIsAttentionModalOpen(true); }}
                                         className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-600/20"
                                     >
                                         {req.status === 'pending' ? 'Atender' : 'Re-editar'}
                                     </button>
                                     <button
-                                        onClick={() => { setSelectedRequest(req); setAttentionStatus('rejected'); setAdminNotes(req.adminNotes || ''); setIsAttentionModalOpen(true); }}
+                                        onClick={() => { setSelectedRequest(req); setAttentionStatus('rejected'); setAdminNotes(req.admin_notes || ''); setIsAttentionModalOpen(true); }}
                                         className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-rose-600/20"
                                     >
                                         Rechazar
@@ -367,7 +367,7 @@ export const CameraRequestsPage: React.FC = () => {
                                         <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter">#{req.folio}</span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{req.residentName || req.userId}</p>
+                                        <p className="text-sm font-black text-gray-900 dark:text-white leading-none">{req.resident_name || req.user_id}</p>
                                         <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-1">{req.unitId}</p>
                                     </td>
                                     <td className="px-6 py-4">
@@ -378,7 +378,7 @@ export const CameraRequestsPage: React.FC = () => {
                                             </span>
                                         </div>
                                         <p className="text-[10px] font-bold text-gray-400 mt-1">
-                                            {new Date(req.date + 'T00:00:00').toLocaleDateString()} ({req.startTime}-{req.endTime})
+                                            {new Date(req.date + 'T00:00:00').toLocaleDateString()} ({req.start_time}-{req.end_time})
                                         </p>
                                     </td>
                                     <td className="px-6 py-4">
@@ -390,13 +390,13 @@ export const CameraRequestsPage: React.FC = () => {
                                         {isAdmin && (
                                             <div className="flex justify-end gap-2">
                                                 <button
-                                                    onClick={() => { setSelectedRequest(req); setAttentionStatus('attended'); setAdminNotes(req.adminNotes || ''); setIsAttentionModalOpen(true); }}
+                                                    onClick={() => { setSelectedRequest(req); setAttentionStatus('attended'); setAdminNotes(req.admin_notes || ''); setIsAttentionModalOpen(true); }}
                                                     className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase border transition-all ${req.status === 'pending' ? 'bg-emerald-600 text-white border-emerald-600 shadow-md' : 'text-gray-400 border-gray-100 hover:text-indigo-600'}`}
                                                 >
                                                     {req.status === 'pending' ? 'Atender' : 'Respuesta'}
                                                 </button>
                                                 <button
-                                                    onClick={() => { setSelectedRequest(req); setAttentionStatus('rejected'); setAdminNotes(req.adminNotes || ''); setIsAttentionModalOpen(true); }}
+                                                    onClick={() => { setSelectedRequest(req); setAttentionStatus('rejected'); setAdminNotes(req.admin_notes || ''); setIsAttentionModalOpen(true); }}
                                                     className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase border border-gray-100 text-gray-400 hover:text-rose-600"
                                                 >
                                                     Rechazar
@@ -473,7 +473,7 @@ export const CameraRequestsPage: React.FC = () => {
                             <div className="mb-6">
                                 <Input
                                     label="Nombre del Solicitante"
-                                    value={residentName}
+                                    value={resident_name}
                                     onChange={e => setResidentName(e.target.value)}
                                     placeholder="Se cargará al elegir unidad..."
                                     required
@@ -510,7 +510,7 @@ export const CameraRequestsPage: React.FC = () => {
                                     <label className="text-[10px] font-black text-gray-400 ml-1 uppercase tracking-widest mb-1 block">Desde</label>
                                     <select
                                         className="w-full px-5 py-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-sm h-[58px]"
-                                        value={startTime}
+                                        value={start_time}
                                         onChange={e => setStartTime(e.target.value)}
                                         required
                                     >
@@ -522,7 +522,7 @@ export const CameraRequestsPage: React.FC = () => {
                                     <label className="text-[10px] font-black text-gray-400 ml-1 uppercase tracking-widest mb-1 block">Hasta</label>
                                     <select
                                         className="w-full px-5 py-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold text-sm h-[58px]"
-                                        value={endTime}
+                                        value={end_time}
                                         onChange={e => setEndTime(e.target.value)}
                                         required
                                     >
@@ -579,7 +579,7 @@ export const CameraRequestsPage: React.FC = () => {
                                     {attentionStatus === 'attended' ? 'Notas de atención o Enlace al Video' : 'Motivo del Rechazo'}
                                 </label>
                                 <textarea
-                                    value={adminNotes}
+                                    value={admin_notes}
                                     onChange={e => setAdminNotes(e.target.value)}
                                     className={`w-full rounded-2xl border p-5 text-sm font-bold bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-4 transition-all min-h-[150px] ${attentionStatus === 'attended' ? 'border-emerald-100 dark:border-emerald-900/30 focus:ring-emerald-500/10' : 'border-rose-100 dark:border-rose-900/30 focus:ring-rose-500/10'}`}
                                     placeholder={attentionStatus === 'attended' ? 'Detalle como se atendió o comparta el link...' : 'Explique por qué se rechaza...'}

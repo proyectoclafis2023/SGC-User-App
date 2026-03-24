@@ -35,7 +35,7 @@ export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ chi
 
         const resp = await fetch(BACKEND_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(newRecord)
         });
         if (!resp.ok) {
@@ -53,7 +53,7 @@ export const EmergencyNumberProvider: React.FC<{ children: ReactNode }> = ({ chi
 
         const resp = await fetch(`${BACKEND_URL}/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(updated)
         });
         if (!resp.ok) {

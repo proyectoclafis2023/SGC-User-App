@@ -9,7 +9,7 @@ export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ childre
 
     const fetchReports = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/shift_reports`);
+            const response = await fetch(`${API_BASE_URL}/shift_reports`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
             if (response.ok) {
                 const data = await response.json();
                 setReports(Array.isArray(data) ? data : []);
@@ -45,7 +45,7 @@ export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ childre
         try {
             const response = await fetch(`${API_BASE_URL}/shift_reports`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify(newRecord)
             });
             if (response.ok) {
@@ -68,7 +68,7 @@ export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ childre
         try {
             const response = await fetch(`${API_BASE_URL}/shift_reports/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify(updated)
             });
             if (response.ok) {
@@ -87,10 +87,10 @@ export const ShiftReportProvider: React.FC<{ children: ReactNode }> = ({ childre
         });
     };
 
-    const reopenShift = async (id: string, adminName: string, reason: string) => {
+    const reopenShift = async (id: string, admin_name: string, reason: string) => {
         await updateReport(id, {
             status: 'open',
-            admin_reopened_by: adminName,
+            admin_reopened_by: admin_name,
             admin_reopen_reason: reason,
             closed_at: undefined
         });

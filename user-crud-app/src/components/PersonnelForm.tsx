@@ -41,12 +41,12 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
     const [dni, setDni] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
-    const [baseSalary, setBaseSalary] = useState(0);
-    const [vacationDays, setVacationDays] = useState(0);
+    const [base_salary, setBaseSalary] = useState(0);
+    const [vacation_days, setVacationDays] = useState(0);
     // const [assignedShift, setAssignedShift] = useState<'Mañana' | 'Tarde' | 'Noche' | ''>(''); // Removed Redundant field
-    const [healthProviderId, setHealthProviderId] = useState('');
+    const [health_provider_id, setHealthProviderId] = useState('');
     const [hasComplementaryInsurance, setHasComplementaryInsurance] = useState(false);
-    const [pensionFundId, setPensionFundId] = useState('');
+    const [pension_fund_id, setPensionFundId] = useState('');
     const [hasAPV, setHasAPV] = useState(false);
     const [address, setAddress] = useState('');
     const [hasEmergencyContact, setHasEmergencyContact] = useState(false);
@@ -61,9 +61,9 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
     const [photo, setPhoto] = useState<string>('');
     const [position, setPosition] = useState('');
     const [contractType, setContractType] = useState<'honorarios' | 'plazo' | 'indefinido'>('indefinido');
-    const [bankId, setBankId] = useState('');
+    const [bank_id, setBankId] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
-    const [jornadaGroupId, setJornadaGroupId] = useState('');
+    const [jornada_group_id, setJornadaGroupId] = useState('');
     const [assignedArticles, setAssignedArticles] = useState<AssignedArticle[]>([]);
 
     // Quick add bank states
@@ -169,8 +169,8 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
             dni,
             email,
             phone,
-            base_salary: Number(baseSalary),
-            vacation_days: Number(vacationDays),
+            base_salary: Number(base_salary),
+            vacation_days: Number(vacation_days),
             address,
             has_emergency_contact: hasEmergencyContact,
             emergency_contact: hasEmergencyContact ? {
@@ -187,14 +187,14 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
             role: position,
             is_honorary: contractType === 'honorarios',
             contract_type: contractType,
-            bank_id: bankId,
+            bank_id: bank_id,
             account_number: accountNumber,
             assigned_articles: assignedArticles, 
-            health_provider_id: contractType === 'honorarios' ? undefined : healthProviderId,
-            pension_fund_id: contractType === 'honorarios' ? undefined : pensionFundId,
+            health_provider_id: contractType === 'honorarios' ? undefined : health_provider_id,
+            pension_fund_id: contractType === 'honorarios' ? undefined : pension_fund_id,
             has_complementary_insurance: contractType === 'honorarios' ? false : hasComplementaryInsurance,
             has_apv: contractType === 'honorarios' ? false : hasAPV,
-            jornada_group_id: jornadaGroupId || undefined,
+            jornada_group_id: jornada_group_id || undefined,
         }, initialData?.id);
     };
 
@@ -274,14 +274,14 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                     label="Días de Vacaciones"
                                     type="number"
                                     step="0.01"
-                                    value={vacationDays}
+                                    value={vacation_days}
                                     onChange={(e) => setVacationDays(Number(e.target.value))}
                                     min="0"
                                 />
                                 <Input
                                     label="Sueldo Total Haberes ($)"
                                     type="number"
-                                    value={baseSalary}
+                                    value={base_salary}
                                     onChange={(e) => setBaseSalary(Number(e.target.value))}
                                     required
                                     min="0"
@@ -350,7 +350,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                         <div className="space-y-1">
                                             <div className="flex items-center justify-between ml-1">
                                                 <label className="block text-sm font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider">Asignar Jornada</label>
-                                                {jornadaGroupId && (
+                                                {jornada_group_id && (
                                                     <button 
                                                         type="button"
                                                         onClick={() => setJornadaGroupId('')}
@@ -362,7 +362,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                                 )}
                                             </div>
                                             <select
-                                                value={jornadaGroupId}
+                                                value={jornada_group_id}
                                                 onChange={(e) => setJornadaGroupId(e.target.value)}
                                                 className="w-full h-12 px-4 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 text-sm font-bold shadow-inner focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
                                             >
@@ -373,22 +373,22 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                             </select>
                                         </div>
 
-                                        {jornadaGroupId && (
+                                        {jornada_group_id && (
                                             <div className="animate-in zoom-in-95 duration-300">
                                                 {(() => {
-                                                    const selectedJornada = jornadaGroups.find(g => g.id === jornadaGroupId);
+                                                    const selectedJornada = jornadaGroups.find(g => g.id === jornada_group_id);
                                                     if (!selectedJornada) return null;
 
                                                     const calculateWeeklyHours = (item: any) => {
                                                         let totalMinutes = 0;
                                                         const schedules = item.schedules && item.schedules.length > 0 
                                                             ? item.schedules 
-                                                            : [{ days: item.workDays || [], startTime: item.startTime, endTime: item.endTime }];
+                                                            : [{ days: item.workDays || [], start_time: item.start_time, end_time: item.end_time }];
 
                                                         schedules.forEach((s: any) => {
-                                                            if (!s.startTime || !s.endTime || !s.days || !s.startTime.includes(':') || !s.endTime.includes(':')) return;
-                                                            const [startH, startM] = s.startTime.split(':').map(Number);
-                                                            const [endH, endM] = s.endTime.split(':').map(Number);
+                                                            if (!s.start_time || !s.end_time || !s.days || !s.start_time.includes(':') || !s.end_time.includes(':')) return;
+                                                            const [startH, startM] = s.start_time.split(':').map(Number);
+                                                            const [endH, endM] = s.end_time.split(':').map(Number);
                                                             if (isNaN(startH) || isNaN(startM) || isNaN(endH) || isNaN(endM)) return;
                                                             let diff = (endH * 60 + endM) - (startH * 60 + startM);
                                                             if (diff < 0) diff += 24 * 60;
@@ -409,7 +409,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                                                     {(!selectedJornada.schedules || selectedJornada.schedules.length === 0) ? (
                                                                         <div className="flex flex-col items-center gap-2">
                                                                             <p className="text-sm font-black text-indigo-700 dark:text-indigo-300">
-                                                                                {selectedJornada.startTime} - {selectedJornada.endTime}
+                                                                                {selectedJornada.start_time} - {selectedJornada.end_time}
                                                                             </p>
                                                                             <div className="grid grid-cols-7 gap-1 w-full justify-center">
                                                                                 {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, dIdx) => {
@@ -428,7 +428,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                                                                 <div key={idx} className="flex flex-col items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800">
                                                                                     <div className="bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-lg">
                                                                                         <p className="text-[11px] font-black text-indigo-700 dark:text-indigo-300">
-                                                                                            Tanda {idx + 1}: {s.startTime} - {s.endTime}
+                                                                                            Tanda {idx + 1}: {s.start_time} - {s.end_time}
                                                                                         </p>
                                                                                     </div>
                                                                                     <div className="flex flex-wrap gap-1 justify-center">
@@ -473,7 +473,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                             Previsión (Salud)
                                         </label>
                                         <select
-                                            value={healthProviderId}
+                                            value={health_provider_id}
                                             onChange={(e) => setHealthProviderId(e.target.value)}
                                             className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
                                             required={contractType !== 'honorarios'}
@@ -518,7 +518,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                             AFP
                                         </label>
                                         <select
-                                            value={pensionFundId}
+                                            value={pension_fund_id}
                                             onChange={(e) => setPensionFundId(e.target.value)}
                                             className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
                                             required={contractType !== 'honorarios'}
@@ -606,7 +606,7 @@ export const PersonnelForm: React.FC<PersonnelFormProps> = ({ isOpen, onClose, o
                                 <div className="space-y-1.5">
                                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Banco</label>
                                     <select
-                                        value={bankId}
+                                        value={bank_id}
                                         onChange={(e) => setBankId(e.target.value)}
                                         className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
                                     >

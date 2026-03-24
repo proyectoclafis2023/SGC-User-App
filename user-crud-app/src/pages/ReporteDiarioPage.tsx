@@ -144,7 +144,7 @@ export const ReporteDiarioPage: React.FC = () => {
                                                 <Users className="w-6 h-6" />
                                             </div>
                                             <div>
-                                                <h4 className="font-black text-gray-900 dark:text-white leading-tight">{shift.worker_name}</h4>
+                                                <h4 className="font-black text-gray-900 dark:text-white leading-tight">{shift.concierge_name}</h4>
                                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                                     <span className="text-indigo-600 font-black">Turno {shift.shift_type}</span>
                                                     <span>•</span>

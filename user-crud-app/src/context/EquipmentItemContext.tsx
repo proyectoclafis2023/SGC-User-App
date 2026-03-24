@@ -28,7 +28,7 @@ export const EquipmentItemProvider: React.FC<{ children: ReactNode }> = ({ child
     const addItem = async (item: Omit<EquipmentItem, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...item, created_at: new Date().toISOString() })
         });
         if (!response.ok) {
@@ -41,7 +41,7 @@ export const EquipmentItemProvider: React.FC<{ children: ReactNode }> = ({ child
     const updateItem = async (item: EquipmentItem) => {
         const response = await fetch(`${API_URL}/${item.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(item)
         });
         if (!response.ok) {

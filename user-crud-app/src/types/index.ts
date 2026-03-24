@@ -18,7 +18,7 @@ export interface User {
     id: string;
     name: string;
     email: string;
-    role: 'global_admin' | 'admin' | 'resident' | 'worker' | 'owner' | 'user' | 'pending';
+    role: 'global_admin' | 'admin' | 'resident' | 'concierge' | 'owner' | 'user' | 'pending';
     profileId?: string;
     relatedId?: string; // ID of resident or personnel
     status: 'active' | 'inactive' | 'setting_up' | 'pending_approval';
@@ -53,7 +53,7 @@ export interface UserContextType {
 }
 
 export interface SystemSettings {
-    systemName: string;
+    system_name: string;
     systemIcon: string;
     systemLogo?: string; // Base64 del logo personalizado
     systemFavicon?: string; // Base64 del favicon personalizado
@@ -61,10 +61,10 @@ export interface SystemSettings {
     darkMode: boolean;
     theme?: 'light' | 'dark' | 'modern';
     // Datos del Administrador/Condominio
-    adminName?: string;
+    admin_name?: string;
     adminRut?: string;
-    condoRut?: string;
-    condoAddress?: string;
+    condo_rut?: string;
+    condo_address?: string;
     adminPhone?: string;
     adminSignature?: string; // Base64 de la firma
     deletionPassword?: string;
@@ -366,9 +366,9 @@ export interface SpecialConditionContextType {
 }
 
 export interface UnitTypeContextType {
-    unitTypes: UnitType[];
-    addUnitType: (unitType: Omit<UnitType, 'id'>) => Promise<UnitType | undefined>;
-    updateUnitType: (unitType: UnitType) => Promise<void>;
+    unit_types: UnitType[];
+    addUnitType: (unit_type: Omit<UnitType, 'id'>) => Promise<UnitType | undefined>;
+    updateUnitType: (unit_type: UnitType) => Promise<void>;
     deleteUnitType: (id: string) => Promise<void>;
 }
 
@@ -458,23 +458,23 @@ export interface ServiceDirectoryContextType {
 export interface CameraRequest {
     id: string;
     folio: string;
-    userId: string;
-    residentName?: string; // Nombre completo del residente
+    user_id: string;
+    resident_name?: string; // Nombre completo del residente
     unitId?: string; // Unidad (Ej: Torre A - 101)
     cameraId: string; // O ubicación de la cámara
     date: string;
-    startTime: string;
-    endTime: string;
+    start_time: string;
+    end_time: string;
     reason: string;
     status: 'pending' | 'attended' | 'rejected';
     created_at: string;
-    adminNotes?: string;
+    admin_notes?: string;
 }
 
 export interface CameraRequestContextType {
     requests: CameraRequest[];
     addRequest: (request: Omit<CameraRequest, 'id' | 'folio' | 'status' | 'created_at'>) => Promise<void>;
-    updateRequestStatus: (id: string, status: CameraRequest['status'], adminNotes?: string) => Promise<void>;
+    updateRequestStatus: (id: string, status: CameraRequest['status'], admin_notes?: string) => Promise<void>;
     deleteRequest: (id: string) => Promise<void>;
 }
 
@@ -713,8 +713,8 @@ export interface FundUnitTypeConfig {
 
 export interface JornadaSchedule {
     days: number[]; // 0-6 (Sun-Sat)
-    startTime: string;
-    endTime: string;
+    start_time: string;
+    end_time: string;
 }
 
 export interface JornadaGroup {
@@ -722,8 +722,8 @@ export interface JornadaGroup {
     name: string;
     description?: string;
     workDays: number[]; // Mantener para compatibilidad
-    startTime?: string;
-    endTime?: string;
+    start_time?: string;
+    end_time?: string;
     isActive: boolean;
     is_archived?: boolean;
     schedules?: JornadaSchedule[];
@@ -1052,8 +1052,8 @@ export interface CameraContextType {
 export interface ShiftReport {
     id: string;
     folio: string;
-    worker_id: string;
-    worker_name: string;
+    concierge_id: string;
+    concierge_name: string;
     shift_date: string;
     shift_type: 'Manana' | 'Tarde' | 'Noche';
     status: 'open' | 'closed';
@@ -1086,7 +1086,7 @@ export interface ShiftReportContextType {
     addReport: (report: Omit<ShiftReport, 'id' | 'folio' | 'created_at' | 'status' | 'has_incidents' | 'has_infrastructure_issues' | 'has_equipment_issues'>) => Promise<boolean>;
     updateReport: (id: string, data: Partial<ShiftReport>) => Promise<void>;
     closeShift: (id: string, data: Partial<ShiftReport>) => Promise<void>;
-    reopenShift: (id: string, adminName: string, reason: string) => Promise<void>;
+    reopenShift: (id: string, admin_name: string, reason: string) => Promise<void>;
     deleteReport: (id: string) => Promise<void>;
     clearAllReports: () => void;
 }
@@ -1097,7 +1097,7 @@ export interface ShiftLog {
     timestamp: string;
     event: string;
     category?: 'routine' | 'incident' | 'check';
-    worker_id: string;
+    concierge_id: string;
     is_archived?: boolean;
     created_at: string;
 }
@@ -1226,7 +1226,7 @@ export interface SupplyRequest {
     folio: string;
     name: string;
     description?: string;
-    requested_by: string; // worker_id
+    requested_by: string; // concierge_id
     status: 'pending' | 'approved' | 'rejected' | 'delivered';
     is_archived?: boolean;
     created_at: string;

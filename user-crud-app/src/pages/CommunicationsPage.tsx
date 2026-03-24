@@ -31,7 +31,7 @@ export const CommunicationsPage: React.FC = () => {
     const { towers, departments } = useInfrastructure();
     const { owners } = useOwners();
     const { residents } = useResidents();
-    const { unitTypes } = useUnitTypes();
+    const { unit_types } = useUnitTypes();
     const { settings } = useSettings();
     const { templates, history, addHistory, addTemplate, deleteTemplate } = useCommunications();
 
@@ -39,7 +39,7 @@ export const CommunicationsPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'send' | 'history' | 'templates'>('send');
 
     // Form State
-    const [targetType, setTargetType] = useState<'all' | 'tower' | 'floor' | 'unit' | 'unitType'>('all');
+    const [targetType, setTargetType] = useState<'all' | 'tower' | 'floor' | 'unit' | 'unit_type'>('all');
     const [selectedTowerId, setSelectedTowerId] = useState('');
     const [selectedFloor, setSelectedFloor] = useState<number | ''>('');
     const [selectedUnitId, setSelectedUnitId] = useState('');
@@ -59,12 +59,12 @@ export const CommunicationsPage: React.FC = () => {
         let filtered = departments.filter((d: Department) => !d.is_archived);
         
         if (targetType === 'tower' && selectedTowerId) {
-            filtered = filtered.filter((d: Department) => d.towerId === selectedTowerId);
+            filtered = filtered.filter((d: Department) => d.tower_id === selectedTowerId);
         } else if (targetType === 'floor' && selectedTowerId && selectedFloor !== '') {
-            filtered = filtered.filter((d: Department) => d.towerId === selectedTowerId && d.floor === selectedFloor);
+            filtered = filtered.filter((d: Department) => d.tower_id === selectedTowerId && d.floor === selectedFloor);
         } else if (targetType === 'unit' && selectedTowerId && selectedUnitId) {
-            filtered = filtered.filter((d: Department) => d.towerId === selectedTowerId && d.id === selectedUnitId);
-        } else if (targetType === 'unitType' && selectedUnitTypeId) {
+            filtered = filtered.filter((d: Department) => d.tower_id === selectedTowerId && d.id === selectedUnitId);
+        } else if (targetType === 'unit_type' && selectedUnitTypeId) {
             filtered = filtered.filter((d: Department) => d.unit_type_id === selectedUnitTypeId);
         }
         
@@ -78,14 +78,14 @@ export const CommunicationsPage: React.FC = () => {
 
         targetedDepartments.forEach((dept: Department) => {
             if (recipientType === 'owners' || recipientType === 'both') {
-                const owner = owners.find((o: Owner) => o.id === dept.ownerId);
+                const owner = owners.find((o: Owner) => o.id === dept.owner_id);
                 if (owner && owner.email) {
                     emails.add(owner.email);
                     ownerCount++;
                 }
             }
             if (recipientType === 'residents' || recipientType === 'both') {
-                const resident = residents.find((r: Resident) => r.id === dept.residentId);
+                const resident = residents.find((r: Resident) => r.id === dept.resident_id);
                 if (resident && resident.email) {
                     emails.add(resident.email);
                     residentCount++;
@@ -159,7 +159,7 @@ export const CommunicationsPage: React.FC = () => {
                 <body>
                     <div class="header">
                         ${settings.systemLogo ? `<img src="${settings.systemLogo}" class="logo" />` : `<div style="font-size: 40px; font-weight: 900; color: #4f46e5;">${settings.systemIcon || '🏙️'}</div>`}
-                        <div style="font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">${settings.systemName || 'Comunidad SGC'}</div>
+                        <div style="font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">${settings.system_name || 'Comunidad SGC'}</div>
                     </div>
                     <div class="meta">
                         <span>FECHA: ${new Date().toLocaleDateString()}</span>
@@ -194,14 +194,14 @@ export const CommunicationsPage: React.FC = () => {
 
     const floorsForSelectedTower = useMemo(() => {
         if (!selectedTowerId) return [];
-        const towerDepts = departments.filter((d: Department) => d.towerId === selectedTowerId && d.floor);
+        const towerDepts = departments.filter((d: Department) => d.tower_id === selectedTowerId && d.floor);
         const uniqueFloors = Array.from(new Set(towerDepts.map((d: Department) => d.floor as number))).sort((a: any, b: any) => a - b);
         return uniqueFloors;
     }, [selectedTowerId, departments]);
 
     const unitsForSelectedTower = useMemo(() => {
         if (!selectedTowerId) return [];
-        return departments.filter((d: Department) => d.towerId === selectedTowerId).sort((a: any, b: any) => a.number.localeCompare(b.number));
+        return departments.filter((d: Department) => d.tower_id === selectedTowerId).sort((a: any, b: any) => a.number.localeCompare(b.number));
     }, [selectedTowerId, departments]);
 
     return (
@@ -264,7 +264,7 @@ export const CommunicationsPage: React.FC = () => {
                                                 { id: 'tower', label: 'Edificio', icon: Building2 },
                                                 { id: 'floor', label: 'Piso', icon: Layers },
                                                 { id: 'unit', label: 'Unidad', icon: Home },
-                                                { id: 'unitType', label: 'Tipo Und.', icon: Info }
+                                                { id: 'unit_type', label: 'Tipo Und.', icon: Info }
                                             ].map(t => (
                                                 <button
                                                     key={t.id}
@@ -333,7 +333,7 @@ export const CommunicationsPage: React.FC = () => {
                                             </div>
                                         )}
 
-                                        {targetType === 'unitType' && (
+                                        {targetType === 'unit_type' && (
                                             <div className="space-y-2">
                                                 <label className="text-[11px] font-bold uppercase text-gray-400 ml-1">Tipo de Unidad</label>
                                                 <select 
@@ -342,7 +342,7 @@ export const CommunicationsPage: React.FC = () => {
                                                     className="w-full h-11 px-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm outline-none dark:text-gray-200"
                                                 >
                                                     <option value="">Elegir Tipo...</option>
-                                                    {unitTypes.map((t: UnitType) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+                                                    {unit_types.map((t: UnitType) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                                                 </select>
                                             </div>
                                         )}

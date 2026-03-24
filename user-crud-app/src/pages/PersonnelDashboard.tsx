@@ -18,7 +18,7 @@ export const PersonnelDashboard: React.FC = () => {
     const currentPerson = personnel.find(p => p.id === user?.relatedId);
 
     const myPayslips = payslips.filter(p => p.personnel_id === currentPerson?.id);
-    const myReports = (reports as ShiftReport[]).filter(r => r.worker_id === currentPerson?.id);
+    const myReports = (reports as ShiftReport[]).filter(r => r.concierge_id === currentPerson?.id);
     const completedShifts = myReports.filter(r => r.status === 'closed').length;
 
     const latestPayslip = myPayslips.sort((a, b) => new Date(b.generated_at).getTime() - new Date(a.generated_at).getTime())[0];

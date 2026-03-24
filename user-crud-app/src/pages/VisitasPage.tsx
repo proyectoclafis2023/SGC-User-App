@@ -18,7 +18,7 @@ export const VisitasPage: React.FC = () => {
     const { residents } = useResidents();
     const { user } = useAuth();
     const { addTicket } = useTickets();
-    const isAdmin = user?.role === 'admin' || user?.role === 'global_admin' || user?.role === 'worker';
+    const isAdmin = user?.role === 'admin' || user?.role === 'global_admin' || user?.role === 'concierge';
 
     const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
     const [searchTerm, setSearchTerm] = useState('');
@@ -57,8 +57,8 @@ export const VisitasPage: React.FC = () => {
         });
 
     // Check if selected department has parking associated
-    const selectedResident = residents.find(r => r.unitId === department_id);
-    const hasParking = selectedResident ? (selectedResident.parkingIds?.length || 0) > 0 : true;
+    const selectedResident = residents.find(r => r.unit_id === department_id);
+    const hasParking = selectedResident ? (selectedResident.parking_ids?.length || 0) > 0 : true;
 
     const resetForm = () => {
         setNames('');
@@ -88,11 +88,11 @@ export const VisitasPage: React.FC = () => {
 
         // Registrar Ticket/KPI en Centro de Gestiones
         await addTicket({
-            userId: user?.id || 'system',
+            resident_id: user?.id || 'system',
             type: 'visit_registration',
             subject: `Ingreso Visita - ${names} (${dni})`,
             description: `Destino: Torre ${towers.find(t => t.id === tower_id)?.name} - ${filteredDepartments.find(d => d.id === department_id)?.number}. Jornada: ${visit_time}. ${notes}`,
-            status: 'pending'
+            status: 'open'
         });
 
         setIsModalOpen(false);

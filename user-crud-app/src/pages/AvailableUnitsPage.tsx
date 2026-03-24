@@ -13,21 +13,21 @@ import type { Department, Tower, UnitType } from '../types';
 
 export const AvailableUnitsPage: React.FC = () => {
     const { towers } = useInfrastructure();
-    const { unitTypes } = useUnitTypes();
+    const { unit_types } = useUnitTypes();
     const { settings } = useSettings();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all'); // all, venta, arriendo
     const [selectedUnit, setSelectedUnit] = useState<Department | null>(null);
 
     const availableUnits = useMemo(() => {
-        const units: (Department & { towerName: string; unitTypeName: string })[] = [];
+        const units: (Department & { towerName: string; unit_typeName: string })[] = [];
         towers.forEach((tower) => {
             tower.departments.forEach((dept) => {
                 if (dept.isAvailable) {
                     units.push({
                         ...dept,
                         towerName: tower.name,
-                        unitTypeName: unitTypes.find((t) => t.id === dept.unit_type_id)?.name || 'Unidad'
+                        unit_typeName: unit_types.find((t) => t.id === dept.unit_type_id)?.name || 'Unidad'
                     });
                 }
             });
@@ -37,7 +37,7 @@ export const AvailableUnitsPage: React.FC = () => {
             const matchesType = filterType === 'all' || u.publishType === filterType;
             return matchesSearch && matchesType;
         });
-    }, [towers, unitTypes, searchTerm, filterType]);
+    }, [towers, unit_types, searchTerm, filterType]);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(value);

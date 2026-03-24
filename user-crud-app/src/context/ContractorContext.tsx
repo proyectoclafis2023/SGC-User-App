@@ -43,7 +43,7 @@ export const ContractorProvider: React.FC<{ children: ReactNode }> = ({ children
         try {
             const resp = await fetch(BACKEND_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify(newRecord)
             });
             if (resp.ok) {
@@ -58,7 +58,7 @@ export const ContractorProvider: React.FC<{ children: ReactNode }> = ({ children
         try {
             const resp = await fetch(`${BACKEND_URL}/${contractor.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify(contractor)
             });
             if (resp.ok) {

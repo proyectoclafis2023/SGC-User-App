@@ -28,7 +28,7 @@ export const HolidayProvider: React.FC<{ children: ReactNode }> = ({ children })
     const addHoliday = async (holiday: Omit<Holiday, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(holiday)
         });
         if (!response.ok) {
@@ -41,7 +41,7 @@ export const HolidayProvider: React.FC<{ children: ReactNode }> = ({ children })
     const updateHoliday = async (holiday: Holiday) => {
         const response = await fetch(`${API_URL}/${holiday.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(holiday)
         });
         if (!response.ok) {

@@ -17,7 +17,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     const fetchPayments = React.useCallback(async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/common_expense_payments`, {
-                headers: { 'x-role': user?.role || 'resident' }
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'x-role': user?.role || 'resident' }
             });
             if (response.ok) {
                 const data = await response.json();
@@ -28,7 +28,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
 
     const fetchRules = React.useCallback(async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/common_expense_rules`);
+            const response = await fetch(`${API_BASE_URL}/reglas_gastos_comunes`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
             if (response.ok) {
                 const data = await response.json();
                 setRules(Array.isArray(data) ? data : []);
@@ -38,7 +38,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
 
     const fetchFunds = React.useCallback(async (includeArchived = false) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/special_funds`);
+            const response = await fetch(`${API_BASE_URL}/maestro_fondos`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
             if (response.ok) {
                 const data = await response.json();
                 const arrayData = Array.isArray(data) ? data : [];
@@ -49,7 +49,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
 
     const fetchCommunityExpenses = React.useCallback(async (includeArchived = false) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/expenses`);
+            const response = await fetch(`${API_BASE_URL}/registro_gastos`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
             if (response.ok) {
                 const data = await response.json();
                 const arrayData = Array.isArray(data) ? data : [];
@@ -60,7 +60,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
 
     const fetchChargeRules = React.useCallback(async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/charge_rules`);
+            const response = await fetch(`${API_BASE_URL}/reglas_gastos_comunes`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
             if (response.ok) {
                 const data = await response.json();
                 setChargeRules(Array.isArray(data) ? data : []);
@@ -70,7 +70,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
 
     const fetchActualPayments = React.useCallback(async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/payments`);
+            const response = await fetch(`${API_BASE_URL}/pagos_gastos_comunes`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
             if (response.ok) {
                 const data = await response.json();
                 setActualPayments(Array.isArray(data) ? data : []);
@@ -90,7 +90,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     const addPayment = React.useCallback(async (payment: Omit<CommonExpensePayment, 'id' | 'created_at'>) => {
         const response = await fetch(`${API_BASE_URL}/common_expense_payments`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(payment)
         });
         if (!response.ok) {
@@ -103,7 +103,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     const updatePayment = React.useCallback(async (payment: CommonExpensePayment) => {
         const response = await fetch(`${API_BASE_URL}/common_expense_payments/${payment.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(payment)
         });
         if (!response.ok) {
@@ -123,9 +123,9 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     }, [fetchPayments]);
 
     const addRule = React.useCallback(async (rule: Omit<CommonExpenseRule, 'id' | 'created_at'>) => {
-        const response = await fetch(`${API_BASE_URL}/common_expense_rules`, {
+        const response = await fetch(`${API_BASE_URL}/reglas_gastos_comunes`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(rule)
         });
         if (!response.ok) {
@@ -139,7 +139,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
         try {
             // DEPRECATED in frontend, now handled via master generation per period.
             // Keeping for suggested payment preview if needed, but using backend logic.
-            const response = await fetch(`${API_BASE_URL}/common_expense_payments?dept_id=${deptId}&status=unpaid`);
+            const response = await fetch(`${API_BASE_URL}/common_expense_payments?dept_id=${deptId}&status=unpaid`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
             if (response.ok) {
                 const data = await response.json();
                 const latest = data.sort((a: any, b: any) => b.created_at.localeCompare(a.created_at))[0];
@@ -156,9 +156,9 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     }, []);
 
     const addFund = React.useCallback(async (fund: Omit<SpecialFund, 'id' | 'created_at'>) => {
-        const response = await fetch(`${API_BASE_URL}/special_funds`, {
+        const response = await fetch(`${API_BASE_URL}/maestro_fondos`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(fund)
         });
         if (!response.ok) {
@@ -169,9 +169,9 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     }, [fetchFunds]);
 
     const updateFund = React.useCallback(async (fund: SpecialFund) => {
-        const response = await fetch(`${API_BASE_URL}/special_funds/${fund.id}`, {
+        const response = await fetch(`${API_BASE_URL}/maestro_fondos/${fund.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(fund)
         });
         if (!response.ok) {
@@ -182,7 +182,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     }, [fetchFunds]);
 
     const deleteFund = React.useCallback(async (id: string) => {
-        const response = await fetch(`${API_BASE_URL}/special_funds/${id}`, { method: 'DELETE' });
+        const response = await fetch(`${API_BASE_URL}/maestro_fondos/${id}`, { method: 'DELETE' });
         if (!response.ok) {
             const err = await response.json();
             throw new Error(err.message || 'Error al eliminar el fondo especial');
@@ -196,9 +196,9 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     }, [funds, updateFund]);
 
     const addCommunityExpense = React.useCallback(async (expense: Omit<CommunityExpense, 'id' | 'created_at'>) => {
-        const response = await fetch(`${API_BASE_URL}/expenses`, {
+        const response = await fetch(`${API_BASE_URL}/registro_gastos`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(expense)
         });
         if (!response.ok) {
@@ -209,7 +209,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     }, [fetchCommunityExpenses]);
 
     const deleteCommunityExpense = React.useCallback(async (id: string) => {
-        const response = await fetch(`${API_BASE_URL}/expenses/${id}`, { method: 'DELETE' });
+        const response = await fetch(`${API_BASE_URL}/registro_gastos/${id}`, { method: 'DELETE' });
         if (!response.ok) {
             const err = await response.json();
             throw new Error(err.message || 'Error al eliminar el gasto');
@@ -218,9 +218,9 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     }, [fetchCommunityExpenses]);
 
     const addChargeRule = React.useCallback(async (rule: Omit<ChargeRule, 'id' | 'created_at'>) => {
-        const response = await fetch(`${API_BASE_URL}/charge_rules`, {
+        const response = await fetch(`${API_BASE_URL}/reglas_gastos_comunes`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(rule)
         });
         if (!response.ok) {
@@ -231,7 +231,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     }, [fetchChargeRules]);
 
     const deleteChargeRule = React.useCallback(async (id: string) => {
-        const response = await fetch(`${API_BASE_URL}/charge_rules/${id}`, { method: 'DELETE' });
+        const response = await fetch(`${API_BASE_URL}/reglas_gastos_comunes/${id}`, { method: 'DELETE' });
         if (!response.ok) {
             const err = await response.json();
             throw new Error(err.message || 'Error al eliminar la regla de cobro');
@@ -240,9 +240,9 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     }, [fetchChargeRules]);
 
     const addActualPayment = React.useCallback(async (transaction: Omit<Payment, 'id' | 'created_at'>) => {
-        const response = await fetch(`${API_BASE_URL}/payments`, {
+        const response = await fetch(`${API_BASE_URL}/pagos_gastos_comunes`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(transaction)
         });
         if (!response.ok) {
@@ -253,7 +253,7 @@ export const CommonExpenseProvider: React.FC<{ children: ReactNode }> = ({ child
     }, [fetchActualPayments, fetchPayments]);
 
     const deleteActualPayment = React.useCallback(async (id: string) => {
-        const response = await fetch(`${API_BASE_URL}/payments/${id}`, { method: 'DELETE' });
+        const response = await fetch(`${API_BASE_URL}/pagos_gastos_comunes/${id}`, { method: 'DELETE' });
         if (!response.ok) {
             const err = await response.json();
             throw new Error(err.message || 'Error al eliminar el pago');

@@ -22,7 +22,7 @@ export const InfraestructuraPage: React.FC = () => {
     const { getLogsByUnit } = useHistoryLogs();
     const { owners, addOwner } = useOwners();
     const { residents, addResident } = useResidents();
-    const { unitTypes } = useUnitTypes();
+    const { unit_types } = useUnitTypes();
     const { conditions } = useSpecialConditions();
     const { settings } = useSettings();
 
@@ -55,14 +55,14 @@ export const InfraestructuraPage: React.FC = () => {
 
     useEffect(() => {
         if (unit_type_id) {
-            const type = unitTypes.find((t: UnitType) => t.id === unit_type_id);
+            const type = unit_types.find((t: UnitType) => t.id === unit_type_id);
             if (type && type.default_m2) {
                 if (m2 === 0 || !editingDept) {
                     setM2(type.default_m2);
                 }
             }
         }
-    }, [unit_type_id, unitTypes, editingDept]);
+    }, [unit_type_id, unit_types, editingDept]);
     const [electricity_client_id, setElectricityClientId] = useState('');
     const [gas_client_id, setGasClientId] = useState('');
     const [owner_id, setOwnerId] = useState('');
@@ -289,7 +289,7 @@ export const InfraestructuraPage: React.FC = () => {
 
     const getOwnerName = (id?: string) => owners.find((o: Owner) => o.id === id) ? `${owners.find((o: Owner) => o.id === id)?.names} ${owners.find((o: Owner) => o.id === id)?.lastNames}` : 'Sin asignar';
     const getResidentName = (id?: string) => residents.find((r: Resident) => r.id === id) ? `${residents.find((r: Resident) => r.id === id)?.names} ${residents.find((r: Resident) => r.id === id)?.lastNames}` : 'Sin asignar';
-    const getUnitTypeName = (id?: string) => unitTypes.find((t: UnitType) => t.id === id)?.nombre || 'Sin tipo';
+    const getUnitTypeName = (id?: string) => unit_types.find((t: UnitType) => t.id === id)?.nombre || 'Sin tipo';
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -483,7 +483,7 @@ export const InfraestructuraPage: React.FC = () => {
                                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">Tipo de Unidad</label>
                                             <select value={unit_type_id} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setUnitTypeId(e.target.value)} className="w-full h-[42px] px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm outline-none transition-all" required>
                                                 <option value="">Seleccionar...</option>
-                                                {unitTypes.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+                                                {unit_types.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                                             </select>
                                         </div>
                                     </div>

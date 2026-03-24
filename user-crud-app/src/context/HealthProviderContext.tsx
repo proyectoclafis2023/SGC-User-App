@@ -31,7 +31,7 @@ export const HealthProviderProvider: React.FC<{ children: ReactNode }> = ({ chil
     const addProvider = async (provider: Omit<HealthProvider, 'id'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(provider)
         });
         if (!response.ok) {
@@ -44,7 +44,7 @@ export const HealthProviderProvider: React.FC<{ children: ReactNode }> = ({ chil
     const updateProvider = async (provider: HealthProvider) => {
         const response = await fetch(`${API_URL}/${provider.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(provider)
         });
         if (!response.ok) {

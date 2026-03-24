@@ -34,7 +34,7 @@ app.use(express.json());
 // --- PRODUCTION SECURITY (Phase 1, 3, 4) ---
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
-    max: 100, 
+    max: process.env.NODE_ENV === 'development' ? 10000 : 100, 
     message: { error: 'Límite de peticiones excedido, intente en 15 minutos' }
 });
 app.use('/api/', apiLimiter);
@@ -55,7 +55,7 @@ const authenticate = async (req, res, next) => {
         if (!user || user.isArchived) return res.status(401).json({ error: 'Acceso denegado' });
 
         req.user = user;
-        req.isAdmin = (user.roleRef?.name === 'Administrador');
+        req.isAdmin = (user.roleRef?.name === 'Administrador' || user.roleRef?.name === 'admin');
         next();
     } catch (err) {
         return res.status(401).json({ error: 'Sesión inválida o expirada' });
@@ -121,12 +121,25 @@ app.post('/api/login', async (req, res) => {
         // Extraer los slugs de permisos en un array simple
         const permissionsSlugs = user.roleRef?.permissions.map(p => p.permission.slug) || [];
 
+        // For resident/owner roles, find the related identity ID
+        let relatedId = user.id; // Default for admin/concierge
+        if (user.roleRef?.name === 'resident') {
+            const resData = await prisma.residente.findFirst({ where: { email: user.email } });
+            relatedId = resData?.id;
+        } else if (user.roleRef?.name === 'owner') {
+            const propData = await prisma.propietario.findFirst({ where: { email: user.email } });
+            relatedId = propData?.id;
+        }
+
         res.json({
             token,
             user: { 
                 id: user.id, 
-                names: user.names, 
+                name: user.names, 
+                email: user.email,
                 role: user.roleRef?.name || 'Invitado',
+                status: user.status,
+                relatedId,
                 permissions: permissionsSlugs
             }
         });
@@ -317,7 +330,7 @@ app.post('/api/residentes/upload', async (req, res) => {
 });
 
 // --- Personal ---
-app.get('/api/personal', async (req, res) => {
+app.get('/api/personal', authorize('personnel:manage'), async (req, res) => {
     try {
         const data = await prisma.personnel.findMany({ 
             where: { isArchived: false },
@@ -661,7 +674,7 @@ app.get('/api/common_expense_payments', authorize('common_expenses:view'), async
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/common_expense_payments', requestMapper('common_expense_payment'), async (req, res) => {
+app.post('/api/common_expense_payments', authorize('common_expenses:view'), requestMapper('common_expense_payment'), async (req, res) => {
     try {
         const data = await prisma.commonExpensePayment.create({ data: req.body });
         res.status(201).json(mapResponse('common_expense_payment', data));
@@ -1233,7 +1246,7 @@ app.delete('/api/maestros_operativos/:id', async (req, res) => {
 // AFC
 app.get('/api/afc', async (req, res) => {
     try {
-        const data = await prisma.afc.findMany({ where: { isArchived: false } });
+        const data = await prisma.afc.findMany({ where: { isActive: true } });
         res.json(mapResponse('afc', data));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -2239,7 +2252,7 @@ app.delete('/api/bitacora_turnos/:id', async (req, res) => {
 
 
 // --- Visitas ---
-app.get('/api/visitas', async (req, res) => {
+app.get('/api/visitas', authorize('visits:view'), async (req, res) => {
     try {
         const data = await prisma.visita.findMany({ 
             where: { isArchived: false },
@@ -2253,7 +2266,7 @@ app.get('/api/visitas', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/visitas', requestMapper('visitas'), async (req, res) => {
+app.post('/api/visitas', authorize('visits:view'), requestMapper('visitas'), async (req, res) => {
     try {
         const data = await prisma.visita.create({ data: req.body });
         res.status(201).json(mapResponse('visitas', data));

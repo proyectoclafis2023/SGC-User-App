@@ -11,8 +11,8 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
     const fetchAll = async () => {
         try {
             const [towersRes, deptsRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/towers`),
-                fetch(`${API_BASE_URL}/departments`)
+                fetch(`${API_BASE_URL}/torres`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } }),
+                fetch(`${API_BASE_URL}/unidades`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } })
             ]);
             const tData = towersRes.ok ? await towersRes.json() : [];
             const dData = deptsRes.ok ? await deptsRes.json() : [];
@@ -28,9 +28,9 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
     }, []);
 
     const addTower = async (tower: Omit<Tower, 'id'>) => {
-        const response = await fetch(`${API_BASE_URL}/towers`, {
+        const response = await fetch(`${API_BASE_URL}/torres`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(tower)
         });
         if (!response.ok) {
@@ -43,9 +43,9 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
     };
 
     const updateTower = async (updatedTower: Tower) => {
-        const response = await fetch(`${API_BASE_URL}/towers/${updatedTower.id}`, {
+        const response = await fetch(`${API_BASE_URL}/torres/${updatedTower.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedTower)
         });
         if (!response.ok) {
@@ -56,7 +56,7 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
     };
 
     const deleteTower = async (id: string) => {
-        const response = await fetch(`${API_BASE_URL}/towers/${id}`, { method: 'DELETE' });
+        const response = await fetch(`${API_BASE_URL}/torres/${id}`, { method: 'DELETE' });
         if (!response.ok) {
             const err = await response.json();
             throw new Error(err.message || 'Error al eliminar la torre');
@@ -72,9 +72,9 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
     };
 
     const addDepartment = async (dept: Omit<Department, 'id'>) => {
-        const response = await fetch(`${API_BASE_URL}/departments`, {
+        const response = await fetch(`${API_BASE_URL}/unidades`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(dept)
         });
         if (!response.ok) {
@@ -87,9 +87,9 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
     };
 
     const updateDepartment = async (dept: Department) => {
-        const response = await fetch(`${API_BASE_URL}/departments/${dept.id}`, {
+        const response = await fetch(`${API_BASE_URL}/unidades/${dept.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(dept)
         });
         if (!response.ok) {
@@ -100,7 +100,7 @@ export const InfrastructureProvider: React.FC<{ children: ReactNode }> = ({ chil
     };
 
     const deleteDepartment = async (id: string) => {
-        const response = await fetch(`${API_BASE_URL}/departments/${id}`, { method: 'DELETE' });
+        const response = await fetch(`${API_BASE_URL}/unidades/${id}`, { method: 'DELETE' });
         if (!response.ok) {
             const err = await response.json();
             throw new Error(err.message || 'Error al eliminar el departamento');

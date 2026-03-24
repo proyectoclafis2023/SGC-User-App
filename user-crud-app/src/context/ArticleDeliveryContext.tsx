@@ -42,7 +42,7 @@ export const ArticleDeliveryProvider: React.FC<{ children: ReactNode }> = ({ chi
 
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(newRecord)
         });
         if (!response.ok) {
@@ -56,7 +56,7 @@ export const ArticleDeliveryProvider: React.FC<{ children: ReactNode }> = ({ chi
     const updateDelivery = async (delivery: ArticleDelivery) => {
         const response = await fetch(`${API_URL}/${delivery.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(delivery)
         });
         if (!response.ok) {

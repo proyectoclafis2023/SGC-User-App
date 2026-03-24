@@ -83,7 +83,7 @@ export const PersonnelProvider: React.FC<{ children: ReactNode }> = ({ children 
     const addPersonnel = async (person: Omit<Personnel, 'id' | 'created_at' | 'status'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...person, status: 'active' })
         });
 
@@ -106,7 +106,7 @@ export const PersonnelProvider: React.FC<{ children: ReactNode }> = ({ children 
     const updatePersonnel = async (person: Personnel) => {
         const response = await fetch(`${API_URL}/${person.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(person)
         });
         if (!response.ok) {

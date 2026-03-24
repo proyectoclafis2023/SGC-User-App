@@ -37,7 +37,7 @@ export const HistoryLogProvider: React.FC<{ children: ReactNode }> = ({ children
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...log,
                     timestamp: new Date().toISOString()

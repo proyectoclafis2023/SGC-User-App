@@ -28,7 +28,7 @@ export const SystemMessageProvider: React.FC<{ children: ReactNode }> = ({ child
     const addMessage = async (message: Omit<SystemMessage, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...message, created_at: new Date().toISOString() })
         });
         if (!response.ok) {
@@ -41,7 +41,7 @@ export const SystemMessageProvider: React.FC<{ children: ReactNode }> = ({ child
     const updateMessage = async (message: SystemMessage) => {
         const response = await fetch(`${API_URL}/${message.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(message)
         });
         if (!response.ok) {

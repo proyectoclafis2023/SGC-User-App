@@ -29,7 +29,7 @@ export const DirectedMessageProvider: React.FC<{ children: ReactNode }> = ({ chi
         try {
             await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...message, id: crypto.randomUUID(), created_at: new Date().toISOString() })
             });
             await fetchMessages();
@@ -42,7 +42,7 @@ export const DirectedMessageProvider: React.FC<{ children: ReactNode }> = ({ chi
         try {
             await fetch(`${API_URL}/${message.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify(message)
             });
             await fetchMessages();

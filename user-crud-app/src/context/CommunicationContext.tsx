@@ -33,7 +33,7 @@ export const CommunicationProvider: React.FC<{ children: React.ReactNode }> = ({
     const addTemplate = async (template: Omit<CommunicationTemplate, 'id' | 'created_at'>) => {
         const response = await fetch(TPL_API, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(template)
         });
         if (!response.ok) {
@@ -46,7 +46,7 @@ export const CommunicationProvider: React.FC<{ children: React.ReactNode }> = ({
     const updateTemplate = async (template: CommunicationTemplate) => {
         const response = await fetch(`${TPL_API}/${template.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(template)
         });
         if (!response.ok) {
@@ -68,7 +68,7 @@ export const CommunicationProvider: React.FC<{ children: React.ReactNode }> = ({
     const addHistory = async (item: Omit<CommunicationHistory, 'id' | 'created_at'>) => {
         const response = await fetch(HIST_API, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(item)
         });
         if (!response.ok) {

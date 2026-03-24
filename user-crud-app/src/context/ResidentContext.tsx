@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../config/api';
 
 const ResidentContext = createContext<ResidentContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/residents`;
+const API_URL = `${API_BASE_URL}/residentes`;
 
 export const ResidentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { addLog } = useHistoryLogs();
@@ -49,7 +49,7 @@ export const ResidentProvider: React.FC<{ children: ReactNode }> = ({ children }
     const addResident = async (resident: Omit<Resident, 'id' | 'created_at' | 'status'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 ...resident,
                 status: 'active'
@@ -77,7 +77,7 @@ export const ResidentProvider: React.FC<{ children: ReactNode }> = ({ children }
     const updateResident = async (resident: Resident) => {
         const response = await fetch(`${API_URL}/${resident.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(resident)
         });
         if (!response.ok) {

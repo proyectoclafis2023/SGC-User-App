@@ -51,7 +51,7 @@ export const Dashboard: React.FC = () => {
     const { reservations } = useReservations();
     const { deliveries } = useArticleDeliveries();
     const { payments, communityExpenses, addCommunityExpense, deleteCommunityExpense, funds } = useCommonExpenses();
-    const { unitTypes } = useUnitTypes();
+    const { unit_types } = useUnitTypes();
     const { items: correspondence } = useCorrespondence();
     const { visitors } = useVisitors();
     const { reports: shiftReports } = useShiftReport();
@@ -117,7 +117,7 @@ export const Dashboard: React.FC = () => {
         return <ResidentDashboard />;
     }
 
-    if (user?.role === 'worker') {
+    if (user?.role === 'concierge') {
         return <PersonnelDashboard />;
     }
 
@@ -140,7 +140,7 @@ export const Dashboard: React.FC = () => {
 
     const stats = [
         { label: 'Reservas Pendientes', value: reservations.filter((r: Reservation) => r.status === 'pending').length, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/20', url: '/reservas' },
-        { label: 'Entregas s/Respaldo', value: deliveries.filter((d: ArticleDelivery) => !d.signedDocument).length, icon: FileWarning, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20', url: '/entregas-articulos' },
+        { label: 'Entregas s/Respaldo', value: deliveries.filter((d: ArticleDelivery) => !d.signed_document).length, icon: FileWarning, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20', url: '/entregas-articulos' },
         { 
             label: 'Unidades en Mora',
             value: (departments || []).filter((d: Department) => {
@@ -149,8 +149,8 @@ export const Dashboard: React.FC = () => {
                 const currentYear = now.getFullYear();
                 const deadline = settings.paymentDeadlineDay || 5;
                 
-                const paymentsForDept = payments.filter((p: CommonExpensePayment) => p.departmentId === d.id);
-                const ut = unitTypes.find((u: UnitType) => u.id === d.unit_type_id);
+                const paymentsForDept = payments.filter((p: CommonExpensePayment) => p.department_id === d.id);
+                const ut = unit_types.find((u: UnitType) => u.id === d.unit_type_id);
                 const targetAmount = (ut?.base_common_expense || 0);
                 
                 const paidThisMonth = paymentsForDept
@@ -170,7 +170,7 @@ export const Dashboard: React.FC = () => {
             value: (departments || []).filter((d: Department) => {
                 const maxMonths = settings.maxArrearsMonths || 3;
                 // Count unpaid periods for this unit
-                const paymentsForDept = payments.filter((p: CommonExpensePayment) => p.departmentId === d.id && p.status === 'pending');
+                const paymentsForDept = payments.filter((p: CommonExpensePayment) => p.department_id === d.id && p.status === 'pending');
                 return paymentsForDept.length >= maxMonths;
             }).length, 
             icon: AlertCircle, 
@@ -248,7 +248,7 @@ export const Dashboard: React.FC = () => {
 
         const allDepts = (departments || []).filter((d: Department) => !d.is_archived);
         const gcTarget = allDepts.reduce((acc: number, dept: Department) => {
-            const ut = unitTypes.find((u: UnitType) => u.id === dept.unit_type_id);
+            const ut = unit_types.find((u: UnitType) => u.id === dept.unit_type_id);
             return acc + (ut?.base_common_expense || 0);
         }, 0);
 

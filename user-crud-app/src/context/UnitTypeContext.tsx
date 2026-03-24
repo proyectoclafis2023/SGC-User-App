@@ -7,7 +7,7 @@ const UnitTypeContext = createContext<UnitTypeContextType | undefined>(undefined
 const API_URL = `${API_BASE_URL}/tipos_unidad`;
 
 export const UnitTypeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [unitTypes, setUnitTypes] = useState<UnitType[]>([]);
+    const [unit_types, setUnitTypes] = useState<UnitType[]>([]);
 
     const fetchUnitTypes = async () => {
         try {
@@ -25,11 +25,11 @@ export const UnitTypeProvider: React.FC<{ children: ReactNode }> = ({ children }
         fetchUnitTypes();
     }, []);
 
-    const addUnitType = async (unitType: Omit<UnitType, 'id'>) => {
+    const addUnitType = async (unit_type: Omit<UnitType, 'id'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(unitType)
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
+            body: JSON.stringify(unit_type)
         });
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
@@ -40,11 +40,11 @@ export const UnitTypeProvider: React.FC<{ children: ReactNode }> = ({ children }
         return data;
     };
 
-    const updateUnitType = async (unitType: UnitType) => {
-        const response = await fetch(`${API_URL}/${unitType.id}`, {
+    const updateUnitType = async (unit_type: UnitType) => {
+        const response = await fetch(`${API_URL}/${unit_type.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(unitType)
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
+            body: JSON.stringify(unit_type)
         });
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
@@ -63,7 +63,7 @@ export const UnitTypeProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
 
     return (
-        <UnitTypeContext.Provider value={{ unitTypes, addUnitType, updateUnitType, deleteUnitType }}>
+        <UnitTypeContext.Provider value={{ unit_types, addUnitType, updateUnitType, deleteUnitType }}>
             {children}
         </UnitTypeContext.Provider>
     );

@@ -35,7 +35,7 @@ export const PayslipProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         const response = await fetch(PAYSLIPS_API, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...data, folio, generated_at })
         });
 
@@ -55,7 +55,7 @@ export const PayslipProvider: React.FC<{ children: ReactNode }> = ({ children })
     const addAdvance = async (data: Omit<Advance, 'id' | 'status'>) => {
         const response = await fetch(ADVANCES_API, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...data, status: 'pending' })
         });
         if (response.ok) {
@@ -70,7 +70,7 @@ export const PayslipProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (advance) {
             const response = await fetch(`${ADVANCES_API}/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...advance, status, payslip_id })
             });
             if (response.ok) fetchAll();

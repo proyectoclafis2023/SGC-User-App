@@ -28,7 +28,7 @@ export const PensionFundProvider: React.FC<{ children: ReactNode }> = ({ childre
     const addFund = async (fund: Omit<PensionFund, 'id'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(fund)
         });
         if (!response.ok) {
@@ -41,7 +41,7 @@ export const PensionFundProvider: React.FC<{ children: ReactNode }> = ({ childre
     const updateFund = async (fund: PensionFund) => {
         const response = await fetch(`${API_URL}/${fund.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(fund)
         });
         if (!response.ok) {

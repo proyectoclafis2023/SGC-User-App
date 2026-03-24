@@ -23,14 +23,14 @@ const TEMPLATES = [
 
 export const ConfiguracionPage: React.FC = () => {
     const { settings, updateSettings } = useSettings();
-    const [name, setName] = useState(settings.systemName);
+    const [name, setName] = useState(settings.system_name);
     const [icon, setIcon] = useState(settings.systemIcon);
     const [logo, setLogo] = useState(settings.systemLogo || '');
     const [favicon, setFavicon] = useState(settings.systemFavicon || '');
-    const [adminName, setAdminName] = useState(settings.adminName || '');
+    const [admin_name, setAdminName] = useState(settings.admin_name || '');
     const [adminRut, setAdminRut] = useState(settings.adminRut || '');
-    const [condoRut, setCondoRut] = useState(settings.condoRut || '');
-    const [condoAddress, setCondoAddress] = useState(settings.condoAddress || '');
+    const [condo_rut, setCondoRut] = useState(settings.condo_rut || '');
+    const [condo_address, setCondoAddress] = useState(settings.condo_address || '');
     const [adminPhone, setAdminPhone] = useState(settings.adminPhone || '');
     const [signature, setSignature] = useState(settings.adminSignature || '');
     const [cameraBackupDays, setCameraBackupDays] = useState(settings.cameraBackupDays || 7);
@@ -88,14 +88,14 @@ export const ConfiguracionPage: React.FC = () => {
 
         updateSettings({
             ...settings,
-            systemName: name,
+            system_name: name,
             systemIcon: icon.charAt(0).toUpperCase(),
             systemLogo: logo,
             systemFavicon: favicon,
-            adminName,
+            admin_name,
             adminRut,
-            condoRut,
-            condoAddress,
+            condo_rut,
+            condo_address,
             adminPhone,
             adminSignature: signature,
             cameraBackupDays: Number(cameraBackupDays),
@@ -252,7 +252,7 @@ Esta acción borrará TODOS los datos maestros y operativos de la plataforma:
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <Input
                                         label="Administrador Responsable"
-                                        value={adminName}
+                                        value={admin_name}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdminName(e.target.value)}
                                         placeholder="Nombre completo"
                                     />
@@ -264,13 +264,13 @@ Esta acción borrará TODOS los datos maestros y operativos de la plataforma:
                                     />
                                     <Input
                                         label="RUT del Condominio"
-                                        value={condoRut}
+                                        value={condo_rut}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCondoRut(formatRUT(e.target.value))}
                                         placeholder="76.543.210-K"
                                     />
                                     <Input
                                         label="Dirección Oficial"
-                                        value={condoAddress}
+                                        value={condo_address}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCondoAddress(e.target.value)}
                                         placeholder="Av. Principal #123"
                                     />

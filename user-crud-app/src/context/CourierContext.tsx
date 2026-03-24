@@ -29,7 +29,7 @@ export const CourierProvider: React.FC<{ children: ReactNode }> = ({ children })
         try {
             await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify(courier)
             });
             await fetchCouriers();
@@ -42,7 +42,7 @@ export const CourierProvider: React.FC<{ children: ReactNode }> = ({ children })
         try {
             await fetch(`${API_URL}/${courier.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify(courier)
             });
             await fetchCouriers();

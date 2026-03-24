@@ -8,6 +8,7 @@ const registry = require('./registry');
 /**
  * Transforma un payload de entrada (API o Excel) a formato BD (camelCase).
  * Preserva campos desconocidos (relaciones o metadatos de Prisma).
+ * Realiza validaciones estrictas de formato (Phase 5).
  */
 const toCamelCase = (entityKey, payload, source = 'api') => {
     const config = registry[entityKey];
@@ -16,9 +17,26 @@ const toCamelCase = (entityKey, payload, source = 'api') => {
     const result = { ...payload };
     config.fields.forEach(field => {
         const sourceKey = field[source];
-        if (payload[sourceKey] !== undefined) {
+        let value = payload[sourceKey];
+
+        if (value !== undefined && value !== null) {
+            // 1. Validar formato de decimales (Sólo para API)
+            if (source === 'api' && typeof value === 'string') {
+                if (value.includes(',')) {
+                    throw new Error(`[FORMAT ERROR] El campo '${sourceKey}' contiene una coma (,). Usa punto (.) para decimales.`);
+                }
+            }
+
+            // 2. Validar formato de fechas (Sólo para API y campos que terminen en _at o _date)
+            if (source === 'api' && typeof value === 'string' && (sourceKey.endsWith('_at') || sourceKey.endsWith('_date'))) {
+                // Regex para DD/MM/YYYY (restringido)
+                if (/^\d{2}\/\d{2}\/\d{4}/.test(value)) {
+                    throw new Error(`[FORMAT ERROR] El campo '${sourceKey}' usa formato local (DD/MM/YYYY). Usa estándar ISO 8601.`);
+                }
+            }
+
             delete result[sourceKey];
-            result[field.bd] = payload[sourceKey];
+            result[field.bd] = value;
         }
     });
 

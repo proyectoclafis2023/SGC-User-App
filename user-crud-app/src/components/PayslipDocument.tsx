@@ -24,9 +24,9 @@ export const PayslipDocument: React.FC<Props> = ({ payslip, person, health, fund
             {/* Header */}
             <div className="flex justify-between items-start border-b-2 border-indigo-600 pb-6 mb-8">
                 <div className="space-y-1">
-                    <h2 className="text-xl font-black uppercase text-indigo-600">{settings.systemName}</h2>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase">RUT: {settings.condoRut}</p>
-                    <p className="text-[10px] font-bold text-gray-500 truncate">{settings.condoAddress}</p>
+                    <h2 className="text-xl font-black uppercase text-indigo-600">{settings.system_name}</h2>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase">RUT: {settings.condo_rut}</p>
+                    <p className="text-[10px] font-bold text-gray-500 truncate">{settings.condo_address}</p>
                 </div>
                 <div className="text-right">
                     <h1 className="text-2xl font-black uppercase tracking-tighter">Liquidación de Sueldo</h1>
@@ -123,7 +123,7 @@ export const PayslipDocument: React.FC<Props> = ({ payslip, person, health, fund
                     <p className="text-[10px] text-gray-400 uppercase">Firma del Trabajador</p>
                 </div>
                 <div className="border-t border-gray-300 pt-4 text-center">
-                    <p className="text-xs font-bold uppercase">{settings.adminName || 'Administración'}</p>
+                    <p className="text-xs font-bold uppercase">{settings.admin_name || 'Administración'}</p>
                     <p className="text-[10px] text-gray-400 uppercase">Firma Empleador</p>
                 </div>
             </div>

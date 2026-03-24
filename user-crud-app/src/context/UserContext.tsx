@@ -29,7 +29,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...user, created_at: new Date().toISOString() })
             });
             await fetchUsers();
@@ -42,7 +42,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             await fetch(`${API_URL}/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify(user)
             });
             await fetchUsers();
@@ -64,7 +64,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             await fetch(`${API_URL}/${id}/change-password`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ newPassword })
             });
             await fetchUsers();

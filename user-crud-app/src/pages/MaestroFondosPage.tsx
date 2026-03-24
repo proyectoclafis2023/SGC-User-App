@@ -11,7 +11,7 @@ import { SecurityModal } from '../components/SecurityModal';
 
 export const MaestroFondosPage: React.FC = () => {
     const { towers } = useInfrastructure();
-    const { unitTypes } = useUnitTypes();
+    const { unit_types } = useUnitTypes();
     const { payments, funds, addFund, updateFund, deleteFund, restoreFund, fetchFunds } = useCommonExpenses();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -129,14 +129,14 @@ export const MaestroFondosPage: React.FC = () => {
 
         allDepts.forEach(dept => {
             const config = fund.unitConfigs?.find(c => c.unit_type_id === dept.unit_type_id);
-            const unitType = unitTypes.find(ut => ut.id === dept.unit_type_id);
+            const unit_type = unit_types.find(ut => ut.id === dept.unit_type_id);
             let targetForThisDept = fund.total_amount_per_unit;
 
             if (config) {
                 if (config.isExempt) {
                     targetForThisDept = 0;
-                } else if (config.calculationType === 'percentage' && unitType) {
-                    targetForThisDept = (unitType.base_common_expense * config.value) / 100;
+                } else if (config.calculationType === 'percentage' && unit_type) {
+                    targetForThisDept = (unit_type.base_common_expense * config.value) / 100;
                 } else {
                     targetForThisDept = config.value;
                 }
@@ -145,7 +145,7 @@ export const MaestroFondosPage: React.FC = () => {
             totalTarget += targetForThisDept;
 
             const paidToThisDept = payments
-                .filter(p => p.departmentId === dept.id)
+                .filter(p => p.department_id === dept.id)
                 .reduce((acc, p) => {
                     const contribution = p.fundContributions?.find(c => c.fundId === fund.id);
                     return acc + (contribution?.amount || 0);
@@ -431,7 +431,7 @@ export const MaestroFondosPage: React.FC = () => {
                                                     // Calcular peso total basado en el gasto común base de cada tipo de unidad
                                                     // Esto asegura un prorrateo equitativo según el tamaño/valor de la unidad
                                                     const totalWeight = activeDepts.reduce((acc, d) => {
-                                                        const ut = unitTypes.find(u => u.id === d.unit_type_id);
+                                                        const ut = unit_types.find(u => u.id === d.unit_type_id);
                                                         return acc + (ut?.base_common_expense || 0);
                                                     }, 0);
 
@@ -440,7 +440,7 @@ export const MaestroFondosPage: React.FC = () => {
                                                         setTotalAmountPerUnit(Math.round(total_project_amount / activeDepts.length));
                                                     } else {
                                                         // Generar nuevas configuraciones proporcionales por tipo de unidad
-                                                        const newConfigs = unitTypes.map(ut => {
+                                                        const newConfigs = unit_types.map(ut => {
                                                             const existing = unitConfigs.find(c => c.unit_type_id === ut.id);
                                                             if (existing?.isExempt) return existing;
 
@@ -485,7 +485,7 @@ export const MaestroFondosPage: React.FC = () => {
                                         <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">Parametrización por Tipo de Unidad</h4>
                                     </div>
                                     <div className="grid grid-cols-1 gap-3">
-                                        {unitTypes.map(ut => {
+                                        {unit_types.map(ut => {
                                             const config = unitConfigs.find(c => c.unit_type_id === ut.id);
                                             const isExempt = config?.isExempt || false;
                                             const calcType = config?.calculationType || 'fixed';

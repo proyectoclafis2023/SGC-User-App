@@ -682,8 +682,8 @@ model Aviso {
 model DailyReport {
   id                         String       @id @default(cuid())
   folio                      String       @unique
-  workerId                   String
-  workerName                 String
+  conciergeId                String
+  conciergeName              String
   shiftDate                  String
   shiftType                  String
   novedades                  String?
@@ -724,7 +724,7 @@ model ShiftLog {
   timestamp     DateTime    @default(now())
   event         String
   category      String?
-  workerId      String
+  conciergeId   String
   isArchived    Boolean     @default(false)
   createdAt     DateTime    @default(now())
   dailyReport   DailyReport @relation(fields: [dailyReportId], references: [id])
@@ -788,7 +788,7 @@ model SupplyRequest {
   status      String    @default("pending")
   isArchived  Boolean   @default(false)
   createdAt   DateTime  @default(now())
-  worker      Personnel @relation(fields: [requestedBy], references: [id])
+  concierge   Personnel @relation(fields: [requestedBy], references: [id])
 
   @@map("SupplyRequest")
 }

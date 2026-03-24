@@ -28,7 +28,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
     const addParking = async (parking: Omit<Parking, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(parking)
         });
         if (!response.ok) {
@@ -41,7 +41,7 @@ export const ParkingProvider: React.FC<{ children: ReactNode }> = ({ children })
     const updateParking = async (parking: Parking) => {
         const response = await fetch(`${API_URL}/${parking.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(parking)
         });
         if (!response.ok) {

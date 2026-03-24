@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../config/api';
 
 const ReservationContext = createContext<ReservationContextType | undefined>(undefined);
 
-const API_URL = `${API_BASE_URL}/reservations`;
+const API_URL = `${API_BASE_URL}/reservas`;
 const LOGS_API_URL = `${API_BASE_URL}/reservation_logs`;
 
 export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -43,7 +43,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
     const addLog = async (res_id: string, resident_id: string, action: ReservationLog['action'], details: string) => {
         await fetch(LOGS_API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 reservation_id: res_id,
                 resident_id,
@@ -64,7 +64,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
     const addReservation = async (reservation: Omit<Reservation, 'id' | 'folio' | 'is_archived' | 'created_at' | 'status' | 'payment_status'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 ...reservation,
                 folio: generateFolio('RES'),
@@ -84,7 +84,7 @@ export const ReservationProvider: React.FC<{ children: ReactNode }> = ({ childre
     const updateReservation = async (reservation: Reservation) => {
         const response = await fetch(`${API_URL}/${reservation.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(reservation)
         });
         if (!response.ok) {

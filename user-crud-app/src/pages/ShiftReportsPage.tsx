@@ -50,7 +50,7 @@ export const ShiftReportsPage: React.FC = () => {
     const [checkedMandatoryItems, setCheckedMandatoryItems] = useState<string[]>([]);
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const activeReport = reports.find((r: ShiftReport) => r.worker_id === user?.id && r.shift_date === todayStr && r.status === 'open');
+    const activeReport = reports.find((r: ShiftReport) => r.concierge_id === user?.id && r.shift_date === todayStr && r.status === 'open');
 
     const getCurrentShift = () => {
         const hour = new Date().getHours();
@@ -62,9 +62,9 @@ export const ShiftReportsPage: React.FC = () => {
     useEffect(() => {
         if (user?.relatedId && !activeReport) {
             const currentPersonnel = personnel.find((p: Personnel) => p.id === user.relatedId);
-            if (currentPersonnel?.assignedShift) {
+            if (currentPersonnel?.assigned_shift) {
                 // Normalize 'Mañana' or any variation to 'Manana'
-                const normalized = currentPersonnel.assignedShift.includes('Ma') ? 'Manana' : currentPersonnel.assignedShift;
+                const normalized = currentPersonnel.assigned_shift.includes('Ma') ? 'Manana' : currentPersonnel.assigned_shift;
                 if (['Manana', 'Tarde', 'Noche'].includes(normalized)) {
                     setShiftType(normalized as 'Manana' | 'Tarde' | 'Noche');
                 }
@@ -122,7 +122,7 @@ export const ShiftReportsPage: React.FC = () => {
     const handleStartShift = async () => {
         const current = getCurrentShift();
         const existing = reports.find((r: ShiftReport) => 
-            r.worker_id === user?.id && 
+            r.concierge_id === user?.id && 
             r.shift_date === todayStr && 
             r.shift_type === current
         );
@@ -138,8 +138,8 @@ export const ShiftReportsPage: React.FC = () => {
         }
 
         await addReport({
-            worker_id: user?.id || 'unknown',
-            worker_name: user?.name || 'Usuario',
+            concierge_id: user?.id || 'unknown',
+            concierge_name: user?.name || 'Usuario',
             shift_date: todayStr,
             shift_type: current as any,
             novedades: ''
@@ -214,11 +214,11 @@ export const ShiftReportsPage: React.FC = () => {
             
             // Register Ticket / KPI
             await addTicket({
-                userId: user?.id || 'system',
+                resident_id: user?.id || 'system',
                 type: 'shift_report',
-                subject: `Cierre Turno ${shift_type} - ${user?.name || 'Funcionario'}`,
+                subject: `Cierre Turno ${shift_type} - ${user?.name || 'Conserje'}`,
                 description: `Folio Turno: ${activeReport.folio}. Novedades: ${novedades || 'Sin novedades'}. Incidencias: ${has_incidents ? 'Sí' : 'No'}. Instalaciones: ${has_infrastructure_issues ? 'Revisar' : 'OK'}. Equipamiento: ${has_equipment_issues ? 'Revisar' : 'OK'}.`,
-                status: 'pending'
+                status: 'open'
             });
 
             setIsModalOpen(false);
@@ -249,7 +249,7 @@ export const ShiftReportsPage: React.FC = () => {
     };
 
     const filteredReports = reports.filter((r: ShiftReport) => {
-        const matchesSearch = r.worker_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        const matchesSearch = r.concierge_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             r.folio.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesDate = !dateFilter || r.shift_date === dateFilter;
         return matchesSearch && matchesDate;
@@ -292,8 +292,8 @@ export const ShiftReportsPage: React.FC = () => {
       const getShiftInfo = (type: 'Manana' | 'Tarde' | 'Noche') => {
         const report = todayReports.find(r => r.shift_type === type);
         if (!report) return { status: 'pending', label: '⚠ NO INFORMADO', color: 'text-rose-700 dark:text-rose-400', bgColor: 'bg-rose-50/50', iconColor: 'bg-rose-500', subLabel: 'Pendiente de inicio' };
-        if (report.status === 'open') return { status: 'open', label: '● EN CURSO', color: 'text-indigo-700 dark:text-indigo-400', bgColor: 'bg-indigo-50/50', iconColor: 'bg-indigo-500', subLabel: `Por: ${report.worker_name}`, report };
-        return { status: 'closed', label: '✓ REPORTADO', color: 'text-emerald-700 dark:text-emerald-400', bgColor: 'bg-emerald-50/50', iconColor: 'bg-emerald-500', subLabel: `Por: ${report.worker_name}`, report };
+        if (report.status === 'open') return { status: 'open', label: '● EN CURSO', color: 'text-indigo-700 dark:text-indigo-400', bgColor: 'bg-indigo-50/50', iconColor: 'bg-indigo-500', subLabel: `Por: ${report.concierge_name}`, report };
+        return { status: 'closed', label: '✓ REPORTADO', color: 'text-emerald-700 dark:text-emerald-400', bgColor: 'bg-emerald-50/50', iconColor: 'bg-emerald-500', subLabel: `Por: ${report.concierge_name}`, report };
     };
 
     return (
@@ -339,7 +339,7 @@ export const ShiftReportsPage: React.FC = () => {
                                 <User className="w-10 h-10" />
                             </div>
                             <div>
-                                <p className="text-xs font-black uppercase tracking-widest text-indigo-100 mb-1 opacity-80">Funcionario en Turno</p>
+                                 <p className="text-xs font-black uppercase tracking-widest text-indigo-100 mb-1 opacity-80">Conserje en Turno</p>
                                 <h2 className="text-3xl font-black leading-none">{user?.name}</h2>
                                 <p className="text-xs font-bold text-indigo-200 mt-2 uppercase tracking-widest flex items-center gap-2 bg-white/10 w-fit px-3 py-1 rounded-full border border-white/10">
                                     <Calendar className="w-3.5 h-3.5" /> {new Date(activeReport.shift_date).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -455,7 +455,7 @@ export const ShiftReportsPage: React.FC = () => {
                                             <User className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h4 className="font-black text-gray-900 dark:text-white leading-tight">{report.worker_name}</h4>
+                                             <h4 className="font-black text-gray-900 dark:text-white leading-tight">{report.concierge_name}</h4>
                                             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2">
                                                 <span className="text-indigo-600 font-black">Turno {report.shift_type}</span>
                                                 <span>•</span>
@@ -893,7 +893,7 @@ export const ShiftReportsPage: React.FC = () => {
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-black text-gray-900 dark:text-white leading-tight">Reabrir Turno</h2>
-                                    <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest">{reopeningReport.folio} - {reopeningReport.worker_name}</p>
+                                    <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest">{reopeningReport.folio} - {reopeningReport.concierge_name}</p>
                                 </div>
                             </div>
                             <button onClick={() => setIsReopenModalOpen(false)} className="p-2 hover:bg-white dark:hover:bg-gray-800 rounded-xl transition-colors text-gray-400">

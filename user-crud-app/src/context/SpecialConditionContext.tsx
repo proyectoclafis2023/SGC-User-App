@@ -28,7 +28,7 @@ export const SpecialConditionProvider: React.FC<{ children: ReactNode }> = ({ ch
     const addCondition = async (condition: Omit<SpecialCondition, 'id'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(condition)
         });
         if (!response.ok) {
@@ -41,7 +41,7 @@ export const SpecialConditionProvider: React.FC<{ children: ReactNode }> = ({ ch
     const updateCondition = async (condition: SpecialCondition) => {
         const response = await fetch(`${API_URL}/${condition.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(condition)
         });
         if (!response.ok) {

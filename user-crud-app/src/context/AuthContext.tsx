@@ -28,22 +28,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [auth]);
 
     const login = async (username: string, pass: string) => {
-        // Hardcoded admin/admin for development
-        if (username === 'admin' && pass === 'admin') {
-            const adminUser = {
-                isAuthenticated: true,
-                user: {
-                    id: '1',
-                    name: 'Admin User',
-                    email: 'admin@example.com',
-                    role: 'admin',
-                    status: 'active'
-                }
-            };
-            setAuth(adminUser);
-            return true;
-        }
-
         try {
             const response = await fetch(`${API_BASE_URL}/login`, {
                 method: 'POST',
@@ -53,6 +37,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             if (response.ok) {
                 const data = await response.json();
+                localStorage.setItem('token', data.token);
                 setAuth({
                     isAuthenticated: true,
                     user: data.user
@@ -71,7 +56,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const response = await fetch(`${API_BASE_URL}/users/${auth.user.id}/change-password`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ newPassword })
             });
 
@@ -90,7 +75,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const response = await fetch(`${API_BASE_URL}/auth/google`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, name, photoUrl }),
             });
 

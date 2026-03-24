@@ -28,7 +28,7 @@ export const BankProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const addBank = async (bank: Omit<Bank, 'id'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(bank)
         });
         if (!response.ok) {
@@ -43,7 +43,7 @@ export const BankProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updateBank = async (bank: Bank) => {
         const response = await fetch(`${API_URL}/${bank.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(bank)
         });
         if (!response.ok) {

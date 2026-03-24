@@ -31,7 +31,7 @@ export const CertificateProvider: React.FC<{ children: ReactNode }> = ({ childre
             const generated_at = new Date().toISOString();
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...certificate, folio, generated_at })
             });
             if (response.ok) {

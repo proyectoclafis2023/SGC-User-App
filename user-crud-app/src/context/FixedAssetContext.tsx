@@ -28,7 +28,7 @@ export const FixedAssetProvider: React.FC<{ children: ReactNode }> = ({ children
     const addAsset = async (asset: Omit<FixedAsset, 'id' | 'created_at'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(asset)
         });
         if (!response.ok) {
@@ -41,7 +41,7 @@ export const FixedAssetProvider: React.FC<{ children: ReactNode }> = ({ children
     const updateAsset = async (asset: FixedAsset) => {
         const response = await fetch(`${API_URL}/${asset.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(asset)
         });
         if (!response.ok) {

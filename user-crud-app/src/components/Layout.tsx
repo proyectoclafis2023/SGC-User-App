@@ -213,7 +213,7 @@ export const Layout: React.FC = () => {
     };
 
     const isAdmin = user?.role === 'admin' || user?.role === 'global_admin';
-    const isWorker = user?.role === 'worker';
+    const isConcierge = user?.role === 'concierge';
     const isResidentOrOwner = user?.role === 'resident' || user?.role === 'owner';
 
     return (
@@ -257,7 +257,7 @@ export const Layout: React.FC = () => {
                     <NavItem to="/" icon={LayoutDashboard} label="Dashboard" isCollapsed={isCollapsed} />
 
                     {/* SECCIÓN OPERACIONES */}
-                    {(isAdmin || isWorker) && (
+                    {(isAdmin || isConcierge) && (
                         <NavItem
                             icon={Zap}
                             label="Operaciones"
@@ -403,7 +403,7 @@ export const Layout: React.FC = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs font-black text-gray-900 dark:text-white truncate">{user?.name}</p>
-                                <p className="text-[9px] text-indigo-500 dark:text-indigo-400 uppercase tracking-widest font-black mt-0.5">{user?.role === 'admin' ? 'Administrador' : user?.role === 'global_admin' ? 'Global Admin' : user?.role === 'worker' ? 'Funcionario' : 'Residente'}</p>
+                                <p className="text-[9px] text-indigo-500 dark:text-indigo-400 uppercase tracking-widest font-black mt-0.5">{user?.role === 'admin' ? 'Administrador' : user?.role === 'global_admin' ? 'Global Admin' : user?.role === 'concierge' ? 'Conserje' : 'Residente'}</p>
                             </div>
                         </div>
                     ) : (

@@ -17,7 +17,7 @@ export const GastosComunesPage: React.FC = () => {
     const { towers, departments } = useInfrastructure();
     const { payments, funds, addPayment, deletePayment, calculateAmount } = useCommonExpenses();
     const { settings } = useSettings();
-    const { unitTypes } = useUnitTypes();
+    const { unit_types } = useUnitTypes();
     const { owners } = useOwners();
     const { residents } = useResidents();
 
@@ -96,7 +96,7 @@ export const GastosComunesPage: React.FC = () => {
         });
     };
 
-    const totalAmount = amount_paid + fund_contributions.reduce((acc, c) => acc + c.amount, 0);
+    const total_amount = amount_paid + fund_contributions.reduce((acc, c) => acc + c.amount, 0);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -109,7 +109,7 @@ export const GastosComunesPage: React.FC = () => {
             department_id: selectedDeptId,
             period_month: period_month,
             period_year: period_year,
-            amount_paid: totalAmount,
+            amount_paid: total_amount,
             payment_method: payment_method,
             evidence_image: evidence_image,
             notes,
@@ -275,7 +275,7 @@ export const GastosComunesPage: React.FC = () => {
                                     return tower.name.toLowerCase().includes(q) || d.number.toLowerCase().includes(q);
                                 }).map(dept => {
                                     const tower = towers.find(t => t.id === dept.tower_id);
-                                    const ut = unitTypes.find(u => u.id === dept.unit_type_id);
+                                    const ut = unit_types.find(u => u.id === dept.unit_type_id);
                                     const owner = owners.find(o => o.id === dept.owner_id);
                                     const resident = residents.find(r => r.id === dept.resident_id);
                                     
@@ -468,7 +468,7 @@ export const GastosComunesPage: React.FC = () => {
                                                 <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Total a Percibir</p>
                                                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                                             </div>
-                                            <p className="text-3xl font-black text-emerald-700">${totalAmount.toLocaleString()}</p>
+                                            <p className="text-3xl font-black text-emerald-700">${total_amount.toLocaleString()}</p>
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-xs font-black text-gray-500 ml-1 uppercase">Método de Pago</label>

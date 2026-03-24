@@ -28,7 +28,7 @@ export const TicketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const addTicket = async (ticket_data: Omit<Ticket, 'id' | 'created_at' | 'updated_at' | 'folio' | 'is_archived'>) => {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 ...ticket_data,
                 folio: `REQ-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -47,7 +47,7 @@ export const TicketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const updateTicketStatus = async (id: string, status: Ticket['status']) => {
         const response = await fetch(`${API_URL}/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 status,
                 acknowledged_at: (status === 'resolved' || status === 'closed') ? new Date().toISOString() : undefined
@@ -67,7 +67,7 @@ export const TicketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const updateTicket = async (id: string, ticket_data: Partial<Ticket>) => {
         const response = await fetch(`${API_URL}/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
             body: JSON.stringify(ticket_data)
         });
         if (!response.ok) {

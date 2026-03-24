@@ -13,7 +13,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
         try {
             const [profilesRes, permsRes] = await Promise.all([
                 fetch(API_URL),
-                fetch(`${API_BASE_URL}/profile_permissions`)
+                fetch(`${API_BASE_URL}/profile_permissions`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } })
             ]);
             
             if (profilesRes.ok && permsRes.ok) {
@@ -41,7 +41,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
             const { permissions, ...rest } = profile as any;
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify(rest)
             });
             if (response.ok) {
@@ -49,7 +49,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
                 if (permissions) {
                     await fetch(`${API_BASE_URL}/profile_permissions`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                         body: JSON.stringify({ ...permissions, profileId: newProfile.id })
                     });
                 }
@@ -63,7 +63,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
             const { permissions, ...rest } = profile as any;
             const response = await fetch(`${API_URL}/${profile.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                 body: JSON.stringify(rest)
             });
             if (response.ok) {
@@ -71,7 +71,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
                     // Try to update first, if fail (404/500 if not exist), could create but usually exists
                     await fetch(`${API_BASE_URL}/profile_permissions/${profile.id}`, {
                         method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
                         body: JSON.stringify({ ...permissions, profileId: profile.id })
                     });
                 }

@@ -15,7 +15,7 @@ export interface EmailData {
  * folios de registro o reportes, lo que permite un fácil seguimiento.
  */
 export const generateEmailSubject = (type: EmailType, settings: SystemSettings, folio?: string): string => {
-    const condoName = settings.systemName || 'Nuestra Comunidad';
+    const condoName = settings.system_name || 'Nuestra Comunidad';
     const folioText = folio ? ` [Folio #${folio}]` : '';
 
     switch (type) {

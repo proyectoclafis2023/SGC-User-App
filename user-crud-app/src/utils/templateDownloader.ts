@@ -3,7 +3,7 @@
  */
 
 const TEMPLATES = {
-    personal: `names;lastNames;dni;isHonorary;baseSalary;vacationDays;address;phone;email;position;status
+    personal: `names;lastNames;dni;isHonorary;base_salary;vacation_days;address;phone;email;position;status
 Jorge;Valdivia;12.345.678-9;false;850000;15;Calle Falsa 123;+56912345678;jorge@example.com;Conserje;active
 Esteban;Pavez;18.765.432-1;true;1200000;0;Avenida Siempre Viva 742;+56987654321;esteban@example.com;Administrador;active`,
 
