@@ -71,5 +71,14 @@ docker-compose up --build
 - **Frontend URL**: `http://localhost:5173`
 - **Backend API**: `http://localhost:3001/api`
 
+## 📚 Documentación Técnica
+
+Para mantener la consistencia del sistema, consulte los manuales en `/docs/architecture`:
+
+- **Standard de Módulos**: Rules in [sgc-module-standard.md](./docs/architecture/sgc-module-standard.md) (Nombres, tipos, Soft Delete).
+- **Mapping Engine**: Lógica de `registry.js` en [mapping-and-registry-rules.md](./docs/architecture/mapping-and-registry-rules.md).
+- **Módulo Canónico**: Ejemplo de referencia en [canonical-module-712.md](./docs/architecture/canonical-module-712.md).
+- **Automatización**: Guía detallada de pruebas en [automation.md](./docs/automation.md).
+
 ## 📄 Licencia
 Este proyecto es de uso privado para el sistema SGC.
