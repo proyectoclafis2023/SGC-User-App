@@ -8,6 +8,7 @@ const registry = {
     // 2.1.0 Reporte Diario
     reporte_diario: {
         model: 'DailyReport',
+        isMaster: false,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'folio', bd: 'folio', excel: 'folio' },
@@ -66,6 +67,7 @@ const registry = {
     // 2.3.1 Visitas
     visitas: {
         model: 'Visita',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'folio', bd: 'folio', excel: 'folio' },
@@ -238,6 +240,7 @@ const registry = {
     // 4.3.0 Directorio de Servicios
     servicios_residentes: {
         model: 'DirectorioServicio',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'name', excel: 'nombre' },
@@ -254,6 +257,7 @@ const registry = {
     // 4.4.0 Números Emergencia
     emergencias: {
         model: 'NumeroEmergencia',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'nombre', excel: 'nombre' },
@@ -286,6 +290,7 @@ const registry = {
     // 5.3.1 Residentes
     residentes: {
         model: 'Residente',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'names', bd: 'names', excel: 'nombres' },
@@ -315,6 +320,7 @@ const registry = {
     // 5.3.2 Propietarios
     propietarios: {
         model: 'Propietario',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'names', bd: 'names', excel: 'nombres' },
@@ -335,6 +341,7 @@ const registry = {
     // 5.3.3 Directiva
     directiva: {
         model: 'Comite',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'name', excel: 'nombre' },
@@ -388,6 +395,7 @@ const registry = {
     // 5.4.1 Maestro Personal
     personal: {
         model: 'Personnel',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'names', bd: 'names', excel: 'nombres' },
@@ -491,6 +499,7 @@ const registry = {
     // 5.5.4 Fondos Especiales
     maestro_fondos: {
         model: 'SpecialFund',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'name', excel: 'nombre' },
@@ -578,6 +587,7 @@ const registry = {
     // 7.1.1 Infraestructura
     infraestructura: {
         model: 'ItemInfraestructura',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'nombre', excel: 'nombre' },
@@ -590,6 +600,7 @@ const registry = {
     // 7.1.2 Tipos de Unidad
     tipos_unidad: {
         model: 'TipoUnidad',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'nombre', bd: 'nombre', excel: 'nombre' },
@@ -602,6 +613,7 @@ const registry = {
     // 7.1.3 Espacios Comunes
     espacios: {
         model: 'EspacioComun',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'nombre', excel: 'nombre' },
@@ -616,6 +628,7 @@ const registry = {
     // 7.1.4 Estacionamientos
     estacionamientos: {
         model: 'Estacionamiento',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'number', bd: 'number', excel: 'numero' },
@@ -632,6 +645,7 @@ const registry = {
     // 7.2.1 Previsiones
     previsiones: {
         model: 'HealthProvider',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'name', excel: 'nombre' },
@@ -644,6 +658,7 @@ const registry = {
     // 7.2.2 AFPs
     afps: {
         model: 'PensionFund',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'name', excel: 'nombre' },
@@ -655,6 +670,7 @@ const registry = {
     // 7.2.3 Maestro AFC
     afc: {
         model: 'Afc',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'name', excel: 'nombre' },
@@ -667,6 +683,7 @@ const registry = {
     // 7.2.4 Maestro Insumos
     articulos_personal: {
         model: 'Articulo',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'nombre', excel: 'nombre' },
@@ -682,6 +699,7 @@ const registry = {
     // 7.2.5 Maestro Categorias Insumos
     maestro_categorias_articulos: {
         model: 'ParametroSistema',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'nombre', excel: 'nombre' },
@@ -692,6 +710,7 @@ const registry = {
     // 7.2.6 Maestro Feriados
     feriados: {
         model: 'Feriado',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'date', bd: 'date', excel: 'fecha' },
@@ -703,6 +722,7 @@ const registry = {
     // 7.3.1 Bancos
     bancos: {
         model: 'Banco',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'nombre', excel: 'nombre' },
@@ -713,6 +733,7 @@ const registry = {
     // 7.3.2 Maestro IPC
     maestro_ipc: {
         model: 'ProyeccionIPC',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'nombre', excel: 'nombre' },
@@ -737,6 +758,7 @@ const registry = {
     // 7.3.4 Mensajes Prefijados
     maestro_mensajes: {
         model: 'PlantillaComunicacion',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'nombre', excel: 'nombre' },
@@ -748,6 +770,7 @@ const registry = {
     // 7.3.5 Números Emergencia (Maestro) -> use emergencias
     maestro_emergencias: {
         model: 'NumeroEmergencia',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'nombre', excel: 'nombre' },
@@ -758,6 +781,7 @@ const registry = {
     // 7.3.6 Condiciones Especiales
     condiciones_especiales: {
         model: 'CondicionEspecial',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'nombre', excel: 'nombre' },
@@ -785,6 +809,7 @@ const registry = {
     // Auxiliares (No mapeados directamente a modulos doc)
     unidades: {
         model: 'Department',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'tower_id', bd: 'towerId', excel: 'torre_id' },
@@ -804,6 +829,7 @@ const registry = {
     },
     torres: {
         model: 'Tower',
+        isMaster: true,
         fields: [
             { api: 'id', bd: 'id', excel: 'id' },
             { api: 'name', bd: 'name', excel: 'nombre' }

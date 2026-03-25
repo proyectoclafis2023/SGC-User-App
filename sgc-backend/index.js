@@ -12,6 +12,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
 const bulkMapping = require('./config/bulk-mapping');
+const bulkEngine = require('./core/bulk_engine');
 
 const prisma = new PrismaClient();
 const app = express();
@@ -144,6 +145,54 @@ app.post('/api/login', async (req, res) => {
             }
         });
     } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// -------------------------
+// GLOBAL BULK MANAGEMENT (8.1.0)
+// -------------------------
+
+app.get('/api/bulk-export', async (req, res) => {
+    try {
+        const buffer = await bulkEngine.exportEntities();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=sgc_full_export.xlsx');
+        res.send(buffer);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/bulk-export/:entity', async (req, res) => {
+    try {
+        const buffer = await bulkEngine.exportEntities([req.params.entity]);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=sgc_${req.params.entity}_export.xlsx`);
+        res.send(buffer);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/bulk-import', upload.single('file'), async (req, res) => {
+    try {
+        const dryRun = req.query.dryRun === 'true';
+        const file = req.file;
+        if (!file) return res.status(400).json({ error: 'No file uploaded' });
+
+        const buffer = fs.readFileSync(file.path);
+        const result = await bulkEngine.importEntities(buffer, dryRun, 'Admin');
+        
+        // Cleanup temp file
+        fs.unlinkSync(file.path);
+
+        res.json({ success: true, ...result });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/bulk-masters', (req, res) => {
+    res.json(bulkEngine.getMasters());
 });
 
 // --- RBAC Middleware (Production v3.0) ---

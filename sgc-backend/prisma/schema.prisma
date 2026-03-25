@@ -636,6 +636,7 @@ model BulkUploadLog {
   processed  Int
   created    Int
   updated    Int
+  archived   Int      @default(0)
   status     String
   dryRun     Boolean  @default(false)
   errorsJson String?
