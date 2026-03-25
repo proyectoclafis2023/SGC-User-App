@@ -1,4 +1,4 @@
-# SGC - Sistema de Gestión de Condominios v2.5.1
+# SGC - Sistema de Gestión de Condominios v2.5.2
 
 Sistema integral para la administración de edificios y condominios, con motor financiero avanzado, control de acceso RBAC, auditoría y pruebas automatizadas.
 
@@ -20,7 +20,7 @@ Sistema integral para la administración de edificios y condominios, con motor f
 
 ### 1. Clonar el repositorio
 ```bash
-git clone -b release/v2.5.1 https://github.com/proyectoclafis2023/SGC-User-App.git
+git clone -b release/v2.5.2 https://github.com/proyectoclafis2023/SGC-User-App.git
 cd SGC-User-App
 ```
 
@@ -91,6 +91,12 @@ Para mantener la consistencia del sistema, consulte los manuales en `/docs/archi
 - **Mapping Engine**: Lógica de `registry.js` en [mapping-and-registry-rules.md](./docs/architecture/mapping-and-registry-rules.md).
 - **Módulo Canónico**: Ejemplo de referencia en [canonical-module-712.md](./docs/architecture/canonical-module-712.md).
 - **Automatización**: Guía detallada de pruebas en [automation.md](./docs/automation.md).
+
+## 🤖 AI / Nuevos desarrolladores
+
+Antes de trabajar en el sistema, leer:
+
+/docs/ai/ai-context.md
 
 ## 📄 Licencia
 Este proyecto es de uso privado para el sistema SGC.
