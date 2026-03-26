@@ -180,7 +180,7 @@ Antes de modificar cualquier cosa:
 - Mapping: ✔ centralizado
 - RBAC: ✔ activo
 - Testing: ✔ automatizado
-- Version: v2.5.x
+- Version: v2.5.4
 
 ---
 

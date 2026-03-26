@@ -1,4 +1,4 @@
-# SGC MAPPING & REGISTRY RULES v2.2.4
+# SGC MAPPING & REGISTRY RULES v2.5.4
 
 Este documento establece la normativa técnica obligatoria para la transformación de datos entre capas en el sistema SGC.
 

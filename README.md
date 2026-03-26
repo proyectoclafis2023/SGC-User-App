@@ -1,4 +1,4 @@
-# SGC - Sistema de Gestión de Condominios v2.5.2
+# SGC - Sistema de Gestión de Condominios v2.5.4
 
 Sistema integral para la administración de edificios y condominios, con motor financiero avanzado, control de acceso RBAC, auditoría y pruebas automatizadas.
 
@@ -20,7 +20,7 @@ Sistema integral para la administración de edificios y condominios, con motor f
 
 ### 1. Clonar el repositorio
 ```bash
-git clone -b release/v2.5.2 https://github.com/proyectoclafis2023/SGC-User-App.git
+git clone -b release/v2.5.4 https://github.com/proyectoclafis2023/SGC-User-App.git
 cd SGC-User-App
 ```
 
@@ -92,11 +92,36 @@ Para mantener la consistencia del sistema, consulte los manuales en `/docs/archi
 - **Módulo Canónico**: Ejemplo de referencia en [canonical-module-712.md](./docs/architecture/canonical-module-712.md).
 - **Automatización**: Guía detallada de pruebas en [automation.md](./docs/automation.md).
 
-## 🤖 AI / Nuevos desarrolladores
+## 🤖 AI / Workflow con Asistentes
 
-Antes de trabajar en el sistema, leer:
+Este proyecto está optimizado para trabajar con **Antigravity** (Codificación Directa) y **ChatGPT** (Refinamiento de Prompts).
 
-/docs/ai/ai-context.md
+### 🥇 Paso 1: Configurar ChatGPT como "Prompt Engineer"
+Copia y pega el siguiente prompt en una nueva sesión de ChatGPT para darle contexto total del proyecto:
+
+> **Rol:** Actúa como experto en Prompt Engineering para el sistema **SGC (v2.5.4)**.
+> **Misión:** Redactar tareas técnicas y precisas para que **Antigravity** las ejecute sin romper la arquitectura.
+>
+> **Reglas de Oro (Innegociables):**
+> 1. **Triple Alianza:** API en `snake_case`, DB (Prisma) en `camelCase`, Excel en `español`.
+> 2. **Mapping:** NO transformaciones manuales en frontend. Todo en `registry.js` con `requestMapper/mapResponse`.
+> 3. **Modelos:** Deben incluir `id`, `isArchived`, `createdAt`. Campos complejos terminan en `Json`.
+> 4. **Rutas:** `/api/{modulo_en_plural_snake_case}`.
+>
+> **Fuentes de Verdad:**
+> - `/docs/ai/ai-context.md` (Contexto operativo)
+> - `/docs/architecture/sgc-module-standard.md` (Leyes técnicas)
+> - `/sgc-backend/core/mapping/registry.js` (Estructura de datos)
+>
+> **Instrucción:** Cada vez que te pida una tarea, genera un prompt para Antigravity que comience con: *"Basado en el estándar de /docs/architecture/, realiza lo siguiente..."*
+
+### 🥈 Paso 2: Trabajar con Antigravity
+Una vez que ChatGPT refine tu idea, dale el prompt resultante a Antigravity. Él se encargará de leer los archivos, proponer el código y ejecutarlo siguiendo las reglas del sistema.
+
+### 📚 Documentación Base
+- [Contexto AI](/docs/ai/ai-context.md)
+- [Estándar de Módulos](/docs/architecture/sgc-module-standard.md)
+- [Reglas de Mapeo](/docs/architecture/mapping-and-registry-rules.md)
 
 ## 📄 Licencia
 Este proyecto es de uso privado para el sistema SGC.

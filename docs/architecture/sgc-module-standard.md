@@ -1,6 +1,6 @@
 # 📐 SGC Module Standard v1.0
 
-> 📦 Basado en versión estable: **v2.2.4**
+> 📦 Basado en versión estable: **v2.5.4**
 > 📅 Fecha: 2026-03-18
 > 🟢 Estado: Activo
 > 📍 Ubicación obligatoria: `/docs/architecture/sgc-module-standard.md`
